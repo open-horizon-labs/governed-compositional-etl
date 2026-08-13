@@ -1,20 +1,144 @@
 {
-  "arms": {
-    "compositional_cess": {
-      "active_repair_rate": 0.5,
-      "authority_violations": 0,
-      "escaped_composition_failures": 1,
-      "full_replay": {
+  "canonical_evidence": {
+    "arms": {
+      "compositional_cess": {
+        "active_repair_rate": 0.5,
+        "authority_violations": 0,
+        "compute_cost_available": false,
+        "compute_cost_unavailable_reason": "No monetary or normalized resource-cost measurement was collected; elapsed wall time is descriptive only.",
+        "escaped_composition_failures": 1,
+        "heldout_regressions": 0,
+        "localization_accuracy": 1.0,
+        "model_calls": 0,
+        "model_tokens": 0,
+        "operator_time_available": false,
+        "operator_time_unavailable_reason": "The arm used a scripted zero-model harness and collected no human operator timing.",
+        "operator_work_units": 24,
+        "wall_elapsed_seconds_descriptive": 23.608415417
+      },
+      "native": {
+        "active_repair_rate": 0.25,
+        "authority_violations": 0,
+        "compute_cost_available": false,
+        "compute_cost_unavailable_reason": "No monetary or normalized resource-cost measurement was collected; elapsed wall time is descriptive only.",
+        "escaped_composition_failures": 2,
+        "heldout_regressions": 1,
+        "localization_accuracy": 0.4,
+        "model_calls": 0,
+        "model_tokens": 0,
+        "operator_time_available": false,
+        "operator_time_unavailable_reason": "The arm used a scripted zero-model harness and collected no human operator timing.",
+        "operator_work_units": 19,
+        "wall_elapsed_seconds_descriptive": 24.005366167
+      },
+      "stage_local_cess": {
+        "active_repair_rate": 0.25,
+        "authority_violations": 0,
+        "compute_cost_available": false,
+        "compute_cost_unavailable_reason": "No monetary or normalized resource-cost measurement was collected; elapsed wall time is descriptive only.",
+        "escaped_composition_failures": 2,
+        "heldout_regressions": 1,
+        "localization_accuracy": 0.6,
+        "model_calls": 0,
+        "model_tokens": 0,
+        "operator_time_available": false,
+        "operator_time_unavailable_reason": "The arm used a scripted zero-model harness and collected no human operator timing.",
+        "operator_work_units": 20,
+        "wall_elapsed_seconds_descriptive": 21.933912917
+      }
+    },
+    "chronology": {
+      "invalid_v1_criteria": {
+        "compositional_operator_pseudo_ms_multiple": 3.0,
+        "governs_valid_run": false,
+        "localized_replay_wall_multiple": 2.0,
+        "reason_invalid": "V1 fabricated milliseconds from deterministic work units and used a non-executing harness.",
+        "would_change_valid_decision_to_adopt": false
+      },
+      "unit_change_before_valid_run": "After invalidating fabricated v1 milliseconds, the valid preregistration uses explicit deterministic work units and treats measured wall time as descriptive only.",
+      "valid_preregistration_commit": "e9aa5bb6e1dcaeb2d03af755a7073d2dbcbec608",
+      "valid_preregistration_path": "experiments/preregistration-v2.2.json",
+      "valid_preregistration_sha256": "7e22a6f1ac384c981b9be633cd6a552ff47235e2e8a9eecb4762286c2c4ccd5f",
+      "valid_result_commit": "30109d75dc613a29682a37652c751ef474289608",
+      "valid_thresholds_precede_result": true
+    },
+    "decision": {
+      "bounded_decision": "revise",
+      "cost_pass": true,
+      "incremental_scored_composition_catches": 1,
+      "operator_work_unit_multiple_vs_native": 1.263157894736842,
+      "quality_pass": false,
+      "valid_operator_work_unit_ceiling": 4.0,
+      "valid_wall_time_role": "descriptive_only"
+    },
+    "fresh_projection": {
+      "ce_archive_used": false,
+      "excluded_context": [
+        "oracle/",
+        "counterexamples/archive/",
+        "oracle/fixtures/held-out/",
+        "oracle/submissions/held-out/"
+      ],
+      "manifest_sha256": "fc3baf16fdcff8fbd47ba4af9b132fc70d420ba6b7a2106b4a475c2cfa5cc9f3",
+      "passed": true,
+      "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08"
+    },
+    "limitations": {
+      "corpus_private_case_count": 2,
+      "corpus_visible_case_count": 5,
+      "custody_tests_layer_availability_only": true,
+      "generated_projection_diff_retained": false,
+      "invalid_scored_attempts_excluded": [
+        "v1",
+        "v2_attempt_a",
+        "v2.1",
+        "v2.3"
+      ],
+      "issue4_executable_local_pass_test": "test_independent_local_checks_pass_while_edge_value_fails",
+      "local_pass_contract_validator_rerun_inside_v2": false,
+      "valid_file_internal_schema_label": "matched-experiment-result/v2.3",
+      "valid_run": "v2.4"
+    },
+    "physical_vs_scored": {
+      "edge": {
+        "affected_descendant_members_equal": true,
+        "affected_descendant_order_equal": false,
+        "after": "2012-07-07T00:01:13",
+        "before": "2012-07-07T00:02:34",
+        "physically_repaired": true,
+        "scored_pass": false
+      },
+      "path": {
+        "after": 81,
+        "before": 0,
+        "physically_repaired": true,
+        "scored_pass": true
+      },
+      "physical_composition_repairs": 2,
+      "scored_composition_catches": 1,
+      "scorer_false_negative_derived": true,
+      "verification_gap": {
+        "affected_descendant_members_equal": true,
+        "affected_descendant_order_equal": false,
+        "scored_pass": false
+      }
+    },
+    "publication_gates": [
+      "human_review_required",
+      "no_compliant_tpc_di_benchmark_claim",
+      "no_comparative_tpc_performance_claim",
+      "claims_bounded_to_scripted_agents_and_selected_slice"
+    ],
+    "revalidation": {
+      "full": {
         "audit_count": 6,
         "check_count": 5,
         "restaged_model_count": 6,
         "restaged_rows": 2155125,
         "semantic_recall": 1.0,
-        "wall_ms_descriptive": 1964.731
+        "wall_elapsed_ms_descriptive": 1964.731
       },
-      "heldout_regressions": 0,
-      "localization_accuracy": 1.0,
-      "localized_replay": {
+      "localized": {
         "audit_count": 6,
         "check_count": 5,
         "restaged_model_count": 2,
@@ -22,67 +146,20 @@
         "reused_ancestor_count": 4,
         "semantic_precision": 1.0,
         "semantic_recall": 1.0,
-        "wall_ms_descriptive": 1840.893
-      },
-      "model_calls": 0,
-      "model_tokens": 0,
-      "operator_work_units": 24,
-      "wall_seconds_descriptive": 23.608415417
+        "wall_elapsed_ms_descriptive": 1840.893
+      }
     },
-    "native": {
-      "active_repair_rate": 0.25,
-      "authority_violations": 0,
-      "escaped_composition_failures": 2,
-      "heldout_regressions": 1,
-      "localization_accuracy": 0.4,
-      "model_calls": 0,
-      "model_tokens": 0,
-      "operator_work_units": 19,
-      "wall_seconds_descriptive": 24.005366167
-    },
-    "stage_local_cess": {
-      "active_repair_rate": 0.25,
-      "authority_violations": 0,
-      "escaped_composition_failures": 2,
-      "heldout_regressions": 1,
-      "localization_accuracy": 0.6,
-      "model_calls": 0,
-      "model_tokens": 0,
-      "operator_work_units": 20,
-      "wall_seconds_descriptive": 21.933912917
+    "thresholds": {
+      "active_repair_rate_min": 0.8,
+      "authority_violations_max": 0,
+      "escaped_composition_failures_max": 0,
+      "heldout_regressions_max": 0,
+      "incremental_edge_or_composition_catches_min": 2,
+      "localization_accuracy_min": 0.8,
+      "revalidation_recall_min": 1.0
     }
   },
-  "bounded_decision": "revise",
-  "decision_basis": {
-    "cost_pass": true,
-    "incremental_scored_composition_catches": 1,
-    "operator_work_unit_multiple_vs_native": 1.263157894736842,
-    "quality_pass": false,
-    "scorer_false_negative": "The frozen scorer compared affected-descendant arrays in order. Governance derived the exact members in canonical order for the edge and verification-gap proposals, but their frozen order differed. V2.4 is not rescored."
-  },
-  "fresh_projection": {
-    "ce_archive_used": false,
-    "excluded_context": [
-      "oracle/",
-      "counterexamples/archive/",
-      "oracle/fixtures/held-out/",
-      "oracle/submissions/held-out/"
-    ],
-    "manifest_sha256": "fc3baf16fdcff8fbd47ba4af9b132fc70d420ba6b7a2106b4a475c2cfa5cc9f3",
-    "passed": true,
-    "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08"
-  },
-  "preregistration": {
-    "commit": "e9aa5bb6e1dcaeb2d03af755a7073d2dbcbec608",
-    "result_commit": "30109d75dc613a29682a37652c751ef474289608",
-    "thresholds_precede_valid_run": true
-  },
-  "publication_gates": [
-    "human_review_required",
-    "no_compliant_tpc_di_benchmark_claim",
-    "no_comparative_tpc_performance_claim",
-    "claims_bounded_to_scripted_agents_and_selected_slice"
-  ],
-  "schema_version": "bounded-adoption-decision/v1",
-  "valid_experiment": "v2.4"
+  "canonical_evidence_sha256": "81f594264774f0203a0c0b4741619e7c6a0fa014affb4fda78d599e51f211446",
+  "report_sha256": "d950bcb70a9244b954a86965ca4cd0b9399cab18a395bb9a0da112f7d4cdabe4",
+  "schema_version": "bounded-adoption-decision/v2"
 }

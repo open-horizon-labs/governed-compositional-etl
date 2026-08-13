@@ -11,7 +11,7 @@ owner: research-sponsor
 review_trigger: "Before the first scored comparison run, or when the oracle pilot cannot support a stable threshold."
 ---
 
-Measure boundary-localization accuracy, active-case repair, unauthorized artifact changes, held-out semantic regressions, escaped composition failures, revalidation precision and recall, operator time, model usage, and compute cost.
+Measure boundary-localization accuracy, active-case repair, unauthorized artifact changes, held-out semantic regressions, escaped composition failures, and revalidation precision/recall. Record deterministic work units separately. Human operator time and monetary/normalized compute cost are unavailable for this scripted run; model usage is measured zero and wall time is descriptive only.
 
 Do not treat fewer reruns as an improvement unless every affected descendant remains covered. Do not claim success from deterministic checks without separate review of the same cases against the current Sketch.
 

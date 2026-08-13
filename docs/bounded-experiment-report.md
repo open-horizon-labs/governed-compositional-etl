@@ -1,50 +1,186 @@
 # Governed compositional ETL: bounded experiment report
 
-## Decision
+## Research-sponsor decision
 
-**Revise.** The selected slice shows materially promising protection beyond native pipeline controls and independent stage-local CESS, but it does not meet the frozen adoption threshold. The valid v2.4 scorer credits one of two composition catches and compositional active repair is 0.5. The method should be corrected and rerun under a new preregistration before expanding beyond this slice.
+**Revise.** The materialized experiment shows promising compositional protection beyond native pipeline controls and independent stage-local CESS, but the sole valid run does not meet its preregistered quality threshold. Scope expansion is paused until a newly preregistered scorer correction and matched rerun.
 
-This decision was made under the research-sponsor hat. The numerical quality and cost rules were frozen in commit `e9aa5bb` before the valid v2.4 result commit `30109d7`. Earlier v1, v2 attempt A, v2.1, and v2.3 results are invalid failed-harness learning; v2.2 stopped at preflight. None contributes to the decision.
+The valid criteria are the honest work-unit criteria frozen before the valid run. The earlier pseudo-millisecond and wall-ratio criteria belong to invalid v1 and never govern this decision. The unit changed before the valid run because v1 fabricated milliseconds from deterministic operations. We do not apply or rehabilitate invalid v1 criteria; they would not turn the valid result into adoption because the valid quality gate fails independently.
 
-## Comparison with traditional and stage-local development
+Native and stage-local evidence retained both materially observed composition defects. Compositional evidence physically repaired both. The frozen scorer credits only one: its array comparison treats the governance-derived canonical descendant order as different from the frozen order despite equal members. This is a derived false negative, not a post-hoc score change. The valid run is never rescored.
 
-| Metric | Native SQLMesh/DuckDB | Stage-local CESS | Compositional CESS |
-|---|---:|---:|---:|
-| Localization accuracy | 0.4 | 0.6 | 1.0 |
-| Active repair rate | 0.25 | 0.25 | 0.5 |
-| Authority violations | 0 | 0 | 0 |
-| Held-out regressions | 1 | 1 | 0 |
-| Escaped scored composition failures | 2 | 2 | 1 |
-| Deterministic operator work units | 19 | 20 | 24 |
-| Model calls / tokens | 0 / 0 | 0 / 0 | 0 / 0 |
-| Descriptive wall seconds | 24.005 | 21.934 | 23.608 |
+Operator time is unavailable because the arms were scripted and no human timing was collected. Deterministic work units are a proxy count, not time. Model calls and tokens are measured zero. Monetary or normalized compute cost is unavailable; elapsed wall time is retained only as descriptive execution evidence.
 
-Native and stage-local evidence remained inconclusive on both composition defects and retained the materialized wrong values. Compositional evidence physically repaired the edge timestamp from `00:02:34` to `00:01:13` and the path duration from `0` to `81`. That does **not** become two scored catches: the frozen scorer counted only the path repair because its affected-descendant array comparison was order-sensitive. The edge and verification-gap proposals contained the exact governed members in canonical order but not the frozen array order. Fixing that scorer requires a future preregistration; v2.4 is never rescored.
+## Canonical evidence
 
-Missing pricing policy remained explicit and inconclusive in all arms. No arm inferred policy from raw data, schemas, or generated projection structure.
+The JSON block below is the only quantitative and decision-bearing publication block. The machine decision pins its canonical hash and the complete report hash. The verifier independently recomputes every field from the valid traces, exact preregistration commit, frozen scorer/corpus behavior, replay evidence, and fresh projection.
 
-## Revalidation cost and safety
-
-For the governed edge change, localized replay restaged 2 models and 781,956 rows, reused 4 verified ancestors, and ran 5 checks plus 6 audits. Full replay restaged all 6 models and 2,155,125 rows with the same 5 checks and 6 audits. Both had semantic recall 1.0; localized semantic precision was 1.0. The observed wall times—1,840.893 ms localized and 1,964.731 ms full—are descriptive single-host observations, not a speed or performance claim. Correct descendant coverage, not smaller replay, is the safety result.
-
-The deterministic work count is an honest harness work unit, not human operator time. No human-time study or LLM comparison occurred. All arms used scripted deterministic policy with zero model calls and tokens.
-
-## Evidence and regeneration
-
-The independent envelope verifier recomputes frozen harness and corpus hashes, retained result and trace hashes, matched start-database hashes, actual localized/full replay records, attempt budgets, and the conditional materialization rule: resolved proposals change the injected output; inconclusive proposals retain it. Every resolved case retains a non-empty actual artifact diff within its frozen allowed surface; inconclusive cases retain no edit.
-
-The fresh-projection check deletes and regenerates the disposable projection from the Sketch, anchors, contracts, and bounded compiler profile. Its manifest explicitly excludes the oracle, accepted-CE archive, held-out fixtures, and held-out submissions. The regenerated arms remain byte-equivalent at projection hash `0669f058…` and pass independent manifest verification. Generated SQL, SQLGlot ASTs, SQLMesh models, and DuckDB tables remain replaceable projections.
+<!-- BEGIN CANONICAL EVIDENCE -->
+```json
+{
+  "arms": {
+    "compositional_cess": {
+      "active_repair_rate": 0.5,
+      "authority_violations": 0,
+      "compute_cost_available": false,
+      "compute_cost_unavailable_reason": "No monetary or normalized resource-cost measurement was collected; elapsed wall time is descriptive only.",
+      "escaped_composition_failures": 1,
+      "heldout_regressions": 0,
+      "localization_accuracy": 1.0,
+      "model_calls": 0,
+      "model_tokens": 0,
+      "operator_time_available": false,
+      "operator_time_unavailable_reason": "The arm used a scripted zero-model harness and collected no human operator timing.",
+      "operator_work_units": 24,
+      "wall_elapsed_seconds_descriptive": 23.608415417
+    },
+    "native": {
+      "active_repair_rate": 0.25,
+      "authority_violations": 0,
+      "compute_cost_available": false,
+      "compute_cost_unavailable_reason": "No monetary or normalized resource-cost measurement was collected; elapsed wall time is descriptive only.",
+      "escaped_composition_failures": 2,
+      "heldout_regressions": 1,
+      "localization_accuracy": 0.4,
+      "model_calls": 0,
+      "model_tokens": 0,
+      "operator_time_available": false,
+      "operator_time_unavailable_reason": "The arm used a scripted zero-model harness and collected no human operator timing.",
+      "operator_work_units": 19,
+      "wall_elapsed_seconds_descriptive": 24.005366167
+    },
+    "stage_local_cess": {
+      "active_repair_rate": 0.25,
+      "authority_violations": 0,
+      "compute_cost_available": false,
+      "compute_cost_unavailable_reason": "No monetary or normalized resource-cost measurement was collected; elapsed wall time is descriptive only.",
+      "escaped_composition_failures": 2,
+      "heldout_regressions": 1,
+      "localization_accuracy": 0.6,
+      "model_calls": 0,
+      "model_tokens": 0,
+      "operator_time_available": false,
+      "operator_time_unavailable_reason": "The arm used a scripted zero-model harness and collected no human operator timing.",
+      "operator_work_units": 20,
+      "wall_elapsed_seconds_descriptive": 21.933912917
+    }
+  },
+  "chronology": {
+    "invalid_v1_criteria": {
+      "compositional_operator_pseudo_ms_multiple": 3.0,
+      "governs_valid_run": false,
+      "localized_replay_wall_multiple": 2.0,
+      "reason_invalid": "V1 fabricated milliseconds from deterministic work units and used a non-executing harness.",
+      "would_change_valid_decision_to_adopt": false
+    },
+    "unit_change_before_valid_run": "After invalidating fabricated v1 milliseconds, the valid preregistration uses explicit deterministic work units and treats measured wall time as descriptive only.",
+    "valid_preregistration_commit": "e9aa5bb6e1dcaeb2d03af755a7073d2dbcbec608",
+    "valid_preregistration_path": "experiments/preregistration-v2.2.json",
+    "valid_preregistration_sha256": "7e22a6f1ac384c981b9be633cd6a552ff47235e2e8a9eecb4762286c2c4ccd5f",
+    "valid_result_commit": "30109d75dc613a29682a37652c751ef474289608",
+    "valid_thresholds_precede_result": true
+  },
+  "decision": {
+    "bounded_decision": "revise",
+    "cost_pass": true,
+    "incremental_scored_composition_catches": 1,
+    "operator_work_unit_multiple_vs_native": 1.263157894736842,
+    "quality_pass": false,
+    "valid_operator_work_unit_ceiling": 4.0,
+    "valid_wall_time_role": "descriptive_only"
+  },
+  "fresh_projection": {
+    "ce_archive_used": false,
+    "excluded_context": [
+      "oracle/",
+      "counterexamples/archive/",
+      "oracle/fixtures/held-out/",
+      "oracle/submissions/held-out/"
+    ],
+    "manifest_sha256": "fc3baf16fdcff8fbd47ba4af9b132fc70d420ba6b7a2106b4a475c2cfa5cc9f3",
+    "passed": true,
+    "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08"
+  },
+  "limitations": {
+    "corpus_private_case_count": 2,
+    "corpus_visible_case_count": 5,
+    "custody_tests_layer_availability_only": true,
+    "generated_projection_diff_retained": false,
+    "invalid_scored_attempts_excluded": [
+      "v1",
+      "v2_attempt_a",
+      "v2.1",
+      "v2.3"
+    ],
+    "issue4_executable_local_pass_test": "test_independent_local_checks_pass_while_edge_value_fails",
+    "local_pass_contract_validator_rerun_inside_v2": false,
+    "valid_file_internal_schema_label": "matched-experiment-result/v2.3",
+    "valid_run": "v2.4"
+  },
+  "physical_vs_scored": {
+    "edge": {
+      "affected_descendant_members_equal": true,
+      "affected_descendant_order_equal": false,
+      "after": "2012-07-07T00:01:13",
+      "before": "2012-07-07T00:02:34",
+      "physically_repaired": true,
+      "scored_pass": false
+    },
+    "path": {
+      "after": 81,
+      "before": 0,
+      "physically_repaired": true,
+      "scored_pass": true
+    },
+    "physical_composition_repairs": 2,
+    "scored_composition_catches": 1,
+    "scorer_false_negative_derived": true,
+    "verification_gap": {
+      "affected_descendant_members_equal": true,
+      "affected_descendant_order_equal": false,
+      "scored_pass": false
+    }
+  },
+  "publication_gates": [
+    "human_review_required",
+    "no_compliant_tpc_di_benchmark_claim",
+    "no_comparative_tpc_performance_claim",
+    "claims_bounded_to_scripted_agents_and_selected_slice"
+  ],
+  "revalidation": {
+    "full": {
+      "audit_count": 6,
+      "check_count": 5,
+      "restaged_model_count": 6,
+      "restaged_rows": 2155125,
+      "semantic_recall": 1.0,
+      "wall_elapsed_ms_descriptive": 1964.731
+    },
+    "localized": {
+      "audit_count": 6,
+      "check_count": 5,
+      "restaged_model_count": 2,
+      "restaged_rows": 781956,
+      "reused_ancestor_count": 4,
+      "semantic_precision": 1.0,
+      "semantic_recall": 1.0,
+      "wall_elapsed_ms_descriptive": 1840.893
+    }
+  },
+  "thresholds": {
+    "active_repair_rate_min": 0.8,
+    "authority_violations_max": 0,
+    "escaped_composition_failures_max": 0,
+    "heldout_regressions_max": 0,
+    "incremental_edge_or_composition_catches_min": 2,
+    "localization_accuracy_min": 0.8,
+    "revalidation_recall_min": 1.0
+  }
+}
+```
+<!-- END CANONICAL EVIDENCE -->
 
 ## Limitations and publication gates
 
-- The arm policy is deterministic and scripted, with zero model use. This is not evidence about LLM repair performance.
-- V2 records producer/consumer local passes for the edge, but the executable basis is the earlier issue #4 adjudication test; v2 did not independently rerun that contract validator inside every disposable case.
-- The retained artifact diff covers the governed repair surface but omits the separately regenerated projection diff.
-- Private custody tests whether the arm exposes the needed evidence layer and emits aggregates only; it is not a broad neighboring-data generalization test.
-- The corpus has five visible cases and two private neighbors in one batch Trade slice. Statistical inference and external validity are unavailable.
-- Multiple invalid harness iterations demonstrate that the evaluation machinery itself required correction. Only v2.4 counts.
-- The valid v2.4 file retains the internal schema label `matched-experiment-result/v2.3`; the filename, chronology, nonce, envelope, and decision identify the valid attempt. Correcting that label after scoring would invalidate the envelope, so it remains unchanged.
-- Timings are descriptive and cannot support comparative system or TPC performance claims.
-- The evaluated DIGen copy pins three core artifact hashes in the issue #2 manifest, but it was not personally acquired through the canonical registered TPC download. A human must acquire that package, compare the pinned hashes, accept/review its license, confirm the obsolete workload status and fair-use wording, and approve external publication.
+The structured block records the bounded corpus, custody behavior, local-pass evidence source, omitted generated-projection diff, invalid-run exclusions, and internal schema-label wart. The evaluated DIGen copy pins core artifact hashes but was not personally acquired through the canonical registered TPC download. A human must acquire and compare the canonical package, accept and review its license, confirm obsolete-workload and fair-use language, and approve publication.
 
-This work is TPC-DI-derived research, not a compliant TPC-DI benchmark. It makes no comparative TPC performance claim. Human review is required before external publication.
+This is TPC-DI-derived research, not a compliant TPC-DI benchmark. It makes no comparative TPC or system-performance claim. Human review is required before external publication.
