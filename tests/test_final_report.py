@@ -43,6 +43,17 @@ class FinalReportTests(unittest.TestCase):
         with self.assertRaises(FINAL.FinalReportError):
             FINAL.verify(self.decision, changed)
 
+    def test_coordinated_contradictory_verdict_prose_and_hash_fail_template(self):
+        changed_report = self.report.replace("**Revise.**", "**Adopt.**", 1).replace(
+            "does not meet its preregistered quality threshold",
+            "meets its preregistered quality threshold",
+            1,
+        )
+        changed_decision = copy.deepcopy(self.decision)
+        changed_decision["report_sha256"] = FINAL.sha256_bytes(changed_report.encode())
+        with self.assertRaises(FINAL.FinalReportError):
+            FINAL.verify(changed_decision, changed_report)
+
     def test_coordinated_decision_metric_mutation_fails_derivation(self):
         self.coordinated_mutation(lambda evidence: evidence["decision"].update({"bounded_decision": "adopt"}))
 

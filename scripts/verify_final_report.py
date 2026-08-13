@@ -56,6 +56,50 @@ def report_block(text: str) -> dict:
     return json.loads(text.split(BEGIN, 1)[1].split(END, 1)[0])
 
 
+def render_decision_report(evidence: dict) -> str:
+    """Render every decision-bearing sentence from independently derived evidence."""
+    decision = evidence["decision"]
+    physical = evidence["physical_vs_scored"]
+    chronology = evidence["chronology"]
+    verdict = decision["bounded_decision"]
+    threshold_phrase = "meets" if decision["quality_pass"] else "does not meet"
+    recommendation = {
+        "adopt": "The method merits bounded expansion under the current controls.",
+        "revise": "Scope expansion is paused until a newly preregistered scorer correction and matched rerun.",
+        "reject": "The method should not be expanded from this slice.",
+    }[verdict]
+    physical_word = "both" if physical["physical_composition_repairs"] == 2 else str(physical["physical_composition_repairs"])
+    scored_word = {0: "none", 1: "one", 2: "both"}.get(physical["scored_composition_catches"], str(physical["scored_composition_catches"]))
+    invalid_v1_effect = (
+        "would turn" if chronology["invalid_v1_criteria"]["would_change_valid_decision_to_adopt"] else "would not turn"
+    )
+    block = json.dumps(evidence, indent=2, sort_keys=True)
+    return f"""# Governed compositional ETL: bounded experiment report
+
+## Research-sponsor decision
+
+**{verdict.capitalize()}.** The materialized experiment shows promising compositional protection beyond native pipeline controls and independent stage-local CESS, but the sole valid run {threshold_phrase} its preregistered quality threshold. {recommendation}
+
+The valid criteria are the honest work-unit criteria frozen before the valid run. The earlier pseudo-millisecond and wall-ratio criteria belong to invalid v1 and never govern this decision. The unit changed before the valid run because v1 fabricated milliseconds from deterministic operations. We do not apply or rehabilitate invalid v1 criteria; they {invalid_v1_effect} the valid result into adoption because the valid quality gate fails independently.
+
+Native and stage-local evidence retained both materially observed composition defects. Compositional evidence physically repaired {physical_word}. The frozen scorer credits only {scored_word}: its array comparison treats the governance-derived canonical descendant order as different from the frozen order despite equal members. This is a derived false negative, not a post-hoc score change. The valid run is never rescored.
+
+Operator time is unavailable because the arms were scripted and no human timing was collected. Deterministic work units are a proxy count, not time. Model calls and tokens are measured zero. Monetary or normalized compute cost is unavailable; elapsed wall time is retained only as descriptive execution evidence.
+
+## Canonical evidence
+
+The JSON block below is the only quantitative and decision-bearing publication block. The machine decision pins its canonical hash and the complete report hash. The verifier independently recomputes every field from the valid traces, exact preregistration commit, frozen scorer/corpus behavior, replay evidence, and fresh projection.
+
+{BEGIN}{block}{END}
+
+## Limitations and publication gates
+
+The structured block records the bounded corpus, custody behavior, local-pass evidence source, omitted generated-projection diff, invalid-run exclusions, and internal schema-label wart. The evaluated DIGen copy pins core artifact hashes but was not personally acquired through the canonical registered TPC download. A human must acquire and compare the canonical package, accept and review its license, confirm obsolete-workload and fair-use language, and approve publication.
+
+This is TPC-DI-derived research, not a compliant TPC-DI benchmark. It makes no comparative TPC or system-performance claim. Human review is required before external publication.
+"""
+
+
 def arm_metrics(result: dict, name: str) -> dict:
     arm, summary = result["arms"][name], result["summaries"][name]
     if arm["arm_kind"] != "deterministic_scripted_agent" or arm["model_calls"] != 0 or arm["model_tokens"] != 0:
@@ -239,6 +283,8 @@ def verify(decision: dict | None = None, report_text: str | None = None) -> dict
     derived = derive_canonical(result, corpus, prereg, json.loads(compiler.stdout))
     if decision["canonical_evidence"] != derived:
         raise FinalReportError("published evidence differs from independently derived evidence")
+    if report_text != render_decision_report(derived):
+        raise FinalReportError("report prose differs from the deterministic evidence-derived template")
     if derived["decision"]["bounded_decision"] != "revise":
         raise FinalReportError("bounded decision is not the frozen valid result")
     return {"schema_version": "final-report-verification/v2", "passed": True, "decision": "revise", "valid_experiment": "v2.4", "fresh_projection_passed": True}
