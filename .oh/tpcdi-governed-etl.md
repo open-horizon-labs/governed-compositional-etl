@@ -148,6 +148,8 @@ Use the complete TPC-DI rules as a hidden closed-world oracle. Give the open-wor
 
 **Updated:** 2026-08-12 22:19 EDT
 
+**Execution status (2026-08-13):** Issues #2–#7 produced the bounded slice and valid v2.4 comparison. Issue #8 records `revise`: materially promising compositional protection, but the frozen scorer credits one of two composition catches and active repair 0.5, so adoption and scope expansion are paused pending a newly preregistered correction.
+
 | S&T Step | Disposition | Issue/Epic | Parent Step | Depends On |
 |---|---|---|---|---|
 | root | tracking | [#1](https://github.com/open-horizon-labs/governed-compositional-etl/issues/1) | none | none |
