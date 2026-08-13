@@ -11,17 +11,13 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
-import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = ROOT / "evidence/issue-2/sf3-manifest.json"
-SLICE_FILES = {
-    "status_type": "Batch1/StatusType.txt",
-    "trade_type": "Batch1/TradeType.txt",
-    "trade": "Batch1/Trade.txt",
-    "trade_history": "Batch1/TradeHistory.txt",
-}
+SLICE_NAMES = ("status_type", "trade_type", "trade", "trade_history")
+TOOL_ARTIFACTS = ("DIGen.jar", "pdgf/pdgf.jar", "pdgf/plugins/tpc-di.jar")
+BATCH_NAMES = ("Batch1", "Batch2", "Batch3")
 
 
 def sha256(path: Path) -> str:
@@ -41,8 +37,80 @@ def line_count(path: Path) -> int:
 
 
 def load_manifest(path: Path) -> dict:
-    with path.open(encoding="utf-8") as source:
-        return json.load(source)
+    try:
+        with path.open(encoding="utf-8") as source:
+            manifest = json.load(source)
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"could not load retained manifest {path}: {error}") from error
+    validate_manifest(manifest)
+    return manifest
+
+
+def validate_manifest(manifest: object) -> None:
+    def reject(message: str) -> None:
+        raise SystemExit(f"invalid retained manifest: {message}")
+
+    def mapping(value: object, name: str) -> dict:
+        if not isinstance(value, dict):
+            reject(f"{name} must be an object")
+        return value
+
+    def exact_keys(value: dict, wanted: tuple[str, ...], name: str) -> None:
+        if set(value) != set(wanted):
+            reject(f"{name} keys must be {sorted(wanted)}; got {sorted(value)}")
+
+    def positive_integer(value: object, name: str, minimum: int = 1) -> None:
+        if type(value) is not int or value < minimum:
+            reject(f"{name} must be an integer >= {minimum}")
+
+    root = mapping(manifest, "root")
+    exact_keys(root, ("digen", "provenance", "slice_files", "tool_artifacts"), "root")
+
+    digen = mapping(root["digen"], "digen")
+    exact_keys(digen, ("version", "scale_factor", "batch_rows"), "digen")
+    if not isinstance(digen["version"], str) or not digen["version"].strip():
+        reject("digen.version must be a non-empty string")
+    positive_integer(digen["scale_factor"], "digen.scale_factor", minimum=3)
+    batches = mapping(digen["batch_rows"], "digen.batch_rows")
+    exact_keys(batches, BATCH_NAMES + ("all",), "digen.batch_rows")
+    for name, count in batches.items():
+        positive_integer(count, f"digen.batch_rows.{name}")
+    if batches["all"] != sum(batches[name] for name in BATCH_NAMES):
+        reject("digen.batch_rows.all must equal Batch1 + Batch2 + Batch3")
+
+    provenance = mapping(root["provenance"], "provenance")
+    exact_keys(provenance, ("canonical_download", "evaluated_copy", "note"), "provenance")
+    for name, value in provenance.items():
+        if not isinstance(value, str) or not value.strip():
+            reject(f"provenance.{name} must be a non-empty string")
+
+    slice_files = mapping(root["slice_files"], "slice_files")
+    exact_keys(slice_files, SLICE_NAMES, "slice_files")
+    for name, value in slice_files.items():
+        details = mapping(value, f"slice_files.{name}")
+        exact_keys(details, ("path", "sha256", "bytes", "rows"), f"slice_files.{name}")
+        path = details["path"]
+        if (
+            not isinstance(path, str)
+            or not path
+            or Path(path).is_absolute()
+            or ".." in Path(path).parts
+        ):
+            reject(f"slice_files.{name}.path must be a safe relative path")
+        if not isinstance(details["sha256"], str) or not re.fullmatch(
+            r"[0-9a-f]{64}", details["sha256"]
+        ):
+            reject(f"slice_files.{name}.sha256 must be 64 lowercase hex characters")
+        positive_integer(details["bytes"], f"slice_files.{name}.bytes")
+        positive_integer(details["rows"], f"slice_files.{name}.rows")
+
+    tools = mapping(root["tool_artifacts"], "tool_artifacts")
+    exact_keys(tools, TOOL_ARTIFACTS, "tool_artifacts")
+    for relative, digest in tools.items():
+        if Path(relative).is_absolute() or ".." in Path(relative).parts:
+            reject(f"tool_artifacts path is unsafe: {relative}")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            reject(f"tool_artifacts.{relative} must be 64 lowercase hex characters")
 
 
 def verify_tools(tools_dir: Path, java: Path, manifest: dict) -> None:
@@ -50,7 +118,7 @@ def verify_tools(tools_dir: Path, java: Path, manifest: dict) -> None:
     for relative, wanted in expected.items():
         path = tools_dir / relative
         if not path.is_file():
-            raise SystemExit(f"missing official tool artifact: {path}")
+            raise SystemExit(f"missing pinned tool artifact: {path}")
         actual = sha256(path)
         if actual != wanted:
             raise SystemExit(
@@ -65,8 +133,13 @@ def verify_tools(tools_dir: Path, java: Path, manifest: dict) -> None:
         check=False,
     )
     output = version.stdout + version.stderr
-    if "DIGen Version: 1.1.0" not in output:
-        raise SystemExit(f"DIGen version check failed:\n{output}")
+    expected_version = manifest["digen"]["version"]
+    match = re.search(r"^DIGen Version:\s*(\S+)\s*$", output, re.MULTILINE)
+    if not match or match.group(1) != expected_version:
+        observed = match.group(1) if match else "missing"
+        raise SystemExit(
+            f"DIGen version was {observed}; retained manifest requires {expected_version}"
+        )
 
 
 def java_home(java: Path) -> Path:
@@ -111,31 +184,46 @@ def prepare_compat_home(java: Path, destination: Path) -> Path:
     return destination.resolve()
 
 
-def verify_report(output_dir: Path) -> None:
+def verify_report(output_dir: Path, manifest: dict) -> None:
     report_path = output_dir / "digen_report.txt"
     if not report_path.is_file():
         raise SystemExit(f"DIGen did not write {report_path}")
     report = report_path.read_text(encoding="utf-8")
-    required = (
-        "DIGen Version: 1.1.0",
-        "Scale Factor: 3",
-        "TotalRecords for Batch1: 4539962",
-        "TotalRecords for Batch2: 19900",
-        "TotalRecords for Batch3: 19855",
-        "TotalRecords all Batches: 4579717",
-    )
-    missing = [entry for entry in required if entry not in report]
-    if missing:
-        raise SystemExit(f"DIGen report is missing expected evidence: {missing}")
+    expected = manifest["digen"]
+    patterns = {
+        "version": r"^DIGen Version:\s*(\S+)\s*$",
+        "scale_factor": r"^Scale Factor:\s*(\d+)\s*$",
+    }
+    observed = {}
+    for name, pattern in patterns.items():
+        match = re.search(pattern, report, re.MULTILINE)
+        if not match:
+            raise SystemExit(f"DIGen report is missing {name}")
+        observed[name] = match.group(1) if name == "version" else int(match.group(1))
+    observed_batches = {}
+    for name in BATCH_NAMES:
+        match = re.search(rf"TotalRecords for {name}:\s*(\d+)", report)
+        if not match:
+            raise SystemExit(f"DIGen report is missing row total for {name}")
+        observed_batches[name] = int(match.group(1))
+    match = re.search(r"TotalRecords all Batches:\s*(\d+)", report)
+    if not match:
+        raise SystemExit("DIGen report is missing row total for all batches")
+    observed_batches["all"] = int(match.group(1))
+    observed["batch_rows"] = observed_batches
+    if observed != expected:
+        raise SystemExit(f"DIGen report was {observed}; retained manifest requires {expected}")
 
 
-def generate(tools_dir: Path, java: Path, output_dir: Path, reuse: bool) -> None:
+def generate(
+    tools_dir: Path, java: Path, output_dir: Path, reuse: bool, manifest: dict
+) -> None:
     if output_dir.exists() and any(output_dir.iterdir()):
         if not reuse:
             raise SystemExit(
                 f"{output_dir} is not empty; pass --reuse or choose a fresh --raw-dir"
             )
-        verify_report(output_dir)
+        verify_report(output_dir, manifest)
         return
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -148,20 +236,21 @@ def generate(tools_dir: Path, java: Path, output_dir: Path, reuse: bool) -> None
         "-jar",
         "DIGen.jar",
         "-sf",
-        "3",
+        str(manifest["digen"]["scale_factor"]),
         "-o",
         str(output_dir.resolve()),
         "-jvm",
         "-Xms512m -Xmx2g",
     ]
     subprocess.run(command, cwd=tools_dir, env=env, check=True)
-    verify_report(output_dir)
+    verify_report(output_dir, manifest)
 
 
 def inspect_slice(raw_dir: Path, manifest: dict) -> dict[str, dict[str, object]]:
     observed = {}
     expected = manifest["slice_files"]
-    for name, relative in SLICE_FILES.items():
+    for name in SLICE_NAMES:
+        relative = expected[name]["path"]
         path = raw_dir / relative
         if not path.is_file():
             raise SystemExit(f"missing selected raw file: {path}")
@@ -186,7 +275,9 @@ def sql_literal(value: str) -> str:
 
 
 def load_sql(raw_dir: Path, temp_dir: Path, evidence: dict) -> str:
-    paths = {name: (raw_dir / relative).resolve() for name, relative in SLICE_FILES.items()}
+    paths = {
+        name: (raw_dir / evidence[name]["path"]).resolve() for name in SLICE_NAMES
+    }
     evidence_rows = ",\n".join(
         "(" + ", ".join(
             [
@@ -296,7 +387,7 @@ def main() -> None:
     if args.action in ("verify", "generate", "smoke"):
         verify_tools(tools_dir, java, manifest)
     if args.action in ("generate", "smoke"):
-        generate(tools_dir, java, args.raw_dir, args.reuse)
+        generate(tools_dir, java, args.raw_dir, args.reuse, manifest)
     if args.action in ("verify", "load", "smoke"):
         evidence = inspect_slice(args.raw_dir, manifest)
     if args.action in ("load", "smoke"):

@@ -12,7 +12,7 @@
   "provenance": {
     "canonical_download": "https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DI&bm_vers=1.1.0&mode=CURRENT-ONLY",
     "evaluated_copy": "https://github.com/mwiewior/tbd-tpc-di/tree/892927064ab9246340f8b22910081372cd2520b9/tools",
-    "note": "The evaluated redistribution identifies itself as DIGen 1.1.0 and its three frozen core hashes match three additional public redistributions. Acquire a fresh licensed copy from the canonical TPC source for subsequent runs."
+    "note": "The evaluated redistribution identifies itself as DIGen 1.1.0 and its three frozen core hashes match three additional public redistributions. Human PR verification must personally acquire the canonical registered TPC package, review its license, compare hashes, and record the result. Subsequent experiment runs require canonical acquisition."
   },
   "slice_files": {
     "status_type": {
