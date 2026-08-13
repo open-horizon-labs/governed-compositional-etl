@@ -1,0 +1,2235 @@
+{
+  "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero",
+  "arms": {
+    "compositional_cess": {
+      "arm_kind": "deterministic_scripted_agent",
+      "full_replay_control": {
+        "check_count": 5,
+        "escaped_regressions": [],
+        "execution": {
+          "audit_count": 6,
+          "audit_status": "passed",
+          "check_results": {
+            "edge-trade-history-create-time-v1": true,
+            "invariant.dim_trade_identity": true,
+            "invariant.lifecycle_duration": true,
+            "local-trade-type-name-v1": true,
+            "sqlmesh.audits": true
+          },
+          "executed_models": [
+            {
+              "name": "governed.status_type_reference",
+              "order": 1,
+              "row_count": 6,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_history_stage",
+              "order": 2,
+              "row_count": 982180,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_stage",
+              "order": 3,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_type_reference",
+              "order": 4,
+              "row_count": 5,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_lifecycle",
+              "order": 5,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.dim_trade",
+              "order": 6,
+              "row_count": 390978,
+              "status": "success"
+            }
+          ],
+          "live_submissions": {
+            "edge-trade-history-create-time-v1": {
+              "corrected_output": {
+                "closed_at": "2012-07-07T00:02:34",
+                "created_at": "2012-07-07T00:01:13",
+                "trade_id": 0
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            },
+            "local-trade-type-name-v1": {
+              "corrected_output": {
+                "is_market": true,
+                "is_sell": true,
+                "trade_type_id": "TMS",
+                "type_name": "Market Sell"
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            }
+          },
+          "required_ancestors": [],
+          "selection_closure": [
+            "governed.status_type_reference",
+            "governed.trade_history_stage",
+            "governed.trade_stage",
+            "governed.trade_lifecycle",
+            "governed.trade_type_reference",
+            "governed.dim_trade"
+          ],
+          "wall_ms": 1941.466
+        },
+        "execution_metrics": {
+          "audit_count": 6,
+          "check_count": 5,
+          "restaged_model_count": 6,
+          "restaged_rows": 2155125,
+          "reused_ancestor_count": 0,
+          "wall_ms": 1941.466
+        },
+        "node_count": 14,
+        "nodes": [
+          "duckdb.dim_trade",
+          "duckdb.dim_trade.type",
+          "edge.trade_history_to_dim_trade.create_close_time",
+          "edge.trade_type_to_dim_trade",
+          "governed.dim_trade",
+          "governed.status_type_reference",
+          "governed.trade_history_stage",
+          "governed.trade_lifecycle",
+          "governed.trade_stage",
+          "governed.trade_type_reference",
+          "logical.dim_trade",
+          "logical.dim_trade.type",
+          "metric.trade_lifecycle_seconds",
+          "stage.trade_type_reference.type_name"
+        ],
+        "precision": 0.75,
+        "recall": 1.0,
+        "semantic_metrics": {
+          "escaped_regressions": [],
+          "precision": 0.75,
+          "recall": 1.0,
+          "selected": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "universe": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "unnecessary_recomputation": [
+            "edge.trade_type_to_dim_trade"
+          ]
+        },
+        "unnecessary_recomputation": [
+          "edge.trade_type_to_dim_trade"
+        ]
+      },
+      "heldout_aggregate": {
+        "cases_passed": 2,
+        "cases_scored": 2,
+        "commitment": "issue7-v22-run-20260813-c",
+        "passed": true,
+        "schema_version": "sealed-v2-aggregate/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage",
+        "contract",
+        "path"
+      ],
+      "localized_replay": {
+        "all_revalidation_nodes": [
+          "duckdb.dim_trade",
+          "governed.dim_trade",
+          "governed.trade_lifecycle",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "change_id": "edge.create_status",
+        "changed_pointer": "/history_policy/market_creation_status",
+        "check_count": 5,
+        "check_nodes": [
+          "duckdb.dim_trade",
+          "edge.trade_history_to_dim_trade.create_close_time",
+          "governed.dim_trade",
+          "governed.trade_lifecycle",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "checks": [
+          "edge-trade-history-create-time-v1",
+          "invariant.dim_trade_identity",
+          "invariant.lifecycle_duration",
+          "local-trade-type-name-v1",
+          "sqlmesh.audits"
+        ],
+        "escaped_regressions": [],
+        "executable_revalidation": [
+          "governed.dim_trade",
+          "governed.trade_lifecycle"
+        ],
+        "execution": {
+          "audit_count": 6,
+          "audit_status": "passed",
+          "check_results": {
+            "edge-trade-history-create-time-v1": true,
+            "invariant.dim_trade_identity": true,
+            "invariant.lifecycle_duration": true,
+            "local-trade-type-name-v1": true,
+            "sqlmesh.audits": true
+          },
+          "executed_models": [
+            {
+              "name": "governed.trade_lifecycle",
+              "order": 1,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.dim_trade",
+              "order": 2,
+              "row_count": 390978,
+              "status": "success"
+            }
+          ],
+          "live_submissions": {
+            "edge-trade-history-create-time-v1": {
+              "corrected_output": {
+                "closed_at": "2012-07-07T00:02:34",
+                "created_at": "2012-07-07T00:01:13",
+                "trade_id": 0
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            },
+            "local-trade-type-name-v1": {
+              "corrected_output": {
+                "is_market": true,
+                "is_sell": true,
+                "trade_type_id": "TMS",
+                "type_name": "Market Sell"
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            }
+          },
+          "required_ancestors": [
+            {
+              "name": "governed.status_type_reference",
+              "row_count": 6,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_history_stage",
+              "row_count": 982180,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_stage",
+              "row_count": 390978,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_type_reference",
+              "row_count": 5,
+              "status": "reused_verified"
+            }
+          ],
+          "selection_closure": [
+            "governed.status_type_reference",
+            "governed.trade_history_stage",
+            "governed.trade_stage",
+            "governed.trade_lifecycle",
+            "governed.trade_type_reference",
+            "governed.dim_trade"
+          ],
+          "wall_ms": 1830.763
+        },
+        "execution_metrics": {
+          "audit_count": 6,
+          "check_count": 5,
+          "restaged_model_count": 2,
+          "restaged_rows": 781956,
+          "reused_ancestor_count": 4,
+          "wall_ms": 1830.763
+        },
+        "node_count": 5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "semantic_descendants": [
+          "duckdb.dim_trade",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "semantic_metrics": {
+          "escaped_regressions": [],
+          "precision": 1.0,
+          "recall": 1.0,
+          "selected": [
+            "duckdb.dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "universe": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "unnecessary_recomputation": []
+        },
+        "unnecessary_recomputation": []
+      },
+      "model_calls": 0,
+      "model_tokens": 0,
+      "operator_work_units": 24,
+      "raw_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0",
+      "repair_attempts_per_case": 1,
+      "traces": [
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -6,7 +6,7 @@\n );\n \n SELECT\n-  NULL AS trade_id,\n+  t.trade_id AS trade_id,\n   l.created_at AS created_at,\n   l.closed_at AS closed_at,\n   s.status_name AS status,\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-projection-null-trade-id",
+          "defect_artifact_sha256": "353907ca38ee54f781de8d6004fcd5af3eee696d4663dabee316a791c8354989",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 390978,
+              "trade_id_0_closed_at": null,
+              "trade_id_0_created_at": null,
+              "trade_id_0_lifecycle_seconds": null
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1753765041
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": true,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage",
+            "contract",
+            "path"
+          ],
+          "live_result": {
+            "null_trade_ids": 0
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "b94c2a74cd475a8dfbf27d2d2c698e77ed701cceab9b9f1ea93f8474d58bfd8c",
+          "proposal": {
+            "affected_descendants": [
+              "governed.dim_trade"
+            ],
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "projection_defect",
+            "location": "projection.dim_trade.trade_id"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1695154792
+          },
+          "sequence": 1,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-missing-pricing-policy",
+          "defect_artifact_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": null,
+            "stdout_sha256": null,
+            "wall_ns": 0
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": true,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage",
+            "contract",
+            "path"
+          ],
+          "live_result": {
+            "hole": "trade-stage.execution-pricing-policy",
+            "status": "open"
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "fafb0971151fb1bdccf87d79ad7c847908f5f7b1ccbcca45b1c2187506bc1cbc",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": "missing_policy",
+            "location": "hole.trade-stage.execution-pricing-policy"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 2,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -2,7 +2,7 @@\n   name governed.dim_trade,\n   kind FULL,\n   dialect duckdb,\n-  audits (not_null_trade_id)\n+  audits (not_null_trade_id, valid_lifecycle_order)\n );\n \n SELECT\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-verification-audit-gap",
+          "defect_artifact_sha256": "dc4a8c20e939c409b15d72a646b7e9b3969616837807f8a3edb77b09542dd092",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1778606750
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage",
+            "contract",
+            "path"
+          ],
+          "live_result": {
+            "dim_trade_audits": 2
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "d77b81310c958bb14243660e38a9135b47359cc7fd4be563bb9387fb46416012",
+          "proposal": {
+            "affected_descendants": [
+              "governed.dim_trade",
+              "governed.trade_lifecycle"
+            ],
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "verification_gap",
+            "location": "verification.dim_trade.lifecycle_audit"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1711914750
+          },
+          "sequence": 3,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "contracts/edges/trade-history-to-dim-trade-v1.json"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -19,7 +19,7 @@\n       \"CNCL\"\n     ],\n     \"limit_creation_status\": \"PNDG\",\n-    \"market_creation_status\": \"CMPT\",\n+    \"market_creation_status\": \"SBMT\",\n     \"market_trade_types\": [\n       \"TMB\",\n       \"TMS\"\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-edge-creation-time",
+          "defect_artifact_sha256": "96733d49bddc00d56501106905ebe270ffef007f24d2f658aac047314fc45273",
+          "defect_execution": {
+            "consumer_local": "pass",
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:02:34",
+              "trade_id_0_lifecycle_seconds": 0
+            },
+            "producer_local": "pass",
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "c8aaf605fefb2dab859f06dcac70f32aa0a4b418a157339aab957e4edaeb48b8",
+            "wall_ns": 1888721458
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage",
+            "contract",
+            "path"
+          ],
+          "live_result": {
+            "created_at": "2012-07-07T00:01:13"
+          },
+          "local_edge_proof": {
+            "consumer": "pass",
+            "edge_binding": "fail",
+            "producer": "pass"
+          },
+          "post_execution_database_sha256": "3be164fd0b3b1eb7b2510b7d66670270f7aa714b9440c51a65f11e9cf8dd3950",
+          "proposal": {
+            "affected_descendants": [
+              "duckdb.dim_trade",
+              "logical.dim_trade",
+              "metric.trade_lifecycle_seconds"
+            ],
+            "changed_artifacts": [
+              "contracts/edges/trade-history-to-dim-trade-v1.json"
+            ],
+            "disposition": "resolved",
+            "failure_class": "edge_contract_mismatch",
+            "location": "edge.trade_history_to_dim_trade.create_close_time"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "c8aaf605fefb2dab859f06dcac70f32aa0a4b418a157339aab957e4edaeb48b8",
+            "wall_ns": 1780123125
+          },
+          "sequence": 4,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "path/lifecycle_metric.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -1 +1 @@\n-SELECT date_diff('second', created_at, created_at) AS lifecycle_seconds FROM governed.dim_trade WHERE trade_id = 0\n+SELECT date_diff('second', created_at, closed_at) AS lifecycle_seconds FROM governed.dim_trade WHERE trade_id = 0\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-path-lifecycle-duration",
+          "defect_artifact_sha256": "15cfec03f4c4b26b6ec06ecc11db625e75d2fece7751532efefd739d51452960",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "path_observed": 0,
+            "returncode": 0,
+            "stderr_sha256": null,
+            "stdout_sha256": null,
+            "wall_ns": 0
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": true,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage",
+            "contract",
+            "path"
+          ],
+          "live_result": {
+            "trade_id_0_lifecycle_seconds": 81
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "23c78f0244b61c133020b2b16afbee8bb518e69c5b2ff76a5fc61eea200368b2",
+          "proposal": {
+            "affected_descendants": [
+              "metric.trade_lifecycle_seconds"
+            ],
+            "changed_artifacts": [
+              "path/lifecycle_metric.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "end_to_end_composition",
+            "location": "path.dim_trade_to_lifecycle_metric.timestamp_roles"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 5,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        }
+      ],
+      "visible_phase_complete_before_heldout": true,
+      "wall_ns": 23664951084
+    },
+    "native": {
+      "arm_kind": "deterministic_scripted_agent",
+      "full_replay_control": {
+        "check_count": 5,
+        "escaped_regressions": [],
+        "execution": {
+          "audit_count": 6,
+          "audit_status": "passed",
+          "check_results": {
+            "edge-trade-history-create-time-v1": true,
+            "invariant.dim_trade_identity": true,
+            "invariant.lifecycle_duration": true,
+            "local-trade-type-name-v1": true,
+            "sqlmesh.audits": true
+          },
+          "executed_models": [
+            {
+              "name": "governed.status_type_reference",
+              "order": 1,
+              "row_count": 6,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_history_stage",
+              "order": 2,
+              "row_count": 982180,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_stage",
+              "order": 3,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_type_reference",
+              "order": 4,
+              "row_count": 5,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_lifecycle",
+              "order": 5,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.dim_trade",
+              "order": 6,
+              "row_count": 390978,
+              "status": "success"
+            }
+          ],
+          "live_submissions": {
+            "edge-trade-history-create-time-v1": {
+              "corrected_output": {
+                "closed_at": "2012-07-07T00:02:34",
+                "created_at": "2012-07-07T00:01:13",
+                "trade_id": 0
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            },
+            "local-trade-type-name-v1": {
+              "corrected_output": {
+                "is_market": true,
+                "is_sell": true,
+                "trade_type_id": "TMS",
+                "type_name": "Market Sell"
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            }
+          },
+          "required_ancestors": [],
+          "selection_closure": [
+            "governed.status_type_reference",
+            "governed.trade_history_stage",
+            "governed.trade_stage",
+            "governed.trade_lifecycle",
+            "governed.trade_type_reference",
+            "governed.dim_trade"
+          ],
+          "wall_ms": 1986.829
+        },
+        "execution_metrics": {
+          "audit_count": 6,
+          "check_count": 5,
+          "restaged_model_count": 6,
+          "restaged_rows": 2155125,
+          "reused_ancestor_count": 0,
+          "wall_ms": 1986.829
+        },
+        "node_count": 14,
+        "nodes": [
+          "duckdb.dim_trade",
+          "duckdb.dim_trade.type",
+          "edge.trade_history_to_dim_trade.create_close_time",
+          "edge.trade_type_to_dim_trade",
+          "governed.dim_trade",
+          "governed.status_type_reference",
+          "governed.trade_history_stage",
+          "governed.trade_lifecycle",
+          "governed.trade_stage",
+          "governed.trade_type_reference",
+          "logical.dim_trade",
+          "logical.dim_trade.type",
+          "metric.trade_lifecycle_seconds",
+          "stage.trade_type_reference.type_name"
+        ],
+        "precision": 0.75,
+        "recall": 1.0,
+        "semantic_metrics": {
+          "escaped_regressions": [],
+          "precision": 0.75,
+          "recall": 1.0,
+          "selected": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "universe": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "unnecessary_recomputation": [
+            "edge.trade_type_to_dim_trade"
+          ]
+        },
+        "unnecessary_recomputation": [
+          "edge.trade_type_to_dim_trade"
+        ]
+      },
+      "heldout_aggregate": {
+        "cases_passed": 0,
+        "cases_scored": 2,
+        "commitment": "issue7-v22-run-20260813-c",
+        "passed": false,
+        "schema_version": "sealed-v2-aggregate/v1"
+      },
+      "layers_visible": [
+        "pipeline"
+      ],
+      "localized_replay": {
+        "all_revalidation_nodes": [
+          "duckdb.dim_trade",
+          "governed.dim_trade",
+          "governed.trade_lifecycle",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "change_id": "edge.create_status",
+        "changed_pointer": "/history_policy/market_creation_status",
+        "check_count": 5,
+        "check_nodes": [
+          "duckdb.dim_trade",
+          "edge.trade_history_to_dim_trade.create_close_time",
+          "governed.dim_trade",
+          "governed.trade_lifecycle",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "checks": [
+          "edge-trade-history-create-time-v1",
+          "invariant.dim_trade_identity",
+          "invariant.lifecycle_duration",
+          "local-trade-type-name-v1",
+          "sqlmesh.audits"
+        ],
+        "escaped_regressions": [],
+        "executable_revalidation": [
+          "governed.dim_trade",
+          "governed.trade_lifecycle"
+        ],
+        "execution": {
+          "audit_count": 6,
+          "audit_status": "passed",
+          "check_results": {
+            "edge-trade-history-create-time-v1": true,
+            "invariant.dim_trade_identity": true,
+            "invariant.lifecycle_duration": true,
+            "local-trade-type-name-v1": true,
+            "sqlmesh.audits": true
+          },
+          "executed_models": [
+            {
+              "name": "governed.trade_lifecycle",
+              "order": 1,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.dim_trade",
+              "order": 2,
+              "row_count": 390978,
+              "status": "success"
+            }
+          ],
+          "live_submissions": {
+            "edge-trade-history-create-time-v1": {
+              "corrected_output": {
+                "closed_at": "2012-07-07T00:02:34",
+                "created_at": "2012-07-07T00:01:13",
+                "trade_id": 0
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            },
+            "local-trade-type-name-v1": {
+              "corrected_output": {
+                "is_market": true,
+                "is_sell": true,
+                "trade_type_id": "TMS",
+                "type_name": "Market Sell"
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            }
+          },
+          "required_ancestors": [
+            {
+              "name": "governed.status_type_reference",
+              "row_count": 6,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_history_stage",
+              "row_count": 982180,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_stage",
+              "row_count": 390978,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_type_reference",
+              "row_count": 5,
+              "status": "reused_verified"
+            }
+          ],
+          "selection_closure": [
+            "governed.status_type_reference",
+            "governed.trade_history_stage",
+            "governed.trade_stage",
+            "governed.trade_lifecycle",
+            "governed.trade_type_reference",
+            "governed.dim_trade"
+          ],
+          "wall_ms": 1813.826
+        },
+        "execution_metrics": {
+          "audit_count": 6,
+          "check_count": 5,
+          "restaged_model_count": 2,
+          "restaged_rows": 781956,
+          "reused_ancestor_count": 4,
+          "wall_ms": 1813.826
+        },
+        "node_count": 5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "semantic_descendants": [
+          "duckdb.dim_trade",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "semantic_metrics": {
+          "escaped_regressions": [],
+          "precision": 1.0,
+          "recall": 1.0,
+          "selected": [
+            "duckdb.dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "universe": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "unnecessary_recomputation": []
+        },
+        "unnecessary_recomputation": []
+      },
+      "model_calls": 0,
+      "model_tokens": 0,
+      "operator_work_units": 19,
+      "raw_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0",
+      "repair_attempts_per_case": 1,
+      "traces": [
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -6,7 +6,7 @@\n );\n \n SELECT\n-  NULL AS trade_id,\n+  t.trade_id AS trade_id,\n   l.created_at AS created_at,\n   l.closed_at AS closed_at,\n   s.status_name AS status,\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-projection-null-trade-id",
+          "defect_artifact_sha256": "353907ca38ee54f781de8d6004fcd5af3eee696d4663dabee316a791c8354989",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 390978,
+              "trade_id_0_closed_at": null,
+              "trade_id_0_created_at": null,
+              "trade_id_0_lifecycle_seconds": null
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "270996c1b4977196e8a690595158379d9100def0ae8deda15292fff08d3ee335",
+            "wall_ns": 1865906917
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": true,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline"
+          ],
+          "live_result": {
+            "null_trade_ids": 0
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "8332b9753ec0aa51d245976c4b2b84098829c8890e55e3eec359af73ffdd6846",
+          "proposal": {
+            "affected_descendants": [
+              "governed.dim_trade"
+            ],
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "projection_defect",
+            "location": "projection.dim_trade.trade_id"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1711200166
+          },
+          "sequence": 1,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-missing-pricing-policy",
+          "defect_artifact_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": null,
+            "stdout_sha256": null,
+            "wall_ns": 0
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": false,
+              "disposition": true,
+              "live_result": true,
+              "location": false,
+              "real_diff": true
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline"
+          ],
+          "live_result": {
+            "hole": "trade-stage.execution-pricing-policy",
+            "status": "open"
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "c0f43e72a24be64c917acf13afd38c039e3e8c969549a89865a99e9334a7ccc7",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": null,
+            "location": null
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 2,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -2,7 +2,7 @@\n   name governed.dim_trade,\n   kind FULL,\n   dialect duckdb,\n-  audits (not_null_trade_id)\n+  audits (not_null_trade_id, valid_lifecycle_order)\n );\n \n SELECT\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-verification-audit-gap",
+          "defect_artifact_sha256": "dc4a8c20e939c409b15d72a646b7e9b3969616837807f8a3edb77b09542dd092",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "270996c1b4977196e8a690595158379d9100def0ae8deda15292fff08d3ee335",
+            "wall_ns": 1781498709
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline"
+          ],
+          "live_result": {
+            "dim_trade_audits": 2
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "f644c13ed8aa52c8c56dd2522b725feda99ef2802c89e01dc635645f9e31e3b0",
+          "proposal": {
+            "affected_descendants": [
+              "governed.dim_trade",
+              "governed.trade_lifecycle"
+            ],
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "verification_gap",
+            "location": "verification.dim_trade.lifecycle_audit"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1787363500
+          },
+          "sequence": 3,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-edge-creation-time",
+          "defect_artifact_sha256": "96733d49bddc00d56501106905ebe270ffef007f24d2f658aac047314fc45273",
+          "defect_execution": {
+            "consumer_local": "pass",
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:02:34",
+              "trade_id_0_lifecycle_seconds": 0
+            },
+            "producer_local": "pass",
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "c8aaf605fefb2dab859f06dcac70f32aa0a4b418a157339aab957e4edaeb48b8",
+            "wall_ns": 1859215667
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": false,
+              "disposition": false,
+              "live_result": false,
+              "location": false,
+              "real_diff": false
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline"
+          ],
+          "live_result": {
+            "created_at": "2012-07-07T00:02:34"
+          },
+          "local_edge_proof": {
+            "consumer": "pass",
+            "edge_binding": "fail",
+            "producer": "pass"
+          },
+          "post_execution_database_sha256": "e709d8087058194eef148ecf7f9fa0a42ec174d231ba54fb844a0a900f5e2f9a",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": null,
+            "location": null
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:02:34",
+              "trade_id_0_lifecycle_seconds": 0
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 4,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-path-lifecycle-duration",
+          "defect_artifact_sha256": "15cfec03f4c4b26b6ec06ecc11db625e75d2fece7751532efefd739d51452960",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "path_observed": 0,
+            "returncode": 0,
+            "stderr_sha256": null,
+            "stdout_sha256": null,
+            "wall_ns": 0
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": false,
+              "disposition": false,
+              "live_result": false,
+              "location": false,
+              "real_diff": false
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline"
+          ],
+          "live_result": {
+            "trade_id_0_lifecycle_seconds": 0
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "ef753db8c20ae5c3f1cb5a2d2c705b7bb6b2dec2dc6da13cc63e82373eb0ea4b",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": null,
+            "location": null
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 5,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        }
+      ],
+      "visible_phase_complete_before_heldout": true,
+      "wall_ns": 22442040458
+    },
+    "stage_local_cess": {
+      "arm_kind": "deterministic_scripted_agent",
+      "full_replay_control": {
+        "check_count": 5,
+        "escaped_regressions": [],
+        "execution": {
+          "audit_count": 6,
+          "audit_status": "passed",
+          "check_results": {
+            "edge-trade-history-create-time-v1": true,
+            "invariant.dim_trade_identity": true,
+            "invariant.lifecycle_duration": true,
+            "local-trade-type-name-v1": true,
+            "sqlmesh.audits": true
+          },
+          "executed_models": [
+            {
+              "name": "governed.status_type_reference",
+              "order": 1,
+              "row_count": 6,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_history_stage",
+              "order": 2,
+              "row_count": 982180,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_stage",
+              "order": 3,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_type_reference",
+              "order": 4,
+              "row_count": 5,
+              "status": "success"
+            },
+            {
+              "name": "governed.trade_lifecycle",
+              "order": 5,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.dim_trade",
+              "order": 6,
+              "row_count": 390978,
+              "status": "success"
+            }
+          ],
+          "live_submissions": {
+            "edge-trade-history-create-time-v1": {
+              "corrected_output": {
+                "closed_at": "2012-07-07T00:02:34",
+                "created_at": "2012-07-07T00:01:13",
+                "trade_id": 0
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            },
+            "local-trade-type-name-v1": {
+              "corrected_output": {
+                "is_market": true,
+                "is_sell": true,
+                "trade_type_id": "TMS",
+                "type_name": "Market Sell"
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            }
+          },
+          "required_ancestors": [],
+          "selection_closure": [
+            "governed.status_type_reference",
+            "governed.trade_history_stage",
+            "governed.trade_stage",
+            "governed.trade_lifecycle",
+            "governed.trade_type_reference",
+            "governed.dim_trade"
+          ],
+          "wall_ms": 1982.65
+        },
+        "execution_metrics": {
+          "audit_count": 6,
+          "check_count": 5,
+          "restaged_model_count": 6,
+          "restaged_rows": 2155125,
+          "reused_ancestor_count": 0,
+          "wall_ms": 1982.65
+        },
+        "node_count": 14,
+        "nodes": [
+          "duckdb.dim_trade",
+          "duckdb.dim_trade.type",
+          "edge.trade_history_to_dim_trade.create_close_time",
+          "edge.trade_type_to_dim_trade",
+          "governed.dim_trade",
+          "governed.status_type_reference",
+          "governed.trade_history_stage",
+          "governed.trade_lifecycle",
+          "governed.trade_stage",
+          "governed.trade_type_reference",
+          "logical.dim_trade",
+          "logical.dim_trade.type",
+          "metric.trade_lifecycle_seconds",
+          "stage.trade_type_reference.type_name"
+        ],
+        "precision": 0.75,
+        "recall": 1.0,
+        "semantic_metrics": {
+          "escaped_regressions": [],
+          "precision": 0.75,
+          "recall": 1.0,
+          "selected": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "universe": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "unnecessary_recomputation": [
+            "edge.trade_type_to_dim_trade"
+          ]
+        },
+        "unnecessary_recomputation": [
+          "edge.trade_type_to_dim_trade"
+        ]
+      },
+      "heldout_aggregate": {
+        "cases_passed": 1,
+        "cases_scored": 2,
+        "commitment": "issue7-v22-run-20260813-c",
+        "passed": false,
+        "schema_version": "sealed-v2-aggregate/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage"
+      ],
+      "localized_replay": {
+        "all_revalidation_nodes": [
+          "duckdb.dim_trade",
+          "governed.dim_trade",
+          "governed.trade_lifecycle",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "change_id": "edge.create_status",
+        "changed_pointer": "/history_policy/market_creation_status",
+        "check_count": 5,
+        "check_nodes": [
+          "duckdb.dim_trade",
+          "edge.trade_history_to_dim_trade.create_close_time",
+          "governed.dim_trade",
+          "governed.trade_lifecycle",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "checks": [
+          "edge-trade-history-create-time-v1",
+          "invariant.dim_trade_identity",
+          "invariant.lifecycle_duration",
+          "local-trade-type-name-v1",
+          "sqlmesh.audits"
+        ],
+        "escaped_regressions": [],
+        "executable_revalidation": [
+          "governed.dim_trade",
+          "governed.trade_lifecycle"
+        ],
+        "execution": {
+          "audit_count": 6,
+          "audit_status": "passed",
+          "check_results": {
+            "edge-trade-history-create-time-v1": true,
+            "invariant.dim_trade_identity": true,
+            "invariant.lifecycle_duration": true,
+            "local-trade-type-name-v1": true,
+            "sqlmesh.audits": true
+          },
+          "executed_models": [
+            {
+              "name": "governed.trade_lifecycle",
+              "order": 1,
+              "row_count": 390978,
+              "status": "success"
+            },
+            {
+              "name": "governed.dim_trade",
+              "order": 2,
+              "row_count": 390978,
+              "status": "success"
+            }
+          ],
+          "live_submissions": {
+            "edge-trade-history-create-time-v1": {
+              "corrected_output": {
+                "closed_at": "2012-07-07T00:02:34",
+                "created_at": "2012-07-07T00:01:13",
+                "trade_id": 0
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            },
+            "local-trade-type-name-v1": {
+              "corrected_output": {
+                "is_market": true,
+                "is_sell": true,
+                "trade_type_id": "TMS",
+                "type_name": "Market Sell"
+              },
+              "score_dimensions": {
+                "affected_descendants": true,
+                "artifact_authority": true,
+                "case_id": true,
+                "corrected_output": true,
+                "disposition": true,
+                "failure_class": true,
+                "location": true
+              }
+            }
+          },
+          "required_ancestors": [
+            {
+              "name": "governed.status_type_reference",
+              "row_count": 6,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_history_stage",
+              "row_count": 982180,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_stage",
+              "row_count": 390978,
+              "status": "reused_verified"
+            },
+            {
+              "name": "governed.trade_type_reference",
+              "row_count": 5,
+              "status": "reused_verified"
+            }
+          ],
+          "selection_closure": [
+            "governed.status_type_reference",
+            "governed.trade_history_stage",
+            "governed.trade_stage",
+            "governed.trade_lifecycle",
+            "governed.trade_type_reference",
+            "governed.dim_trade"
+          ],
+          "wall_ms": 1819.743
+        },
+        "execution_metrics": {
+          "audit_count": 6,
+          "check_count": 5,
+          "restaged_model_count": 2,
+          "restaged_rows": 781956,
+          "reused_ancestor_count": 4,
+          "wall_ms": 1819.743
+        },
+        "node_count": 5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "semantic_descendants": [
+          "duckdb.dim_trade",
+          "logical.dim_trade",
+          "metric.trade_lifecycle_seconds"
+        ],
+        "semantic_metrics": {
+          "escaped_regressions": [],
+          "precision": 1.0,
+          "recall": 1.0,
+          "selected": [
+            "duckdb.dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "universe": [
+            "duckdb.dim_trade",
+            "edge.trade_type_to_dim_trade",
+            "logical.dim_trade",
+            "metric.trade_lifecycle_seconds"
+          ],
+          "unnecessary_recomputation": []
+        },
+        "unnecessary_recomputation": []
+      },
+      "model_calls": 0,
+      "model_tokens": 0,
+      "operator_work_units": 20,
+      "raw_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0",
+      "repair_attempts_per_case": 1,
+      "traces": [
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -6,7 +6,7 @@\n );\n \n SELECT\n-  NULL AS trade_id,\n+  t.trade_id AS trade_id,\n   l.created_at AS created_at,\n   l.closed_at AS closed_at,\n   s.status_name AS status,\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-projection-null-trade-id",
+          "defect_artifact_sha256": "353907ca38ee54f781de8d6004fcd5af3eee696d4663dabee316a791c8354989",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 390978,
+              "trade_id_0_closed_at": null,
+              "trade_id_0_created_at": null,
+              "trade_id_0_lifecycle_seconds": null
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1791015791
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": true,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage"
+          ],
+          "live_result": {
+            "null_trade_ids": 0
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "1b935ac7b8a4f535611e50e55f4e7c0263ae5c2a6ebe246faf9746cc476ffb0a",
+          "proposal": {
+            "affected_descendants": [
+              "governed.dim_trade"
+            ],
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "projection_defect",
+            "location": "projection.dim_trade.trade_id"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1679788958
+          },
+          "sequence": 1,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-missing-pricing-policy",
+          "defect_artifact_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": null,
+            "stdout_sha256": null,
+            "wall_ns": 0
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": true,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": true,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage"
+          ],
+          "live_result": {
+            "hole": "trade-stage.execution-pricing-policy",
+            "status": "open"
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "4331f3aec38bc29939ec0325165a76689394025b91f186b29a3e997a585115ec",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": "missing_policy",
+            "location": "hole.trade-stage.execution-pricing-policy"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 2,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": "--- injected\n+++ repaired\n@@ -2,7 +2,7 @@\n   name governed.dim_trade,\n   kind FULL,\n   dialect duckdb,\n-  audits (not_null_trade_id)\n+  audits (not_null_trade_id, valid_lifecycle_order)\n );\n \n SELECT\n"
+          },
+          "attempt": 1,
+          "case_id": "v2-verification-audit-gap",
+          "defect_artifact_sha256": "dc4a8c20e939c409b15d72a646b7e9b3969616837807f8a3edb77b09542dd092",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "270996c1b4977196e8a690595158379d9100def0ae8deda15292fff08d3ee335",
+            "wall_ns": 1871500875
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": true,
+              "disposition": true,
+              "live_result": true,
+              "location": true,
+              "real_diff": true
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage"
+          ],
+          "live_result": {
+            "dim_trade_audits": 2
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "9d1e959d0e15a0dc097a45b43a1dd95bebbca5af8730c431febc797207a6dd56",
+          "proposal": {
+            "affected_descendants": [
+              "governed.dim_trade",
+              "governed.trade_lifecycle"
+            ],
+            "changed_artifacts": [
+              "models/dim_trade.sql"
+            ],
+            "disposition": "resolved",
+            "failure_class": "verification_gap",
+            "location": "verification.dim_trade.lifecycle_audit"
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+            "wall_ns": 1704783958
+          },
+          "sequence": 3,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-edge-creation-time",
+          "defect_artifact_sha256": "96733d49bddc00d56501106905ebe270ffef007f24d2f658aac047314fc45273",
+          "defect_execution": {
+            "consumer_local": "pass",
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:02:34",
+              "trade_id_0_lifecycle_seconds": 0
+            },
+            "producer_local": "pass",
+            "returncode": 0,
+            "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdout_sha256": "c8aaf605fefb2dab859f06dcac70f32aa0a4b418a157339aab957e4edaeb48b8",
+            "wall_ns": 1877407084
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": false,
+              "disposition": false,
+              "live_result": false,
+              "location": false,
+              "real_diff": false
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage"
+          ],
+          "live_result": {
+            "created_at": "2012-07-07T00:02:34"
+          },
+          "local_edge_proof": {
+            "consumer": "pass",
+            "edge_binding": "fail",
+            "producer": "pass"
+          },
+          "post_execution_database_sha256": "a552cdfcfafabb03d731092c40ffb1d0e11b7f4e671454a86e389a268e84177c",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": null,
+            "location": null
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:02:34",
+              "trade_id_0_lifecycle_seconds": 0
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 4,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        },
+        {
+          "artifact_diff": {
+            "changed_artifacts": [],
+            "forbidden_touched": [],
+            "outside_allowed": [],
+            "unified_diff": ""
+          },
+          "attempt": 1,
+          "case_id": "v2-path-lifecycle-duration",
+          "defect_artifact_sha256": "15cfec03f4c4b26b6ec06ecc11db625e75d2fece7751532efefd739d51452960",
+          "defect_execution": {
+            "execution_status": "executed",
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "path_observed": 0,
+            "returncode": 0,
+            "stderr_sha256": null,
+            "stdout_sha256": null,
+            "wall_ns": 0
+          },
+          "deterministic_score": {
+            "dimensions": {
+              "affected_descendants": false,
+              "authority": true,
+              "class": false,
+              "disposition": false,
+              "live_result": false,
+              "location": false,
+              "real_diff": false
+            },
+            "passed": false,
+            "schema_version": "v2-score/v1"
+          },
+          "layers_visible": [
+            "pipeline",
+            "stage"
+          ],
+          "live_result": {
+            "trade_id_0_lifecycle_seconds": 0
+          },
+          "local_edge_proof": null,
+          "post_execution_database_sha256": "a551441859ad451e3d2cad56774b3594366e1908ab126ddae479984043955521",
+          "proposal": {
+            "affected_descendants": [],
+            "changed_artifacts": [],
+            "disposition": "inconclusive",
+            "failure_class": null,
+            "location": null
+          },
+          "repaired_execution": {
+            "observed_output": {
+              "null_trade_ids": 0,
+              "trade_id_0_closed_at": "2012-07-07T00:02:34",
+              "trade_id_0_created_at": "2012-07-07T00:01:13",
+              "trade_id_0_lifecycle_seconds": 81
+            },
+            "returncode": 0,
+            "wall_ns": 0
+          },
+          "sequence": 5,
+          "sketch_review": {
+            "passed": true,
+            "reasons": [],
+            "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+            "schema_version": "sketch-review-v2/v1"
+          },
+          "start_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0"
+        }
+      ],
+      "visible_phase_complete_before_heldout": true,
+      "wall_ns": 22084456959
+    }
+  },
+  "incremental_edge_or_composition_catches": 1,
+  "matched_controls": {
+    "model_tokens": 0,
+    "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08",
+    "raw_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0",
+    "repair_attempts_per_case": 1,
+    "reveal_order": [
+      "v2-projection-null-trade-id",
+      "v2-missing-pricing-policy",
+      "v2-verification-audit-gap",
+      "v2-edge-creation-time",
+      "v2-path-lifecycle-duration"
+    ]
+  },
+  "preregistration_commit": "c04f523fc4db11f01fc575e41dc9996ca1bd3119",
+  "preregistration_sha256": "e53c400ce53226debb1366b51e4bd6348d8c0192d8687477d3186784de85858e",
+  "prior_attempts": {
+    "v1": "invalid",
+    "v2_1": "invalid",
+    "v2_2": "preflight-rejected-no-score",
+    "v2_attempt_a": "invalid"
+  },
+  "publication_gates": [
+    "human_review_required",
+    "no_compliant_tpc_di_benchmark_claim",
+    "no_comparative_tpc_performance_claim",
+    "claims_bounded_to_scripted_agents_and_selected_slice"
+  ],
+  "review_trigger": {
+    "fired": false,
+    "reason": null
+  },
+  "run_nonce": "issue7-v22-run-20260813-c",
+  "schema_version": "matched-experiment-result/v2.3",
+  "summaries": {
+    "compositional_cess": {
+      "active_repair_rate": 0.5,
+      "ambiguous_or_inconclusive": 1,
+      "authority_violations": 0,
+      "composition_catches": 1,
+      "escaped_composition_failures": 1,
+      "heldout_regressions": 0,
+      "localization_accuracy": 1.0,
+      "model_tokens": 0,
+      "operator_work_units": 24,
+      "revalidation_precision": 1.0,
+      "revalidation_recall": 1.0,
+      "wall_ns": 23664951084
+    },
+    "native": {
+      "active_repair_rate": 0.25,
+      "ambiguous_or_inconclusive": 3,
+      "authority_violations": 0,
+      "composition_catches": 0,
+      "escaped_composition_failures": 2,
+      "heldout_regressions": 2,
+      "localization_accuracy": 0.4,
+      "model_tokens": 0,
+      "operator_work_units": 19,
+      "revalidation_precision": 1.0,
+      "revalidation_recall": 1.0,
+      "wall_ns": 22442040458
+    },
+    "stage_local_cess": {
+      "active_repair_rate": 0.25,
+      "ambiguous_or_inconclusive": 3,
+      "authority_violations": 0,
+      "composition_catches": 0,
+      "escaped_composition_failures": 2,
+      "heldout_regressions": 1,
+      "localization_accuracy": 0.6,
+      "model_tokens": 0,
+      "operator_work_units": 20,
+      "revalidation_precision": 1.0,
+      "revalidation_recall": 1.0,
+      "wall_ns": 22084456959
+    }
+  },
+  "threshold_evaluation": {
+    "cost_pass": true,
+    "decision": "revise",
+    "operator_work_unit_multiple": 1.263157894736842,
+    "quality_pass": false
+  }
+}

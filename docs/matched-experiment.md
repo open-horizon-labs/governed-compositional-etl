@@ -1,0 +1,9 @@
+# Valid v2.4 matched scripted experiment
+
+Issue #7 compares native pipeline evidence, pipeline plus stage-local CESS evidence, and compositional evidence that additionally exposes governed contracts, path invariants, and revalidation cones. All arms use the same deterministic repair policy and independent copies of one immutable DuckDB start snapshot and byte-matched projection.
+
+Five real injected cases cover a projection defect, missing policy, verification gap, local-pass/local-pass edge mismatch, and distinct path failure. The harness materializes exact generated SQL into isolated observed tables before and after each proposal. Separate processes perform arm-neutral deterministic scoring, Sketch review, and post-visible sealed aggregate scoring. The tamper envelope verifies inputs, traces, actual replay evidence, and the conditional rule that resolved proposals change observed defects while inconclusive proposals retain them.
+
+The compositional arm materially repaired both composition outputs: creation time `00:02:34 → 00:01:13` and lifecycle duration `0 → 81`. Native and stage-local retained both wrong values. The frozen scorer counted only the path repair because its edge descendant list comparison was order-sensitive; the governance-derived list had the same members in canonical order. The valid preregistered result is therefore `revise`: one incremental scored composition catch, active repair 0.5, one scored composition escape, zero authority violations, zero compositional held-out regressions, and revalidation recall 1.0. Work was 24 deterministic units versus 19 native units; wall time is descriptive, and model use is zero.
+
+This is bounded scripted-slice evidence, not a compliant TPC-DI benchmark, model-performance comparison, general correctness claim, or production-readiness claim. Earlier invalid runs remain retained only as failed-harness learning.

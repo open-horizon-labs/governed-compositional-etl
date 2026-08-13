@@ -1,0 +1,87 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "affected_descendants": ["governed.dim_trade"],
+        "allowed_artifacts": ["models/dim_trade.sql"],
+        "disposition": "resolved",
+        "failure_class": "projection_defect",
+        "forbidden_artifacts": ["sketches/trade-dim-v1.md", "contracts/edges/trade-history-to-dim-trade-v1.json"],
+        "live_result": {"null_trade_ids": 0},
+        "location": "projection.dim_trade.trade_id"
+      },
+      "heldout_relation": "v22-ho-projection-neighbor",
+      "id": "v2-projection-null-trade-id",
+      "injection": {
+        "artifact": "models/dim_trade.sql",
+        "kind": "text_replace",
+        "replacement": "NULL AS trade_id",
+        "target": "t.trade_id AS trade_id"
+      },
+      "source_authority": [{"id": "tpc-di-1.1.0-4.5.8.2-copy", "source": "contracts/logical-models/dim-trade-v1.json#/attributes/0"}]
+    },
+    {
+      "expected": {
+        "affected_descendants": [],
+        "allowed_artifacts": [],
+        "disposition": "inconclusive",
+        "failure_class": "missing_policy",
+        "forbidden_artifacts": ["models/trade_stage.sql", "models/dim_trade.sql"],
+        "live_result": {"hole": "trade-stage.execution-pricing-policy", "status": "open"},
+        "location": "hole.trade-stage.execution-pricing-policy"
+      },
+      "heldout_relation": "v22-ho-policy-neighbor",
+      "id": "v2-missing-pricing-policy",
+      "injection": {"artifact": "sketches/trade-dim-v1.md", "kind": "existing_open_hole", "target": "trade-stage.execution-pricing-policy"},
+      "source_authority": [{"id": "explicit-open-hole", "source": "sketches/trade-dim-v1.md#explicit-holes"}]
+    },
+    {
+      "expected": {
+        "affected_descendants": ["governed.trade_lifecycle", "governed.dim_trade"],
+        "allowed_artifacts": ["models/dim_trade.sql"],
+        "disposition": "resolved",
+        "failure_class": "verification_gap",
+        "forbidden_artifacts": ["sketches/trade-dim-v1.md", "contracts/edges/trade-history-to-dim-trade-v1.json"],
+        "live_result": {"dim_trade_audits": 2},
+        "location": "verification.dim_trade.lifecycle_audit"
+      },
+      "heldout_relation": "v22-ho-verification-neighbor",
+      "id": "v2-verification-audit-gap",
+      "injection": {"artifact": "models/dim_trade.sql", "kind": "text_replace", "replacement": "audits (not_null_trade_id)", "target": "audits (not_null_trade_id, valid_lifecycle_order)"},
+      "source_authority": [{"id": "sketch-verify-twice", "source": "sketches/trade-dim-v1.md#known-rule-8"}]
+    },
+    {
+      "expected": {
+        "affected_descendants": ["logical.dim_trade", "duckdb.dim_trade", "metric.trade_lifecycle_seconds"],
+        "allowed_artifacts": ["contracts/edges/trade-history-to-dim-trade-v1.json"],
+        "disposition": "resolved",
+        "failure_class": "edge_contract_mismatch",
+        "forbidden_artifacts": ["models/trade_stage.sql", "models/trade_history_stage.sql", "models/dim_trade.sql"],
+        "live_result": {"created_at": "2012-07-07T00:01:13"},
+        "location": "edge.trade_history_to_dim_trade.create_close_time"
+      },
+      "heldout_relation": "v22-ho-edge-creation",
+      "id": "v2-edge-creation-time",
+      "injection": {"artifact": "contracts/edges/trade-history-to-dim-trade-v1.json", "kind": "json_pointer_replace", "pointer": "/history_policy/market_creation_status", "replacement": "CMPT", "target": "SBMT"},
+      "local_pass_requirement": true,
+      "source_authority": [{"id": "tpc-di-1.1.0-4.5.8.2-create-close", "source": "contracts/repair-authority/trade-lifecycle-edge-v1.json#/active_authority/basis/1"}]
+    },
+    {
+      "expected": {
+        "affected_descendants": ["metric.trade_lifecycle_seconds"],
+        "allowed_artifacts": ["path/lifecycle_metric.sql"],
+        "disposition": "resolved",
+        "failure_class": "end_to_end_composition",
+        "forbidden_artifacts": ["contracts/edges/trade-history-to-dim-trade-v1.json", "models/trade_lifecycle.sql"],
+        "live_result": {"trade_id_0_lifecycle_seconds": 81},
+        "location": "path.dim_trade_to_lifecycle_metric.timestamp_roles"
+      },
+      "heldout_relation": "v22-ho-path-neighbor",
+      "id": "v2-path-lifecycle-duration",
+      "injection": {"artifact": "path/lifecycle_metric.sql", "kind": "text_replace", "replacement": "date_diff('second', created_at, created_at)", "target": "date_diff('second', created_at, closed_at)"},
+      "source_authority": [{"id": "tpc-di-1.1.0-4.5.8.2-create-close", "source": "contracts/edges/trade-history-to-dim-trade-v1.json#/mappings"}]
+    }
+  ],
+  "reveal_order": ["v2-projection-null-trade-id", "v2-missing-pricing-policy", "v2-verification-audit-gap", "v2-edge-creation-time", "v2-path-lifecycle-duration"],
+  "schema_version": "executable-experiment-corpus/v2"
+}

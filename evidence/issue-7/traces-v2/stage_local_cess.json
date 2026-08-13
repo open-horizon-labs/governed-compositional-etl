@@ -1,0 +1,643 @@
+{
+  "arm_kind": "deterministic_scripted_agent",
+  "full_replay_control": {
+    "check_count": 5,
+    "escaped_regressions": [],
+    "execution": {
+      "audit_count": 6,
+      "audit_status": "passed",
+      "check_results": {
+        "edge-trade-history-create-time-v1": true,
+        "invariant.dim_trade_identity": true,
+        "invariant.lifecycle_duration": true,
+        "local-trade-type-name-v1": true,
+        "sqlmesh.audits": true
+      },
+      "executed_models": [
+        {
+          "name": "governed.status_type_reference",
+          "order": 1,
+          "row_count": 6,
+          "status": "success"
+        },
+        {
+          "name": "governed.trade_history_stage",
+          "order": 2,
+          "row_count": 982180,
+          "status": "success"
+        },
+        {
+          "name": "governed.trade_stage",
+          "order": 3,
+          "row_count": 390978,
+          "status": "success"
+        },
+        {
+          "name": "governed.trade_type_reference",
+          "order": 4,
+          "row_count": 5,
+          "status": "success"
+        },
+        {
+          "name": "governed.trade_lifecycle",
+          "order": 5,
+          "row_count": 390978,
+          "status": "success"
+        },
+        {
+          "name": "governed.dim_trade",
+          "order": 6,
+          "row_count": 390978,
+          "status": "success"
+        }
+      ],
+      "live_submissions": {
+        "edge-trade-history-create-time-v1": {
+          "corrected_output": {
+            "closed_at": "2012-07-07T00:02:34",
+            "created_at": "2012-07-07T00:01:13",
+            "trade_id": 0
+          },
+          "score_dimensions": {
+            "affected_descendants": true,
+            "artifact_authority": true,
+            "case_id": true,
+            "corrected_output": true,
+            "disposition": true,
+            "failure_class": true,
+            "location": true
+          }
+        },
+        "local-trade-type-name-v1": {
+          "corrected_output": {
+            "is_market": true,
+            "is_sell": true,
+            "trade_type_id": "TMS",
+            "type_name": "Market Sell"
+          },
+          "score_dimensions": {
+            "affected_descendants": true,
+            "artifact_authority": true,
+            "case_id": true,
+            "corrected_output": true,
+            "disposition": true,
+            "failure_class": true,
+            "location": true
+          }
+        }
+      },
+      "required_ancestors": [],
+      "selection_closure": [
+        "governed.status_type_reference",
+        "governed.trade_history_stage",
+        "governed.trade_stage",
+        "governed.trade_lifecycle",
+        "governed.trade_type_reference",
+        "governed.dim_trade"
+      ],
+      "wall_ms": 1979.499
+    },
+    "execution_metrics": {
+      "audit_count": 6,
+      "check_count": 5,
+      "restaged_model_count": 6,
+      "restaged_rows": 2155125,
+      "reused_ancestor_count": 0,
+      "wall_ms": 1979.499
+    },
+    "node_count": 14,
+    "nodes": [
+      "duckdb.dim_trade",
+      "duckdb.dim_trade.type",
+      "edge.trade_history_to_dim_trade.create_close_time",
+      "edge.trade_type_to_dim_trade",
+      "governed.dim_trade",
+      "governed.status_type_reference",
+      "governed.trade_history_stage",
+      "governed.trade_lifecycle",
+      "governed.trade_stage",
+      "governed.trade_type_reference",
+      "logical.dim_trade",
+      "logical.dim_trade.type",
+      "metric.trade_lifecycle_seconds",
+      "stage.trade_type_reference.type_name"
+    ],
+    "precision": 0.75,
+    "recall": 1.0,
+    "semantic_metrics": {
+      "escaped_regressions": [],
+      "precision": 0.75,
+      "recall": 1.0,
+      "selected": [
+        "duckdb.dim_trade",
+        "edge.trade_type_to_dim_trade",
+        "logical.dim_trade",
+        "metric.trade_lifecycle_seconds"
+      ],
+      "universe": [
+        "duckdb.dim_trade",
+        "edge.trade_type_to_dim_trade",
+        "logical.dim_trade",
+        "metric.trade_lifecycle_seconds"
+      ],
+      "unnecessary_recomputation": [
+        "edge.trade_type_to_dim_trade"
+      ]
+    },
+    "unnecessary_recomputation": [
+      "edge.trade_type_to_dim_trade"
+    ]
+  },
+  "heldout_aggregate": {
+    "cases_passed": 1,
+    "cases_scored": 2,
+    "commitment": "issue7-v2-run-20260813-a",
+    "passed": false,
+    "schema_version": "sealed-v2-aggregate/v1"
+  },
+  "layers_visible": [
+    "pipeline",
+    "stage"
+  ],
+  "localized_replay": {
+    "all_revalidation_nodes": [
+      "duckdb.dim_trade",
+      "governed.dim_trade",
+      "governed.trade_lifecycle",
+      "logical.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
+    "change_id": "edge.create_status",
+    "changed_pointer": "/history_policy/market_creation_status",
+    "check_count": 5,
+    "check_nodes": [
+      "duckdb.dim_trade",
+      "edge.trade_history_to_dim_trade.create_close_time",
+      "governed.dim_trade",
+      "governed.trade_lifecycle",
+      "logical.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
+    "checks": [
+      "edge-trade-history-create-time-v1",
+      "invariant.dim_trade_identity",
+      "invariant.lifecycle_duration",
+      "local-trade-type-name-v1",
+      "sqlmesh.audits"
+    ],
+    "escaped_regressions": [],
+    "executable_revalidation": [
+      "governed.dim_trade",
+      "governed.trade_lifecycle"
+    ],
+    "execution": {
+      "audit_count": 6,
+      "audit_status": "passed",
+      "check_results": {
+        "edge-trade-history-create-time-v1": true,
+        "invariant.dim_trade_identity": true,
+        "invariant.lifecycle_duration": true,
+        "local-trade-type-name-v1": true,
+        "sqlmesh.audits": true
+      },
+      "executed_models": [
+        {
+          "name": "governed.trade_lifecycle",
+          "order": 1,
+          "row_count": 390978,
+          "status": "success"
+        },
+        {
+          "name": "governed.dim_trade",
+          "order": 2,
+          "row_count": 390978,
+          "status": "success"
+        }
+      ],
+      "live_submissions": {
+        "edge-trade-history-create-time-v1": {
+          "corrected_output": {
+            "closed_at": "2012-07-07T00:02:34",
+            "created_at": "2012-07-07T00:01:13",
+            "trade_id": 0
+          },
+          "score_dimensions": {
+            "affected_descendants": true,
+            "artifact_authority": true,
+            "case_id": true,
+            "corrected_output": true,
+            "disposition": true,
+            "failure_class": true,
+            "location": true
+          }
+        },
+        "local-trade-type-name-v1": {
+          "corrected_output": {
+            "is_market": true,
+            "is_sell": true,
+            "trade_type_id": "TMS",
+            "type_name": "Market Sell"
+          },
+          "score_dimensions": {
+            "affected_descendants": true,
+            "artifact_authority": true,
+            "case_id": true,
+            "corrected_output": true,
+            "disposition": true,
+            "failure_class": true,
+            "location": true
+          }
+        }
+      },
+      "required_ancestors": [
+        {
+          "name": "governed.status_type_reference",
+          "row_count": 6,
+          "status": "reused_verified"
+        },
+        {
+          "name": "governed.trade_history_stage",
+          "row_count": 982180,
+          "status": "reused_verified"
+        },
+        {
+          "name": "governed.trade_stage",
+          "row_count": 390978,
+          "status": "reused_verified"
+        },
+        {
+          "name": "governed.trade_type_reference",
+          "row_count": 5,
+          "status": "reused_verified"
+        }
+      ],
+      "selection_closure": [
+        "governed.status_type_reference",
+        "governed.trade_history_stage",
+        "governed.trade_stage",
+        "governed.trade_lifecycle",
+        "governed.trade_type_reference",
+        "governed.dim_trade"
+      ],
+      "wall_ms": 1840.696
+    },
+    "execution_metrics": {
+      "audit_count": 6,
+      "check_count": 5,
+      "restaged_model_count": 2,
+      "restaged_rows": 781956,
+      "reused_ancestor_count": 4,
+      "wall_ms": 1840.696
+    },
+    "node_count": 5,
+    "precision": 1.0,
+    "recall": 1.0,
+    "semantic_descendants": [
+      "duckdb.dim_trade",
+      "logical.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
+    "semantic_metrics": {
+      "escaped_regressions": [],
+      "precision": 1.0,
+      "recall": 1.0,
+      "selected": [
+        "duckdb.dim_trade",
+        "logical.dim_trade",
+        "metric.trade_lifecycle_seconds"
+      ],
+      "universe": [
+        "duckdb.dim_trade",
+        "edge.trade_type_to_dim_trade",
+        "logical.dim_trade",
+        "metric.trade_lifecycle_seconds"
+      ],
+      "unnecessary_recomputation": []
+    },
+    "unnecessary_recomputation": []
+  },
+  "model_calls": 0,
+  "model_tokens": 0,
+  "operator_work_units": 20,
+  "raw_database_sha256": "0300573629cb5fa372187cc01aecb1dff6e27837b532ca122d3f36a9fea59657",
+  "repair_attempts_per_case": 1,
+  "traces": [
+    {
+      "artifact_diff": {
+        "changed_artifacts": [
+          "models/dim_trade.sql"
+        ],
+        "forbidden_touched": [],
+        "outside_allowed": [],
+        "unified_diff": "--- injected\n+++ repaired\n@@ -6,7 +6,7 @@\n );\n \n SELECT\n-  NULL AS trade_id,\n+  t.trade_id AS trade_id,\n   l.created_at AS created_at,\n   l.closed_at AS closed_at,\n   s.status_name AS status,\n"
+      },
+      "attempt": 1,
+      "case_id": "v2-projection-null-trade-id",
+      "database_copy_sha256": "1392245d0d696f0ac519836beb376f31c33408f60ed0e9ced0402030a477f145",
+      "defect_artifact_sha256": "353907ca38ee54f781de8d6004fcd5af3eee696d4663dabee316a791c8354989",
+      "defect_execution": {
+        "execution_status": "executed",
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+        "wall_ns": 1795774166
+      },
+      "deterministic_score": {
+        "dimensions": {
+          "affected_descendants": true,
+          "authority": true,
+          "class": true,
+          "disposition": true,
+          "live_result": true,
+          "location": true,
+          "real_diff": true
+        },
+        "passed": true,
+        "schema_version": "v2-score/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage"
+      ],
+      "live_result": {
+        "null_trade_ids": 0
+      },
+      "local_edge_proof": null,
+      "proposal": {
+        "affected_descendants": [
+          "governed.dim_trade"
+        ],
+        "changed_artifacts": [
+          "models/dim_trade.sql"
+        ],
+        "disposition": "resolved",
+        "failure_class": "projection_defect",
+        "location": "projection.dim_trade.trade_id"
+      },
+      "repaired_execution": {
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "270996c1b4977196e8a690595158379d9100def0ae8deda15292fff08d3ee335",
+        "wall_ns": 1735988083
+      },
+      "sequence": 1,
+      "sketch_review": {
+        "passed": true,
+        "reasons": [],
+        "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+        "schema_version": "sketch-review-v2/v1"
+      }
+    },
+    {
+      "artifact_diff": {
+        "changed_artifacts": [],
+        "forbidden_touched": [],
+        "outside_allowed": [],
+        "unified_diff": ""
+      },
+      "attempt": 1,
+      "case_id": "v2-missing-pricing-policy",
+      "database_copy_sha256": "0300573629cb5fa372187cc01aecb1dff6e27837b532ca122d3f36a9fea59657",
+      "defect_artifact_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+      "defect_execution": {
+        "execution_status": "executed",
+        "returncode": 0,
+        "stderr_sha256": null,
+        "stdout_sha256": null,
+        "wall_ns": 0
+      },
+      "deterministic_score": {
+        "dimensions": {
+          "affected_descendants": true,
+          "authority": true,
+          "class": true,
+          "disposition": true,
+          "live_result": true,
+          "location": true,
+          "real_diff": true
+        },
+        "passed": true,
+        "schema_version": "v2-score/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage"
+      ],
+      "live_result": {
+        "hole": "trade-stage.execution-pricing-policy",
+        "status": "open"
+      },
+      "local_edge_proof": null,
+      "proposal": {
+        "affected_descendants": [],
+        "changed_artifacts": [],
+        "disposition": "inconclusive",
+        "failure_class": "missing_policy",
+        "location": "hole.trade-stage.execution-pricing-policy"
+      },
+      "repaired_execution": {
+        "returncode": 0,
+        "wall_ns": 0
+      },
+      "sequence": 2,
+      "sketch_review": {
+        "passed": true,
+        "reasons": [],
+        "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+        "schema_version": "sketch-review-v2/v1"
+      }
+    },
+    {
+      "artifact_diff": {
+        "changed_artifacts": [
+          "models/dim_trade.sql"
+        ],
+        "forbidden_touched": [],
+        "outside_allowed": [],
+        "unified_diff": "--- injected\n+++ repaired\n@@ -2,7 +2,7 @@\n   name governed.dim_trade,\n   kind FULL,\n   dialect duckdb,\n-  audits (not_null_trade_id)\n+  audits (not_null_trade_id, valid_lifecycle_order)\n );\n \n SELECT\n"
+      },
+      "attempt": 1,
+      "case_id": "v2-verification-audit-gap",
+      "database_copy_sha256": "e929558509bbe476e46686f15c0cb9b8899848af1cae29b4eb014c2dfad09dce",
+      "defect_artifact_sha256": "dc4a8c20e939c409b15d72a646b7e9b3969616837807f8a3edb77b09542dd092",
+      "defect_execution": {
+        "execution_status": "executed",
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+        "wall_ns": 1805630458
+      },
+      "deterministic_score": {
+        "dimensions": {
+          "affected_descendants": true,
+          "authority": true,
+          "class": true,
+          "disposition": true,
+          "live_result": true,
+          "location": true,
+          "real_diff": true
+        },
+        "passed": true,
+        "schema_version": "v2-score/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage"
+      ],
+      "live_result": {
+        "dim_trade_audits": 2
+      },
+      "local_edge_proof": null,
+      "proposal": {
+        "affected_descendants": [
+          "governed.trade_lifecycle",
+          "governed.dim_trade"
+        ],
+        "changed_artifacts": [
+          "models/dim_trade.sql"
+        ],
+        "disposition": "resolved",
+        "failure_class": "verification_gap",
+        "location": "verification.dim_trade.lifecycle_audit"
+      },
+      "repaired_execution": {
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "27daffde49b13202d5e84f9f8a06dfff19156dd4d3ac83ffa63e8cf6beda11dc",
+        "wall_ns": 1719707125
+      },
+      "sequence": 3,
+      "sketch_review": {
+        "passed": true,
+        "reasons": [],
+        "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+        "schema_version": "sketch-review-v2/v1"
+      }
+    },
+    {
+      "artifact_diff": {
+        "changed_artifacts": [],
+        "forbidden_touched": [],
+        "outside_allowed": [],
+        "unified_diff": ""
+      },
+      "attempt": 1,
+      "case_id": "v2-edge-creation-time",
+      "database_copy_sha256": "be819e6f03612c0a9f34b9ccb0b8cbdd1351f50df5479684f3f0633965799851",
+      "defect_artifact_sha256": "96733d49bddc00d56501106905ebe270ffef007f24d2f658aac047314fc45273",
+      "defect_execution": {
+        "consumer_local": "pass",
+        "execution_status": "executed",
+        "producer_local": "pass",
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "c8aaf605fefb2dab859f06dcac70f32aa0a4b418a157339aab957e4edaeb48b8",
+        "wall_ns": 1874123042
+      },
+      "deterministic_score": {
+        "dimensions": {
+          "affected_descendants": false,
+          "authority": true,
+          "class": false,
+          "disposition": false,
+          "live_result": true,
+          "location": false,
+          "real_diff": false
+        },
+        "passed": false,
+        "schema_version": "v2-score/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage"
+      ],
+      "live_result": {
+        "created_at": "2012-07-07T00:01:13"
+      },
+      "local_edge_proof": {
+        "consumer": "pass",
+        "edge_binding": "fail",
+        "producer": "pass"
+      },
+      "proposal": {
+        "affected_descendants": [],
+        "changed_artifacts": [],
+        "disposition": "inconclusive",
+        "failure_class": null,
+        "location": null
+      },
+      "repaired_execution": {
+        "returncode": 0,
+        "wall_ns": 0
+      },
+      "sequence": 4,
+      "sketch_review": {
+        "passed": true,
+        "reasons": [],
+        "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+        "schema_version": "sketch-review-v2/v1"
+      }
+    },
+    {
+      "artifact_diff": {
+        "changed_artifacts": [],
+        "forbidden_touched": [],
+        "outside_allowed": [],
+        "unified_diff": ""
+      },
+      "attempt": 1,
+      "case_id": "v2-path-lifecycle-duration",
+      "database_copy_sha256": "0300573629cb5fa372187cc01aecb1dff6e27837b532ca122d3f36a9fea59657",
+      "defect_artifact_sha256": "15cfec03f4c4b26b6ec06ecc11db625e75d2fece7751532efefd739d51452960",
+      "defect_execution": {
+        "execution_status": "executed",
+        "path_observed": 0,
+        "returncode": 0,
+        "stderr_sha256": null,
+        "stdout_sha256": null,
+        "wall_ns": 0
+      },
+      "deterministic_score": {
+        "dimensions": {
+          "affected_descendants": false,
+          "authority": true,
+          "class": false,
+          "disposition": false,
+          "live_result": false,
+          "location": false,
+          "real_diff": false
+        },
+        "passed": false,
+        "schema_version": "v2-score/v1"
+      },
+      "layers_visible": [
+        "pipeline",
+        "stage"
+      ],
+      "live_result": {
+        "trade_id_0_lifecycle_seconds": 0
+      },
+      "local_edge_proof": null,
+      "proposal": {
+        "affected_descendants": [],
+        "changed_artifacts": [],
+        "disposition": "inconclusive",
+        "failure_class": null,
+        "location": null
+      },
+      "repaired_execution": {
+        "returncode": 0,
+        "wall_ns": 0
+      },
+      "sequence": 5,
+      "sketch_review": {
+        "passed": true,
+        "reasons": [],
+        "review_basis_sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc",
+        "schema_version": "sketch-review-v2/v1"
+      }
+    }
+  ],
+  "visible_phase_complete_before_heldout": true,
+  "wall_ns": 18783793208
+}
