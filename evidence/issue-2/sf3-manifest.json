@@ -1,0 +1,48 @@
+{
+  "digen": {
+    "batch_rows": {
+      "Batch1": 4539962,
+      "Batch2": 19900,
+      "Batch3": 19855,
+      "all": 4579717
+    },
+    "scale_factor": 3,
+    "version": "1.1.0"
+  },
+  "provenance": {
+    "canonical_download": "https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DI&bm_vers=1.1.0&mode=CURRENT-ONLY",
+    "evaluated_copy": "https://github.com/mwiewior/tbd-tpc-di/tree/892927064ab9246340f8b22910081372cd2520b9/tools",
+    "note": "The evaluated redistribution identifies itself as DIGen 1.1.0 and its three frozen core hashes match three additional public redistributions. Human PR verification must personally acquire the canonical registered TPC package, review its license, compare hashes, and record the result. Subsequent experiment runs require canonical acquisition."
+  },
+  "slice_files": {
+    "status_type": {
+      "bytes": 89,
+      "path": "Batch1/StatusType.txt",
+      "rows": 6,
+      "sha256": "f4ca8eefa64abebcdb3cd47c226d04268a9dbad0f8faf6476cda1bea001481f6"
+    },
+    "trade": {
+      "bytes": 38279028,
+      "path": "Batch1/Trade.txt",
+      "rows": 390978,
+      "sha256": "334c705384bac635f944d58a49337890f122ce5867e8512aac0091bfc25cf99f"
+    },
+    "trade_history": {
+      "bytes": 32129888,
+      "path": "Batch1/TradeHistory.txt",
+      "rows": 982180,
+      "sha256": "02f9baae0c38650b72593fb18a20c262795b9f427dcdd7346fa881f131487639"
+    },
+    "trade_type": {
+      "bytes": 99,
+      "path": "Batch1/TradeType.txt",
+      "rows": 5,
+      "sha256": "8cd4388b9be9bb1ccd30f96715f80143fc78794aac641f898aa6ec90c9f2dfe6"
+    }
+  },
+  "tool_artifacts": {
+    "DIGen.jar": "39ac04392f0e26dfe939a8836cc5e704fd26bb5acab7fe63ea6ea3c31fb3c2f4",
+    "pdgf/pdgf.jar": "a1d50984c5d3b6139180359784ebf3bde07b51a9b95d468c65b5810a834f76fd",
+    "pdgf/plugins/tpc-di.jar": "600a5a586a1fa372aaebdb22d81bccd7d88215b3178c019038e66afad750eca4"
+  }
+}

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TPCDI_REAL_JAVA:?Set TPCDI_REAL_JAVA to the Java 8 executable}"
+
+args=("$@")
+for ((index = 0; index + 1 < ${#args[@]}; index++)); do
+  if [[ "${args[$index]}" == "-jar" && "${args[$((index + 1))]}" == "pdgf.jar" ]]; then
+    exec "$TPCDI_REAL_JAVA" \
+      "${args[@]:0:$index}" \
+      -cp 'pdgf.jar:plugins/*:extlib/*' \
+      pdgf.Controller -noShell \
+      "${args[@]:$((index + 2))}"
+  fi
+done
+
+exec "$TPCDI_REAL_JAVA" "$@"
