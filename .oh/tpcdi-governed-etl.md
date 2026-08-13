@@ -146,4 +146,19 @@ Use the complete TPC-DI rules as a hidden closed-world oracle. Give the open-wor
 
 ## Plan
 
-Planning issues will be inserted by `oh-plan` after the GitHub repository exists.
+**Updated:** 2026-08-12 22:19 EDT
+
+| S&T Step | Disposition | Issue/Epic | Parent Step | Depends On |
+|---|---|---|---|---|
+| root | tracking | [#1](https://github.com/open-horizon-labs/governed-compositional-etl/issues/1) | none | none |
+| E1 | selected | [#2](https://github.com/open-horizon-labs/governed-compositional-etl/issues/2) | root | none |
+| E1.1 | selected | [#3](https://github.com/open-horizon-labs/governed-compositional-etl/issues/3) | E1 | #2 |
+| E3 | selected | [#4](https://github.com/open-horizon-labs/governed-compositional-etl/issues/4) | root | #2 |
+| E2 | selected | [#5](https://github.com/open-horizon-labs/governed-compositional-etl/issues/5) | root | #3, #4 |
+| E4 | selected | [#6](https://github.com/open-horizon-labs/governed-compositional-etl/issues/6) | root | #5 |
+| E2.1 | selected | [#7](https://github.com/open-horizon-labs/governed-compositional-etl/issues/7) | E2 | #3, #5, #6 |
+| E5 | selected | [#8](https://github.com/open-horizon-labs/governed-compositional-etl/issues/8) | root | #7 |
+
+### Workflow handoff
+
+Execute issues in dependency order. Begin with `/oh-task 2`; use #1 only as the tracking issue for the complete selected proof.
