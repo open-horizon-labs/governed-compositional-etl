@@ -19,9 +19,10 @@ import duckdb
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "experiments/corpus-v2.json"
 PREREG = ROOT / "experiments/preregistration-v2.2.json"
-RESULT = ROOT / "evidence/issue-7/experiment-result-v2.2.json"
-TRACES = ROOT / "evidence/issue-7/traces-v2.2"
-ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.2.json"
+RESULT = ROOT / "evidence/issue-7/experiment-result-v2.3.json"
+TRACES = ROOT / "evidence/issue-7/traces-v2.3"
+ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.3.json"
+START_DATABASE = ROOT / "build/issue7-v23-start.duckdb"
 ARMS = {
     "native": ("pipeline",),
     "stage_local_cess": ("pipeline", "stage"),
@@ -79,7 +80,7 @@ def validate_preregistration(corpus: dict, prereg: dict) -> None:
         raise ExperimentV2Error("balanced corpus classes changed")
     if sum(bool(case.get("local_pass_requirement")) for case in corpus["cases"]) < 1:
         raise ExperimentV2Error("local-pass edge case is absent")
-    if digest(ROOT / "build/tpcdi.duckdb") != prereg["frozen_hashes"]["raw_database_sha256"]:
+    if digest(START_DATABASE) != prereg["frozen_hashes"]["raw_database_sha256"]:
         raise ExperimentV2Error("raw/start database differs from preregistration")
     manifest = load(ROOT / "projection/manifest-v1.json")
     if len({item["projection_sha256"] for item in manifest["arms"].values()}) != 1:
@@ -297,7 +298,7 @@ def subprocess_json(script: str, request: dict) -> dict:
 def run(retain: bool = True) -> dict:
     corpus, prereg = load(CORPUS), load(PREREG)
     validate_preregistration(corpus, prereg)
-    raw_digest = digest(ROOT / "build/tpcdi.duckdb")
+    raw_digest = digest(START_DATABASE)
     arm_results = {}
     trace_digests = {}
     for arm_name, layers in ARMS.items():
@@ -308,7 +309,7 @@ def run(retain: bool = True) -> dict:
             with tempfile.TemporaryDirectory(prefix="issue7-v2-", dir=ROOT / "build") as directory:
                 work = Path(directory)
                 database = work / "tpcdi.duckdb"
-                shutil.copy2(ROOT / "build/tpcdi.duckdb", database)
+                shutil.copy2(START_DATABASE, database)
                 start_database_sha256 = digest(database)
                 if start_database_sha256 != raw_digest:
                     raise ExperimentV2Error("arm/case database copy is not identical")
@@ -351,7 +352,7 @@ def run(retain: bool = True) -> dict:
     cost_pass = cost_multiple <= prereg["cost_ceiling"]["compositional_operator_work_unit_multiple_vs_native"]
     decision = "adopt" if quality_pass and cost_pass else ("reject" if incremental <= prereg["decision_rules"]["reject"]["incremental_edge_or_composition_catches_max"] else "revise")
     prereg_commit = git("log", "-1", "--format=%H", "--", str(PREREG.relative_to(ROOT)))
-    report = {"schema_version": "matched-experiment-result/v2.2", "prior_attempts": {"v1": "invalid", "v2_attempt_a": "invalid", "v2_1": "invalid"}, "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero", "preregistration_commit": prereg_commit, "preregistration_sha256": digest(PREREG), "run_nonce": prereg["run"]["nonce"], "matched_controls": {"raw_database_sha256": raw_digest, "projection_sha256": next(iter(load(ROOT / "projection/manifest-v1.json")["arms"].values()))["projection_sha256"], "reveal_order": corpus["reveal_order"], "repair_attempts_per_case": 1, "model_tokens": 0}, "arms": arm_results, "summaries": summaries, "incremental_edge_or_composition_catches": incremental, "threshold_evaluation": {"quality_pass": quality_pass, "cost_pass": cost_pass, "operator_work_unit_multiple": cost_multiple, "decision": decision}, "review_trigger": {"fired": False, "reason": None}, "publication_gates": prereg["publication_gates"]}
+    report = {"schema_version": "matched-experiment-result/v2.3", "prior_attempts": {"v1": "invalid", "v2_attempt_a": "invalid", "v2_1": "invalid", "v2_2": "preflight-rejected-no-score"}, "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero", "preregistration_commit": prereg_commit, "preregistration_sha256": digest(PREREG), "run_nonce": prereg["run"]["nonce"], "matched_controls": {"raw_database_sha256": raw_digest, "projection_sha256": next(iter(load(ROOT / "projection/manifest-v1.json")["arms"].values()))["projection_sha256"], "reveal_order": corpus["reveal_order"], "repair_attempts_per_case": 1, "model_tokens": 0}, "arms": arm_results, "summaries": summaries, "incremental_edge_or_composition_catches": incremental, "threshold_evaluation": {"quality_pass": quality_pass, "cost_pass": cost_pass, "operator_work_unit_multiple": cost_multiple, "decision": decision}, "review_trigger": {"fired": False, "reason": None}, "publication_gates": prereg["publication_gates"]}
     if retain:
         RESULT.parent.mkdir(parents=True, exist_ok=True)
         TRACES.mkdir(parents=True, exist_ok=True)

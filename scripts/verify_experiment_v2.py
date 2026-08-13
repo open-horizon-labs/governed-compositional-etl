@@ -11,8 +11,8 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.2.json"
-RESULT = ROOT / "evidence/issue-7/experiment-result-v2.2.json"
+ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.3.json"
+RESULT = ROOT / "evidence/issue-7/experiment-result-v2.3.json"
 
 
 class VerificationError(ValueError):
@@ -43,7 +43,7 @@ def verify(envelope: dict, result: dict, root: Path = ROOT) -> None:
     if tree != envelope["preregistration_tree"]:
         raise VerificationError("preregistration tree does not match commit")
     for name, expected in envelope["trace_object_sha256"].items():
-        trace = json.loads((root / f"evidence/issue-7/traces-v2.2/{name}.json").read_text())
+        trace = json.loads((root / f"evidence/issue-7/traces-v2.3/{name}.json").read_text())
         if hashlib.sha256(canonical(trace).encode()).hexdigest() != expected:
             raise VerificationError(f"trace object tampered: {name}")
         replay = trace["localized_replay"]
@@ -70,7 +70,7 @@ def verify(envelope: dict, result: dict, root: Path = ROOT) -> None:
     if hashlib.sha256(canonical(summary).encode()).hexdigest() != envelope["root_sha256"]:
         raise VerificationError("envelope root digest is invalid")
     for name, arm in result["arms"].items():
-        retained = json.loads((root / f"evidence/issue-7/traces-v2.2/{name}.json").read_text())
+        retained = json.loads((root / f"evidence/issue-7/traces-v2.3/{name}.json").read_text())
         if retained != arm:
             raise VerificationError("result embeds a trace different from retained evidence")
 
