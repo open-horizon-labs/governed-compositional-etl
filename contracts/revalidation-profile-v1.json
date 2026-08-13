@@ -2,6 +2,7 @@
   "active_case": "edge-trade-history-create-time-v1",
   "changes": {
     "edge.close_statuses": {
+      "artifact": "contracts/edges/trade-history-to-dim-trade-v1.json",
       "executable_sources": [
         "governed.trade_lifecycle"
       ],
@@ -9,6 +10,7 @@
       "semantic_source": "edge.trade_history_to_dim_trade.create_close_time"
     },
     "edge.create_status": {
+      "artifact": "contracts/edges/trade-history-to-dim-trade-v1.json",
       "executable_sources": [
         "governed.trade_lifecycle"
       ],
@@ -16,6 +18,7 @@
       "semantic_source": "edge.trade_history_to_dim_trade.create_close_time"
     },
     "stage.trade_type.rule": {
+      "artifact": "contracts/stages/trade-type-reference-v1.json",
       "executable_sources": [
         "governed.trade_type_reference"
       ],
@@ -62,7 +65,7 @@
       "invariant.dim_trade_identity"
     ],
     "edge.trade_type_to_dim_trade": [
-      "regression.local_trade_type_name"
+      "local-trade-type-name-v1"
     ],
     "governed.dim_trade": [
       "sqlmesh.audits"
@@ -71,17 +74,17 @@
       "sqlmesh.audits"
     ],
     "governed.trade_type_reference": [
-      "regression.local_trade_type_name"
+      "local-trade-type-name-v1"
     ],
     "logical.dim_trade": [
-      "active.edge_create_time",
-      "regression.local_trade_type_name"
+      "edge-trade-history-create-time-v1",
+      "local-trade-type-name-v1"
     ],
     "metric.trade_lifecycle_seconds": [
       "invariant.lifecycle_duration"
     ],
     "stage.trade_type_reference.type_name": [
-      "regression.local_trade_type_name"
+      "local-trade-type-name-v1"
     ]
   },
   "path_invariants": {
@@ -108,18 +111,18 @@
   },
   "schema_version": "revalidation-profile/v1",
   "semantic_dependencies": {
-    "duckdb.dim_trade.lifecycle": [
+    "duckdb.dim_trade": [
       "metric.trade_lifecycle_seconds"
     ],
     "duckdb.dim_trade.type": [],
     "edge.trade_history_to_dim_trade.create_close_time": [
-      "logical.dim_trade.lifecycle"
+      "logical.dim_trade"
     ],
     "edge.trade_type_to_dim_trade": [
       "logical.dim_trade.type"
     ],
-    "logical.dim_trade.lifecycle": [
-      "duckdb.dim_trade.lifecycle"
+    "logical.dim_trade": [
+      "duckdb.dim_trade"
     ],
     "logical.dim_trade.type": [
       "duckdb.dim_trade.type"
@@ -130,9 +133,7 @@
     ]
   },
   "semantic_public_nodes": {
-    "duckdb.dim_trade.lifecycle": "duckdb.dim_trade",
     "duckdb.dim_trade.type": "duckdb.dim_trade",
-    "logical.dim_trade.lifecycle": "logical.dim_trade",
     "logical.dim_trade.type": "logical.dim_trade"
   }
 }

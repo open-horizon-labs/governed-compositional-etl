@@ -1,7 +1,10 @@
 import importlib.util
 import json
 from pathlib import Path
+import tempfile
 import unittest
+
+import duckdb
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,7 +90,70 @@ class RevalidationConeTests(unittest.TestCase):
         self.assertEqual(full["escaped_regressions"], [])
         self.assertGreater(full["node_count"], cone["node_count"])
         self.assertGreaterEqual(full["check_count"], cone["check_count"])
-        self.assertTrue(all(full["execution"]["results"].values()))
+        self.assertTrue(all(full["execution"]["check_results"].values()))
+        self.assertEqual(len(full["execution"]["executed_models"]), 6)
+        self.assertEqual(len(cone["execution"]["executed_models"]), 2)
+        self.assertEqual(
+            [item["name"] for item in cone["execution"]["executed_models"]],
+            ["governed.trade_lifecycle", "governed.dim_trade"],
+        )
+        self.assertEqual(len(cone["execution"]["required_ancestors"]), 4)
+        self.assertEqual(full["execution"]["audit_count"], 6)
+
+    def test_live_scores_replayed_data_not_predeclared_example_outputs(self):
+        report = json.loads(REVALIDATION.EVIDENCE.read_text())
+        live = report["cone"]["execution"]["live_submissions"]
+        self.assertEqual(live["edge-trade-history-create-time-v1"]["corrected_output"]["created_at"], "2012-07-07T00:01:13")
+        self.assertEqual(live["local-trade-type-name-v1"]["corrected_output"]["type_name"], "Market Sell")
+        self.assertTrue(all(live["edge-trade-history-create-time-v1"]["score_dimensions"].values()))
+
+    def test_wrong_live_semantics_pass_local_structure_but_fail_case_scoring(self):
+        with tempfile.TemporaryDirectory(prefix="issue6-negative-", dir=ROOT / "build") as directory:
+            database = Path(directory) / "negative.duckdb"
+            connection = duckdb.connect(str(database))
+            connection.execute("CREATE SCHEMA replay_observed")
+            connection.execute("CREATE TABLE replay_observed.dim_trade(trade_id BIGINT, created_at TIMESTAMP, closed_at TIMESTAMP)")
+            connection.execute("INSERT INTO replay_observed.dim_trade VALUES (0, TIMESTAMP '2012-07-07 00:02:34', TIMESTAMP '2012-07-07 00:02:34')")
+            connection.execute("CREATE TABLE replay_observed.trade_type_reference(trade_type_id VARCHAR, type_name VARCHAR, is_sell BOOLEAN, is_market BOOLEAN)")
+            connection.execute("INSERT INTO replay_observed.trade_type_reference VALUES ('TMS', 'TMS', true, true)")
+            self.assertTrue(connection.execute("SELECT count(*) = count(DISTINCT trade_id) AND count(*) = 1 FROM replay_observed.dim_trade").fetchone()[0])
+            self.assertTrue(connection.execute("SELECT count(*) = 0 FROM replay_observed.dim_trade WHERE trade_id IS NULL OR created_at IS NULL").fetchone()[0])
+            self.assertTrue(connection.execute("SELECT count(*) = 0 FROM replay_observed.trade_type_reference WHERE trade_type_id IS NULL OR type_name IS NULL").fetchone()[0])
+            connection.close()
+            for case_id, source in (
+                ("edge-trade-history-create-time-v1", "edge.trade_history_to_dim_trade.create_close_time"),
+                ("local-trade-type-name-v1", "stage.trade_type_reference.type_name"),
+            ):
+                submission = REVALIDATION.live_submission(database, case_id, self.profile["frozen_descendant_oracle"][source])
+                fixture = REVALIDATION.load_json(ROOT / f"oracle/fixtures/public/{case_id}.json")
+                score = REVALIDATION.ORACLE.score(fixture, submission)
+                self.assertFalse(score["passed"])
+                self.assertFalse(score["dimensions"]["corrected_output"])
+
+    def test_profile_rejects_dag_lineage_alias_check_and_invariant_mutations(self):
+        mutations = []
+        value = json.loads(json.dumps(self.profile)); value["executable_dependencies"]["governed.trade_stage"].remove("governed.dim_trade"); mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["executable_dependencies"]["governed.dim_trade"].append("governed.trade_stage"); mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["changes"]["edge.create_status"]["pointer"] = "/history_policy/ordering"; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["semantic_public_nodes"]["logical.dim_trade.type"] = "duckdb.dim_trade"; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["node_checks"]["governed.dim_trade"] = []; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["path_invariants"]["invariant.lifecycle_duration"]["sources"] = []; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["unexpected"] = True; mutations.append(value)
+        for mutated in mutations:
+            with self.assertRaises(REVALIDATION.RevalidationError):
+                REVALIDATION.validate_profile(mutated)
+
+    def test_profile_path_rejects_symlink_even_to_canonical_profile(self):
+        with tempfile.TemporaryDirectory(prefix="issue6-profile-", dir=ROOT / "build") as directory:
+            link = Path(directory) / "profile.json"
+            link.symlink_to(REVALIDATION.PROFILE)
+            original = REVALIDATION.PROFILE
+            try:
+                REVALIDATION.PROFILE = link
+                with self.assertRaisesRegex(REVALIDATION.RevalidationError, "tracked regular non-symlink"):
+                    REVALIDATION.validate_profile(self.profile)
+            finally:
+                REVALIDATION.PROFILE = original
 
 
 if __name__ == "__main__":
