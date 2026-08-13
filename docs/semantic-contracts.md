@@ -43,7 +43,7 @@ The issue #3 candidate therefore survives issue #4 adjudication as a bounded edg
 
 The adjudicator resolves every evidence binding through its referenced producer contract and checks the edge target against the consumer's semantic-type-bearing input contract. Evidence cannot declare its own semantic type. The identity join is also executable: every history observation in a checked lifecycle must carry the same `trade_id` as its Trade row; missing, foreign, or mixed identities are rejected.
 
-The same stage-binding validator checks every local contract before adjudication. Raw inputs must resolve uniquely to the source descriptor with the same nominal type; each output source must resolve uniquely to an input or declared intermediate; copy mappings preserve semantic type. A conversion is accepted only when an explicit conversion rule names a policy authority retained by the bounded contract set.
+The same stage-binding validator checks every local contract before adjudication. Raw inputs must resolve uniquely to the source descriptor with the same nominal type; each output source must resolve uniquely to an input or declared intermediate; every stage copy preserves exact semantic type. No stage in this slice has conversion authority. The lifecycle edge is the sole semantic conversion surface and accepts only `tpc-di-1.1.0-4.5.8.2-create-close`, whose repair record allows only `sketch.edge.trade_history_to_dim_trade` and forbids adjacent stage Sketches.
 
 This result retires the edge-versus-local risk only for this historical case. Incremental lifecycle composition remains an explicit hole.
 

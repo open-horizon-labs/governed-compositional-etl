@@ -35,6 +35,13 @@ TPC_SPEC_URL = "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1
 TPC_LOCATOR = re.compile(r"^Clauses? [0-9][0-9A-Za-z., -]*$")
 DECISION_ROOT = PurePosixPath(".oh/metis")
 COUNTEREXAMPLE_ROOT = PurePosixPath("counterexamples/archive")
+EDGE_CONVERSION_AUTHORITY = "tpc-di-1.1.0-4.5.8.2-create-close"
+EDGE_REPAIR_ARTIFACT = "sketch.edge.trade_history_to_dim_trade"
+EDGE_FORBIDDEN_STAGE_ARTIFACTS = {
+    "sketch.stage.trade",
+    "sketch.stage.trade_history",
+    "sketch.stage.dim_trade_consumer",
+}
 
 
 class ContractError(ValueError):
@@ -159,30 +166,43 @@ def require_tracked_authority_path(source: str, root: PurePosixPath, kind: str) 
     return source
 
 
-def named_policy_authority_ids(source_descriptor: dict) -> set[str]:
-    authorities = list(source_descriptor.get("authority", []))
-    for path in sorted((ROOT / "contracts/repair-authority").glob("*.json")):
-        record = load_json(path)
-        authorities.extend(record.get("active_authority", {}).get("basis", []))
-    return {require_policy_authority(authority)["id"] for authority in authorities}
-
-
 def semantic_type_compatible(actual: str, required: str) -> bool:
     """Local compatibility is nominal, not physical-type equivalence."""
     return actual == required
 
 
-def validate_semantic_mapping(mapping: dict, semantic_types: dict[str, dict]) -> None:
+def validate_semantic_mapping(
+    mapping: dict,
+    semantic_types: dict[str, dict],
+    repair_authority: dict | None = None,
+) -> None:
     source_type = mapping.get("source_semantic_type")
     target_type = mapping.get("target_semantic_type")
     if source_type not in semantic_types or target_type not in semantic_types:
         raise ContractError("edge mapping references an unknown semantic type")
-    if source_type != target_type and not TPC_RULE.fullmatch(
-        mapping.get("authority", "")
-    ):
+    if source_type == target_type:
+        return
+    if mapping.get("authority") != EDGE_CONVERSION_AUTHORITY:
         raise ContractError(
-            "semantic type conversion at an edge requires named business authority"
+            "edge semantic conversion requires the exact vetted scoped authority"
         )
+    if repair_authority is None:
+        repair_authority = load_json(
+            ROOT / "contracts/repair-authority/trade-lifecycle-edge-v1.json"
+        )
+    validate_repair_authority(repair_authority)
+    allowed = set(repair_authority["allowed_artifacts"])
+    forbidden = set(repair_authority["forbidden_adjacent_policy"])
+    basis_ids = {
+        authority["id"]
+        for authority in repair_authority["active_authority"]["basis"]
+    }
+    if allowed != {EDGE_REPAIR_ARTIFACT}:
+        raise ContractError("edge conversion authority must allow only its edge Sketch")
+    if not EDGE_FORBIDDEN_STAGE_ARTIFACTS <= forbidden:
+        raise ContractError("edge conversion authority must forbid adjacent stage Sketches")
+    if EDGE_CONVERSION_AUTHORITY not in basis_ids:
+        raise ContractError("edge conversion repair record omits its exact scoped authority")
 
 
 def validate_rule_order(contract: dict, name: str) -> None:
@@ -239,9 +259,6 @@ def validate_stage_bindings(
 
     available = [(field["name"], field["semantic_type"]) for field in input_fields]
     available.extend((intermediates or {}).items())
-    rules = {rule["id"]: rule for rule in contract["rules"]}
-    evidence_rules = set(contract["evidence"]["rule_ids"])
-    policy_authorities = named_policy_authority_ids(source_descriptor)
     for output in contract["output"]["fields"]:
         matches = [
             semantic_type
@@ -256,21 +273,11 @@ def validate_stage_bindings(
         target_type = output["semantic_type"]
         if target_type not in semantic_types:
             raise ContractError("stage output references an unknown semantic type")
-        if source_type == target_type:
-            if "conversion_rule" in output:
-                raise ContractError("copy-preserving stage output cannot claim a conversion")
-            continue
-        rule_id = output.get("conversion_rule")
-        rule = rules.get(rule_id)
-        if (
-            rule is None
-            or rule.get("operation") != "convert_semantic_type"
-            or rule["authority"] not in evidence_rules
-            or rule["authority"] not in policy_authorities
-        ):
+        if "conversion_rule" in output:
+            raise ContractError("the bounded slice does not permit stage conversion rules")
+        if source_type != target_type:
             raise ContractError(
-                "stage semantic conversion requires an explicit named conversion rule "
-                "with policy authority"
+                "stage output copies and intermediates must preserve exact semantic type"
             )
 
 
@@ -300,6 +307,9 @@ def validate_edge_bindings(
     consumer_fields = {
         field["name"]: field["semantic_type"] for field in consumer["input"]["fields"]
     }
+    repair_authority = load_json(
+        ROOT / "contracts/repair-authority/trade-lifecycle-edge-v1.json"
+    )
 
     identity = edge["producer"]["identity_join"]
     if identity != "trade_id":
@@ -326,7 +336,7 @@ def validate_edge_bindings(
             raise ContractError(
                 "edge target semantic type must match the consumer input contract"
             )
-        validate_semantic_mapping(mapping, semantic_types)
+        validate_semantic_mapping(mapping, semantic_types, repair_authority)
 
 
 def validate_repair_authority(record: dict) -> None:
@@ -458,7 +468,6 @@ def validate_bundle() -> dict:
         nonempty_string(attribute.get("source_rule"), "logical attribute source_rule")
 
     stage_documents = {}
-    stage_policy_authorities = named_policy_authority_ids(source)
     for path in sorted((ROOT / "contracts/stages").glob("*.json")):
         contract = load_json(path)
         validate_instance(
@@ -476,9 +485,9 @@ def validate_bundle() -> dict:
         for rule in contract.get("rules", []):
             if (
                 rule.get("id") not in rule_order
-                or rule.get("authority") not in stage_policy_authorities
+                or not TPC_RULE.fullmatch(rule.get("authority", ""))
             ):
-                raise ContractError("stage rules need ordered, named policy authority")
+                raise ContractError("stage rules need ordered, named TPC-DI authority")
         validate_stage_bindings(contract, source, semantic_types)
 
     edge = load_json(ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json")

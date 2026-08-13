@@ -49,6 +49,17 @@ class GovernedContractTests(unittest.TestCase):
                 "adversarial stage input",
             )
 
+        speculative_conversion = copy.deepcopy(stage)
+        speculative_conversion["output"]["fields"][0]["conversion_rule"] = (
+            "trade.speculative-conversion"
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "not allowed"):
+            CONTRACTS.validate_instance(
+                schemas["stage-contract-v1.schema.json"],
+                speculative_conversion,
+                "adversarial stage conversion",
+            )
+
         authority = CONTRACTS.load_json(
             ROOT / "contracts/repair-authority/trade-lifecycle-edge-v1.json"
         )
@@ -209,7 +220,7 @@ class GovernedContractTests(unittest.TestCase):
             for field in wrong_consumer_output["output"]["fields"]
             if field["name"] == "created_at"
         )["semantic_type"] = "trade_record_timestamp"
-        with self.assertRaisesRegex(CONTRACTS.ContractError, "conversion rule"):
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "preserve exact"):
             CONTRACTS.validate_stage_bindings(
                 wrong_consumer_output, source, types
             )
@@ -249,28 +260,17 @@ class GovernedContractTests(unittest.TestCase):
         with self.assertRaisesRegex(CONTRACTS.ContractError, "resolve uniquely"):
             CONTRACTS.validate_stage_bindings(ambiguous_source, source, types)
 
-        unauthorized_conversion = copy.deepcopy(consumer)
+        forbidden_conversion_rule = copy.deepcopy(consumer)
         converted = next(
             field
-            for field in unauthorized_conversion["output"]["fields"]
+            for field in forbidden_conversion_rule["output"]["fields"]
             if field["name"] == "created_at"
         )
         converted["semantic_type"] = "trade_record_timestamp"
         converted["conversion_rule"] = "dim-trade.unauthorized-conversion"
-        unauthorized_conversion["rules"].append(
-            {
-                "authority": "tpc-di-1.1.0-9.9.9",
-                "id": "dim-trade.unauthorized-conversion",
-                "operation": "convert_semantic_type",
-                "status": "known",
-            }
-        )
-        unauthorized_conversion["evidence"]["rule_ids"].append(
-            "tpc-di-1.1.0-9.9.9"
-        )
-        with self.assertRaisesRegex(CONTRACTS.ContractError, "policy authority"):
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "does not permit"):
             CONTRACTS.validate_stage_bindings(
-                unauthorized_conversion, source, types
+                forbidden_conversion_rule, source, types
             )
 
     def test_adjudication_runs_generic_stage_binding_validation(self):
@@ -295,7 +295,7 @@ class GovernedContractTests(unittest.TestCase):
             for field in consumer["output"]["fields"]
             if field["name"] == "created_at"
         )["semantic_type"] = "trade_record_timestamp"
-        with self.assertRaisesRegex(CONTRACTS.ContractError, "conversion rule"):
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "preserve exact"):
             CONTRACTS.adjudicate_candidate(mutated, edge, types)
 
     def test_edge_identity_rejects_foreign_mixed_and_missing_trade_ids(self):
@@ -366,7 +366,7 @@ class GovernedContractTests(unittest.TestCase):
         with self.assertRaises(CONTRACTS.ContractError):
             CONTRACTS.validate_hole(silently_filled)
 
-    def test_semantic_conversion_requires_named_authority(self):
+    def test_edge_conversion_requires_exact_scoped_authority_and_edge_only_repair(self):
         registry = CONTRACTS.load_json(
             ROOT / "contracts/semantic-types/trade-types-v1.json"
         )
@@ -378,10 +378,42 @@ class GovernedContractTests(unittest.TestCase):
             item for item in edge["mappings"] if item["to"].endswith("created_at")
         )
         CONTRACTS.validate_semantic_mapping(mapping, types)
-        unauthorized = copy.deepcopy(mapping)
-        unauthorized["authority"] = "raw-values-look-equal"
-        with self.assertRaisesRegex(CONTRACTS.ContractError, "named business authority"):
-            CONTRACTS.validate_semantic_mapping(unauthorized, types)
+        for authority in (
+            "tpc-di-1.1.0-2.2.2.17",
+            "tpc-di-1.1.0-4.5.8.2",
+            "tpc-di-1.1.0-9.9.9",
+        ):
+            unauthorized = copy.deepcopy(mapping)
+            unauthorized["authority"] = authority
+            with self.subTest(authority=authority), self.assertRaisesRegex(
+                CONTRACTS.ContractError, "exact vetted scoped authority"
+            ):
+                CONTRACTS.validate_semantic_mapping(unauthorized, types)
+
+        repair = CONTRACTS.load_json(
+            ROOT / "contracts/repair-authority/trade-lifecycle-edge-v1.json"
+        )
+        stage_allowed = copy.deepcopy(repair)
+        stage_allowed["forbidden_adjacent_policy"].remove("sketch.stage.trade")
+        stage_allowed["allowed_artifacts"].append("sketch.stage.trade")
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "only its edge Sketch"):
+            CONTRACTS.validate_semantic_mapping(mapping, types, stage_allowed)
+
+        missing_stage_prohibition = copy.deepcopy(repair)
+        missing_stage_prohibition["forbidden_adjacent_policy"].remove(
+            "sketch.stage.trade"
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "forbid adjacent stage"):
+            CONTRACTS.validate_semantic_mapping(
+                mapping, types, missing_stage_prohibition
+            )
+
+        active_forbidden = copy.deepcopy(repair)
+        active_forbidden["forbidden_adjacent_policy"].append(
+            "sketch.edge.trade_history_to_dim_trade"
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "non-overlapping"):
+            CONTRACTS.validate_semantic_mapping(mapping, types, active_forbidden)
 
     def test_projection_cannot_promote_itself_to_policy_authority(self):
         classification = CONTRACTS.load_json(

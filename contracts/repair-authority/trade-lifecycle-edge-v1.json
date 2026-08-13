@@ -14,12 +14,6 @@
         "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
       },
       {
-        "id": "tpc-di-1.1.0-4.5.8.2",
-        "kind": "tpc_di_rule",
-        "locator": "Clause 4.5.8.2 DimTrade consumer mapping",
-        "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
-      },
-      {
         "id": "issue-4-candidate-edge-adjudication",
         "kind": "approved_decision",
         "locator": "Decision",
