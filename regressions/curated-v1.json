@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {
+      "boundary": "stage.trade_type_reference.type_name",
+      "fixture": "oracle/fixtures/public/local-trade-type-name-v1.json",
+      "id": "local-trade-type-name-v1",
+      "reason": "Protects a distinct local reference-name semantic boundary."
+    }
+  ],
+  "schema_version": "curated-regression-set/v1"
+}

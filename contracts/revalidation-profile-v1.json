@@ -1,0 +1,145 @@
+{
+  "active_case": "edge-trade-history-create-time-v1",
+  "changes": {
+    "edge.close_statuses": {
+      "artifact": "contracts/edges/trade-history-to-dim-trade-v1.json",
+      "executable_sources": [
+        "governed.trade_lifecycle"
+      ],
+      "pointer": "/history_policy/close_statuses",
+      "semantic_source": "edge.trade_history_to_dim_trade.create_close_time"
+    },
+    "edge.create_status": {
+      "artifact": "contracts/edges/trade-history-to-dim-trade-v1.json",
+      "executable_sources": [
+        "governed.trade_lifecycle"
+      ],
+      "pointer": "/history_policy/market_creation_status",
+      "semantic_source": "edge.trade_history_to_dim_trade.create_close_time"
+    },
+    "stage.trade_type.rule": {
+      "artifact": "contracts/stages/trade-type-reference-v1.json",
+      "executable_sources": [
+        "governed.trade_type_reference"
+      ],
+      "pointer": "/rules/0",
+      "semantic_source": "stage.trade_type_reference.type_name"
+    }
+  },
+  "curated_regression_set": [
+    "local-trade-type-name-v1"
+  ],
+  "executable_dependencies": {
+    "governed.dim_trade": [],
+    "governed.status_type_reference": [
+      "governed.dim_trade"
+    ],
+    "governed.trade_history_stage": [
+      "governed.trade_lifecycle"
+    ],
+    "governed.trade_lifecycle": [
+      "governed.dim_trade"
+    ],
+    "governed.trade_stage": [
+      "governed.trade_lifecycle",
+      "governed.dim_trade"
+    ],
+    "governed.trade_type_reference": [
+      "governed.dim_trade"
+    ]
+  },
+  "frozen_descendant_oracle": {
+    "edge.trade_history_to_dim_trade.create_close_time": [
+      "logical.dim_trade",
+      "duckdb.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
+    "stage.trade_type_reference.type_name": [
+      "edge.trade_type_to_dim_trade",
+      "logical.dim_trade",
+      "duckdb.dim_trade"
+    ]
+  },
+  "node_checks": {
+    "duckdb.dim_trade": [
+      "invariant.dim_trade_identity",
+      "invariant.lifecycle_duration"
+    ],
+    "edge.trade_history_to_dim_trade.create_close_time": [
+      "edge-trade-history-create-time-v1"
+    ],
+    "edge.trade_type_to_dim_trade": [
+      "local-trade-type-name-v1"
+    ],
+    "governed.dim_trade": [
+      "sqlmesh.audits"
+    ],
+    "governed.trade_lifecycle": [
+      "sqlmesh.audits"
+    ],
+    "governed.trade_type_reference": [
+      "sqlmesh.audits"
+    ],
+    "logical.dim_trade": [
+      "edge-trade-history-create-time-v1",
+      "local-trade-type-name-v1",
+      "invariant.dim_trade_identity",
+      "invariant.lifecycle_duration"
+    ],
+    "metric.trade_lifecycle_seconds": [
+      "invariant.lifecycle_duration"
+    ],
+    "stage.trade_type_reference.type_name": [
+      "local-trade-type-name-v1"
+    ]
+  },
+  "path_invariants": {
+    "invariant.dim_trade_identity": {
+      "nodes": [
+        "logical.dim_trade",
+        "duckdb.dim_trade"
+      ],
+      "sources": [
+        "edge.trade_history_to_dim_trade.create_close_time",
+        "stage.trade_type_reference.type_name"
+      ]
+    },
+    "invariant.lifecycle_duration": {
+      "nodes": [
+        "logical.dim_trade",
+        "duckdb.dim_trade",
+        "metric.trade_lifecycle_seconds"
+      ],
+      "sources": [
+        "edge.trade_history_to_dim_trade.create_close_time"
+      ]
+    }
+  },
+  "schema_version": "revalidation-profile/v1",
+  "semantic_dependencies": {
+    "duckdb.dim_trade": [
+      "metric.trade_lifecycle_seconds"
+    ],
+    "duckdb.dim_trade.type": [],
+    "edge.trade_history_to_dim_trade.create_close_time": [
+      "logical.dim_trade"
+    ],
+    "edge.trade_type_to_dim_trade": [
+      "logical.dim_trade.type"
+    ],
+    "logical.dim_trade": [
+      "duckdb.dim_trade"
+    ],
+    "logical.dim_trade.type": [
+      "duckdb.dim_trade.type"
+    ],
+    "metric.trade_lifecycle_seconds": [],
+    "stage.trade_type_reference.type_name": [
+      "edge.trade_type_to_dim_trade"
+    ]
+  },
+  "semantic_public_nodes": {
+    "duckdb.dim_trade.type": "duckdb.dim_trade",
+    "logical.dim_trade.type": "logical.dim_trade"
+  }
+}
