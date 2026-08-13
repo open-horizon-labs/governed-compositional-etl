@@ -16,10 +16,11 @@ class MatchedExperimentTests(unittest.TestCase):
         self.prereg = EXPERIMENT.load(EXPERIMENT.PREREG)
         self.result = EXPERIMENT.load(EXPERIMENT.RESULT)
 
-    def test_preregistration_is_frozen_and_balanced_before_result(self):
-        EXPERIMENT.validate_frozen(self.corpus, self.prereg)
-        self.assertEqual(self.result["preregistration_sha256"], EXPERIMENT.PREREG_SHA256)
-        self.assertEqual(self.result["preregistration_commit"][:7], "0e35102")
+    def test_v1_preregistration_and_result_are_explicitly_invalidated(self):
+        with self.assertRaises(EXPERIMENT.ExperimentError):
+            EXPERIMENT.validate_frozen(self.corpus, self.prereg)
+        self.assertEqual(self.prereg["status"], "invalidated_before_v2")
+        self.assertTrue((ROOT / ".oh/metis/issue-7-v1-invalidated.md").is_file())
         self.assertEqual(
             {case["expected_failure_class"] for case in self.corpus["cases"]},
             set(self.prereg["corpus_requirements"]["balanced_classes"]),
@@ -100,14 +101,9 @@ class MatchedExperimentTests(unittest.TestCase):
         self.assertEqual(self.result["threshold_evaluation"]["decision"], "revise")
         self.assertGreater(self.result["threshold_evaluation"]["operator_cost_multiple"], 3.0)
 
-    def test_scripted_run_is_logically_reproducible(self):
-        rerun = EXPERIMENT.run(retain=False)
-        for result in (self.result, rerun):
-            for arm in result["arms"].values():
-                arm["compute_wall_ms"] = 0
-            for summary in result["summaries"].values():
-                summary["compute_wall_ms"] = 0
-        self.assertEqual(self.result, rerun)
+    def test_invalid_v1_cannot_be_rerun_or_counted(self):
+        with self.assertRaises(EXPERIMENT.ExperimentError):
+            EXPERIMENT.run(retain=False)
 
 
 if __name__ == "__main__":
