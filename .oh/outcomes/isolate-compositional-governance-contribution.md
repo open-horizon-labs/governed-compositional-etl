@@ -1,7 +1,7 @@
 ---
 id: isolate-compositional-governance-contribution
 kind: objective
-status: active
+status: achieved
 outcome: governed-compositional-etl-repair
 s_and_t_step: E2
 parent_step: root
@@ -16,6 +16,7 @@ files:
   - evidence/issue-5/sqlmesh-execution-v1.json
   - evidence/issue-5/sketch-review-v1.md
   - .oh/metis/issue-5-projection-regeneration.md
+  - evidence/issue-7/experiment-result-v2.4.json
 ---
 
 # Isolate what compositional governance adds
@@ -38,4 +39,4 @@ All arms use the same raw snapshot, projection starting point, failure order, mo
 
 ## Current evidence
 
-Issue #5 establishes byte-identical native, stage-local CESS, and compositional CESS starting projections compiled from the same allowlisted governing inputs and persistent raw snapshot. Issue #7 must still establish equivalent failure order, repair budget, and reviewer access during the matched run; the issue #5 evidence does not pre-claim those conditions.
+Issue #5 establishes byte-identical starting projections. Valid issue #7 v2.4 holds raw snapshot, projection, reveal order, one-attempt budget, scripted policy, and zero-model budget fixed; evidence visibility is the treatment. The bounded comparison yields `revise`.

@@ -1,13 +1,13 @@
 ---
 id: issue-7-threshold-preregistration
-status: frozen
+status: invalidated
 owner_hat: research-sponsor
 ---
 
-# Threshold preregistration
+# Invalid v1 threshold preregistration
 
-The research-sponsor hat froze `experiments/preregistration-v1.json` after the three-case oracle pilot, four sealed commitments, the genuine local-pass/local-pass edge adjudication, and the issue #6 replay pilot, and before any issue #7 scored arm run.
+The research-sponsor hat froze `experiments/preregistration-v1.json` before the invalid v1 run. Its pseudo-millisecond and replay-wall criteria are preserved only as failed-harness history and do not govern v2.4.
 
-The thresholds demand a large directional effect rather than statistical significance from five scripted visible cases: at least two incremental edge/composition catches, localization and active repair at or above 0.8, revalidation recall 1.0, and zero authority violations, held-out regressions, or escaped composition failures. A compositional operator-cost multiple above 3.0 versus native, or localized replay wall time above 2.0 times full replay, forces revise even if quality thresholds pass. No model is invoked; the frozen model-token budget is zero.
+V1 mislabeled deterministic work units as fabricated milliseconds. After invalidation and before the valid run, commit `e9aa5bb` froze the governing v2.4 criteria: an honest work-unit ceiling of 4.0 and measured wall time as descriptive only. The quality thresholds remain independently demanding, and v2.4 fails them.
 
-These thresholds may not be tuned after results. External publication remains subject to human review and the TPC-DI naming and fair-use gates.
+The valid result is not rescored. External publication remains subject to human review and the TPC-DI naming and fair-use gates.
