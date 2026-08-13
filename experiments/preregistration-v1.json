@@ -1,0 +1,52 @@
+{
+  "corpus_requirements": {
+    "balanced_classes": [
+      "projection_defect",
+      "missing_policy",
+      "verification_gap",
+      "edge_contract_mismatch",
+      "end_to_end_composition"
+    ],
+    "local_pass_edge_minimum": 1,
+    "visible_case_count": 5
+  },
+  "cost_ceiling": {
+    "compositional_operator_ms_multiple_vs_native": 3.0,
+    "localized_replay_wall_ms_multiple_vs_full_replay": 2.0,
+    "model_tokens_per_arm": 0,
+    "repair_attempts_per_case": 1
+  },
+  "decision_rules": {
+    "adopt": {
+      "active_case_repair_rate_min": 0.8,
+      "authority_violations_max": 0,
+      "escaped_composition_failures_max": 0,
+      "held_out_regressions_max": 0,
+      "incremental_edge_or_composition_catches_min": 2,
+      "localization_accuracy_min": 0.8,
+      "revalidation_recall_min": 1.0
+    },
+    "reject": {
+      "incremental_edge_or_composition_catches_max": 0
+    },
+    "revise": "Any result between adopt and reject, any cost-ceiling breach, or any threshold instability."
+  },
+  "frozen_before_scored_run": true,
+  "owner_hat": "research-sponsor",
+  "pilot_basis": {
+    "issue_3_public_oracle_cases": 3,
+    "issue_3_sealed_commitments": 4,
+    "issue_4_local_pass_edge_case_survived": true,
+    "issue_6_cone_semantic_precision": 1.0,
+    "issue_6_cone_semantic_recall": 1.0,
+    "issue_6_full_replay_semantic_recall": 1.0,
+    "rationale": "The pilot establishes stable structural scoring and a genuine edge case, but is too small for statistical inference. Thresholds require a large directional effect, zero safety regressions, and bounded scripted operating cost."
+  },
+  "publication_gates": [
+    "human_review_required",
+    "no_compliant_tpc_di_benchmark_claim",
+    "no_comparative_tpc_performance_claim",
+    "claims_bounded_to_scripted_agents_and_selected_slice"
+  ],
+  "schema_version": "experiment-preregistration/v1"
+}
