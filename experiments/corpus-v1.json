@@ -1,0 +1,126 @@
+{
+  "cases": [
+    {
+      "affected_descendants": [
+        "governed.dim_trade"
+      ],
+      "allowed_artifacts": [
+        "projection.generated.dim_trade"
+      ],
+      "expected_disposition": "resolved",
+      "expected_failure_class": "projection_defect",
+      "expected_location": "projection.generated.dim_trade.status_alias",
+      "findings": {
+        "pipeline": {
+          "artifact": "projection.generated.dim_trade",
+          "failure_class": "projection_defect",
+          "location": "projection.generated.dim_trade.status_alias"
+        }
+      },
+      "id": "projection-status-alias",
+      "local_checks": {
+        "consumer": "fail",
+        "producer": "pass"
+      }
+    },
+    {
+      "affected_descendants": [],
+      "allowed_artifacts": [],
+      "expected_disposition": "inconclusive",
+      "expected_failure_class": "missing_policy",
+      "expected_location": "hole.trade.execution_pricing_policy",
+      "findings": {
+        "stage": {
+          "artifact": null,
+          "failure_class": "missing_policy",
+          "location": "hole.trade.execution_pricing_policy"
+        }
+      },
+      "id": "missing-execution-price-policy",
+      "local_checks": {
+        "consumer": "pass",
+        "producer": "pass"
+      }
+    },
+    {
+      "affected_descendants": [
+        "governed.trade_lifecycle",
+        "governed.dim_trade"
+      ],
+      "allowed_artifacts": [
+        "verification.lifecycle_order"
+      ],
+      "expected_disposition": "resolved",
+      "expected_failure_class": "verification_gap",
+      "expected_location": "verification.lifecycle_order.missing_audit",
+      "findings": {
+        "pipeline": {
+          "artifact": "verification.lifecycle_order",
+          "failure_class": "verification_gap",
+          "location": "verification.lifecycle_order.missing_audit"
+        }
+      },
+      "id": "verification-lifecycle-audit-gap",
+      "local_checks": {
+        "consumer": "fail",
+        "producer": "pass"
+      }
+    },
+    {
+      "affected_descendants": [
+        "logical.dim_trade",
+        "duckdb.dim_trade",
+        "metric.trade_lifecycle_seconds"
+      ],
+      "allowed_artifacts": [
+        "sketch.edge.trade_history_to_dim_trade"
+      ],
+      "expected_disposition": "resolved",
+      "expected_failure_class": "edge_contract_mismatch",
+      "expected_location": "edge.trade_history_to_dim_trade.create_close_time",
+      "findings": {
+        "contract": {
+          "artifact": "sketch.edge.trade_history_to_dim_trade",
+          "failure_class": "edge_contract_mismatch",
+          "location": "edge.trade_history_to_dim_trade.create_close_time"
+        }
+      },
+      "id": "edge-history-creation-time",
+      "local_checks": {
+        "consumer": "pass",
+        "producer": "pass"
+      }
+    },
+    {
+      "affected_descendants": [
+        "metric.trade_lifecycle_seconds"
+      ],
+      "allowed_artifacts": [
+        "sketch.path.trade_lifecycle_metric"
+      ],
+      "expected_disposition": "resolved",
+      "expected_failure_class": "end_to_end_composition",
+      "expected_location": "path.dim_trade_to_lifecycle_metric.timestamp_roles",
+      "findings": {
+        "path": {
+          "artifact": "sketch.path.trade_lifecycle_metric",
+          "failure_class": "end_to_end_composition",
+          "location": "path.dim_trade_to_lifecycle_metric.timestamp_roles"
+        }
+      },
+      "id": "composition-lifecycle-duration-roles",
+      "local_checks": {
+        "consumer": "pass",
+        "producer": "pass"
+      }
+    }
+  ],
+  "reveal_order": [
+    "projection-status-alias",
+    "missing-execution-price-policy",
+    "verification-lifecycle-audit-gap",
+    "edge-history-creation-time",
+    "composition-lifecycle-duration-roles"
+  ],
+  "schema_version": "matched-experiment-corpus/v1"
+}

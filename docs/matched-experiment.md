@@ -1,0 +1,9 @@
+# Matched scripted experiment
+
+Issue #7 uses deterministic scripted agents because an LLM comparison with stable model and reviewer budgets was not available in this environment. Model calls and tokens are therefore exactly zero. This is a simulation of the information boundaries, not evidence about general model performance.
+
+The five visible cases cover a projection defect, unresolved missing policy, verification gap, genuine local-pass/local-pass edge mismatch, and end-to-end path failure. All arms share the same issue #2 raw manifest hash, issue #5 projection hash, reveal order, one-attempt budget, context ceiling, live replay probe, and sealed four-case custody check. The intended treatment is information access: pipeline findings only; pipeline plus independent stage findings; or pipeline/stage plus governed contracts, path invariants, and issue #6 cones.
+
+The arm-independent scorer compares structural proposals with the frozen corpus. Every trace retains the deterministic gate and separate Sketch review, actual before/after artifact state and unified diff, allowed-surface check, and any cone. Missing policy remains inconclusive and unchanged. Held-out fixtures are accessed only inside the sealed scorer after the visible acceptance phase; arm-specific scripted submissions are scored inside temporary custody and only aggregate counts are retained. Native regresses one local held-out neighbor (3/4); stage-local and compositional pass 4/4. These are scripted-agent results, not model generalization claims.
+
+The compositional arm adds two edge/composition catches and has no escaped composition failures, but breaches the preregistered scripted operator-cost ceiling: 240 scripted milliseconds versus 70 for native, a 3.43 multiple. The sponsor decision is therefore **revise**, not adopt. Measured compute wall time is descriptive, not a TPC performance comparison or speed claim.
