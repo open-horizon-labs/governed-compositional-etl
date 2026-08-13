@@ -1,0 +1,25 @@
+{
+  "documents": {
+    "contracts/artifact-classification-v1.json": "82ad04f5e165d277f84e23386271e26fb672329fb5d8e7f8671737e411db848b",
+    "contracts/edges/trade-history-to-dim-trade-v1.json": "78d7df0ca362a116d19d8293944a7cc1479457347e5720bb1610884c0f545474",
+    "contracts/logical-models/dim-trade-v1.json": "449b9aababe85a86ebce0bf1610a0a2df2192237b2ad4cc3914978c6362edeeb",
+    "contracts/repair-authority/trade-lifecycle-edge-v1.json": "20d7a5a3961acc493134ee2092055d158e673f132bcffb54fd360eb37a6b3f72",
+    "contracts/semantic-types/trade-types-v1.json": "26481afeb3ef6cdbe54909cf1fee0031139c1f860df4cecf1c507100c9d9757a",
+    "contracts/sources/tpcdi-trade-source-v1.json": "7e08e49e71f8f0ffb2bdcae0d9d8926b12c3d2ba511fe712876e301cd94eaf69",
+    "contracts/stages/dim-trade-consumer-v1.json": "d45851c4d116335326aeee983f0353617a408ffeb6f052b60662ecff92664011",
+    "contracts/stages/trade-history-v1.json": "e44f953936cbc6be6a7860af9b1d1b0f2203f4fc65f044c8f477fc2defcff349",
+    "contracts/stages/trade-type-reference-v1.json": "c9f91aa6def13164ef1a3eb426deca5191107940e8f3b133afca7d6e7002d82a",
+    "contracts/stages/trade-v1.json": "2b76b3c42faa2637c28d1ffa8788db3d94c6053f149c71433a4b50c0c3f8f281",
+    "evidence/issue-3/source-anchors-v1.json": "9762cac929b662206d6b52939390343be282bc8539d43e6e266790fd2de82df8",
+    "sketches/trade-dim-v1.md": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc"
+  },
+  "parameters": {
+    "contracts/edges/trade-history-to-dim-trade-v1.json": [
+      "/history_policy/close_statuses",
+      "/history_policy/limit_creation_status",
+      "/history_policy/market_creation_status",
+      "/history_policy/market_trade_types"
+    ]
+  },
+  "schema_version": "bounded-compiler-profile/v1"
+}

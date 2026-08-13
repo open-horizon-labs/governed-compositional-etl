@@ -72,7 +72,7 @@ class GovernedProjectionTests(unittest.TestCase):
         second = COMPILER.compile_projection(self.temp_dir, retain=False)
         self.assertEqual(first, second)
         paths = [item["path"] for item in second["compiler_inputs"]]
-        self.assertEqual(paths, list(COMPILER.GOVERNING_INPUTS))
+        self.assertEqual(paths, list(COMPILER.COMPILER_INPUTS))
         self.assertFalse(any(path.startswith("oracle/") for path in paths))
         self.assertFalse(any("counterexamples/archive" in path for path in paths))
         self.assertFalse(any("held-out" in path for path in paths))
@@ -110,10 +110,67 @@ class GovernedProjectionTests(unittest.TestCase):
         expected |= {("contracts/logical-models/dim-trade-v1.json", f"/attributes/{index}") for index, _ in enumerate(inputs["contracts/logical-models/dim-trade-v1.json"]["attributes"])}
         expected |= {("contracts/edges/trade-history-to-dim-trade-v1.json", f"/rules/{index}") for index, _ in enumerate(inputs["contracts/edges/trade-history-to-dim-trade-v1.json"]["rules"])}
         expected |= {("contracts/edges/trade-history-to-dim-trade-v1.json", f"/mappings/{index}") for index, _ in enumerate(inputs["contracts/edges/trade-history-to-dim-trade-v1.json"]["mappings"])}
+        expected |= {("contracts/edges/trade-history-to-dim-trade-v1.json", f"/history_policy/{key}") for key in ("market_trade_types", "market_creation_status", "limit_creation_status", "close_statuses")}
         expected |= {("contracts/sources/tpcdi-trade-source-v1.json", f"/authority/{index}") for index, _ in enumerate(inputs["contracts/sources/tpcdi-trade-source-v1.json"]["authority"])}
         observed = {(item["source"]["path"], item["source"]["pointer"]) for item in manifest["lineage"]}
         self.assertEqual(observed, expected)
         self.assertEqual({item["source"]["authority"] for item in manifest["lineage"] if item["source"]["pointer"] in {"/mappings/1", "/mappings/2"}}, {"tpc-di-1.1.0-4.5.8.2-create-close"})
+
+    def test_canonical_profile_rejects_an_unconsumed_mutation_in_every_document(self):
+        for path in COMPILER.GOVERNING_INPUTS:
+            inputs = COMPILER.load_inputs()
+            document = inputs[path]
+            if isinstance(document, str):
+                inputs[path] = document + "\nunauthorized policy-bearing text\n"
+            else:
+                document["schema_version"] = f"{document.get('schema_version', 'missing')}-changed"
+            with self.subTest(path=path), self.assertRaises(COMPILER.ProjectionError):
+                COMPILER.render_project(inputs)
+
+    def test_profile_parameter_values_drive_sql_and_lineage(self):
+        inputs = COMPILER.load_inputs()
+        policy = inputs["contracts/edges/trade-history-to-dim-trade-v1.json"]["history_policy"]
+        policy["market_trade_types"] = ["ABC", "XYZ"]
+        policy["market_creation_status"] = "OPEN"
+        policy["limit_creation_status"] = "WAIT"
+        policy["close_statuses"] = ["DONE"]
+        files, expressions = COMPILER.render_project(inputs)
+        lifecycle = files["models/trade_lifecycle.sql"]
+        for literal in ("ABC", "XYZ", "OPEN", "WAIT", "DONE"):
+            self.assertIn(f"'{literal}'", lifecycle)
+        lineage = COMPILER.lineage_manifest(inputs)
+        pointers = {item["source"]["pointer"] for item in lineage}
+        self.assertTrue({"/history_policy/market_trade_types", "/history_policy/close_statuses"} <= pointers)
+        self.assertEqual(set(expressions), {"trade_creation_timestamp", "trade_close_timestamp"})
+
+    def test_canonical_profile_rejects_reproduced_policy_shape_mutations(self):
+        cases = {
+            "edge ordering": lambda i: i["contracts/edges/trade-history-to-dim-trade-v1.json"]["history_policy"].__setitem__("ordering", "status_updated_at descending within trade_id"),
+            "edge resolution": lambda i: i["contracts/edges/trade-history-to-dim-trade-v1.json"]["history_policy"].__setitem__("resolution", "one millisecond"),
+            "trade grain": lambda i: i["contracts/sources/tpcdi-trade-source-v1.json"]["entities"][2].__setitem__("grain", "one row per account"),
+            "trade identifier": lambda i: i["contracts/sources/tpcdi-trade-source-v1.json"]["entities"][2]["identifiers"].__setitem__(0, "t_st_id"),
+            "trade status type": lambda i: i["contracts/stages/trade-v1.json"]["input"]["fields"][2].__setitem__("semantic_type", "status_name"),
+            "logical grain": lambda i: i["contracts/logical-models/dim-trade-v1.json"].__setitem__("grain", "one row per account"),
+            "logical identity": lambda i: i["contracts/logical-models/dim-trade-v1.json"].__setitem__("identifiers", ["status"]),
+            "edge consumer grain": lambda i: i["contracts/edges/trade-history-to-dim-trade-v1.json"]["consumer"].__setitem__("grain", "many rows per trade_id"),
+            "edge identity": lambda i: i["contracts/edges/trade-history-to-dim-trade-v1.json"]["producer"].__setitem__("identity_join", "status_id"),
+            "stage Sketch review": lambda i: i["contracts/stages/trade-v1.json"]["verification"].pop(),
+            "edge deterministic gate": lambda i: i["contracts/edges/trade-history-to-dim-trade-v1.json"]["verification"].pop(0),
+            "repair adjudication basis": lambda i: i["contracts/repair-authority/trade-lifecycle-edge-v1.json"]["active_authority"]["basis"].pop(),
+            "repair forbidden set": lambda i: i["contracts/repair-authority/trade-lifecycle-edge-v1.json"]["forbidden_adjacent_policy"].pop(),
+            "repair conflict": lambda i: i["contracts/repair-authority/trade-lifecycle-edge-v1.json"]["conflict_behavior"].__setitem__("projection_edit", "allow"),
+            "projection replaceability": lambda i: i["contracts/artifact-classification-v1.json"]["artifacts"][2].__setitem__("repair_mode", "edit_in_place"),
+            "Sketch policy authority": lambda i: i["contracts/artifact-classification-v1.json"]["artifacts"][0].__setitem__("policy_authority", False),
+            "anchor custody": lambda i: i["evidence/issue-3/source-anchors-v1.json"]["generated_source"]["extraction"].__setitem__("method", "unverified copy"),
+            "anchor hash": lambda i: i["evidence/issue-3/source-anchors-v1.json"]["generated_source"]["manifest_slice_sha256"].__setitem__("trade", "0" * 64),
+            "anchor deletion": lambda i: i["evidence/issue-3/source-anchors-v1.json"]["authority"]["rules"].pop(),
+            "anchor hash structure": lambda i: i["evidence/issue-3/source-anchors-v1.json"]["generated_source"].__setitem__("manifest_slice_sha256", []),
+        }
+        for label, mutate in cases.items():
+            inputs = COMPILER.load_inputs()
+            mutate(inputs)
+            with self.subTest(label=label), self.assertRaises(COMPILER.ProjectionError):
+                COMPILER.render_project(inputs)
 
     def test_preflight_rejects_governing_shape_mutations_and_injection(self):
         mutations = []

@@ -66,6 +66,10 @@
     {
       "path": "contracts/artifact-classification-v1.json",
       "sha256": "c2bd4f203211121c4aaacea210e1c8f3f7257bbe8294f7c6d51560af9d9dc7bb"
+    },
+    {
+      "path": "contracts/compiler-profile-trade-dim-v1.json",
+      "sha256": "d2a1757b15a4d650cb9e787a46b82e2396dc18b4c889650497def5119b5de061"
     }
   ],
   "dependencies": {
@@ -91,6 +95,90 @@
     "models/trade_type_reference.sql": "005f4562a3333a18c39d0f428e51cb3eaf99547cda9c4ec816dcd3eab1c83696"
   },
   "lineage": [
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/history_policy/close_statuses"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [
+          "closed_at"
+        ],
+        "expressions": [
+          "trade_close_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/history_policy/limit_creation_status"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [
+          "created_at"
+        ],
+        "expressions": [
+          "trade_creation_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/history_policy/market_creation_status"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [
+          "created_at"
+        ],
+        "expressions": [
+          "trade_creation_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/history_policy/market_trade_types"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [
+          "created_at"
+        ],
+        "expressions": [
+          "trade_creation_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
+    },
     {
       "source": {
         "authority": "tpc-di-1.1.0-4.5.8.1",

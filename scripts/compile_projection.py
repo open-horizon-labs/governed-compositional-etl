@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import importlib.metadata
 import importlib.util
@@ -21,6 +22,7 @@ from sqlglot import exp, parse_one
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "build/issue5-projection"
 RETAINED_MANIFEST = ROOT / "projection/manifest-v1.json"
+PROFILE_PATH = "contracts/compiler-profile-trade-dim-v1.json"
 ARMS = ("native", "stage_local_cess", "compositional_cess")
 GOVERNING_INPUTS = (
     "sketches/trade-dim-v1.md",
@@ -36,6 +38,7 @@ GOVERNING_INPUTS = (
     "contracts/repair-authority/trade-lifecycle-edge-v1.json",
     "contracts/artifact-classification-v1.json",
 )
+COMPILER_INPUTS = (*GOVERNING_INPUTS, PROFILE_PATH)
 FORBIDDEN_CONTEXT = (
     "oracle/",
     "counterexamples/archive/",
@@ -178,6 +181,98 @@ def load_inputs() -> dict[str, object]:
     return loaded
 
 
+def remove_pointer(document: object, pointer: str) -> None:
+    parts = pointer.removeprefix("/").split("/")
+    parent = document
+    for part in parts[:-1]:
+        parent = parent[int(part)] if isinstance(parent, list) else parent[part]
+    del parent[parts[-1]]
+
+
+def normalized_document(document: object, parameters: list[str]) -> bytes:
+    if isinstance(document, str):
+        if parameters:
+            raise ProjectionError("text compiler inputs cannot expose parameters")
+        return document.encode()
+    normalized = copy.deepcopy(document)
+    try:
+        for pointer in parameters:
+            remove_pointer(normalized, pointer)
+    except (KeyError, IndexError, TypeError) as error:
+        raise ProjectionError("compiler profile parameter pointer does not resolve") from error
+    return json.dumps(normalized, sort_keys=True, separators=(",", ":")).encode()
+
+
+def compare_canonical(
+    actual: object,
+    expected: object,
+    allowed_parameters: set[str],
+    pointer: str = "",
+) -> None:
+    if pointer in allowed_parameters:
+        return
+    if type(actual) is not type(expected):
+        raise ProjectionError(f"canonical governing type changed at {pointer or '/'}")
+    if isinstance(expected, dict):
+        if set(actual) != set(expected):
+            raise ProjectionError(f"canonical governing fields changed at {pointer or '/'}")
+        for key in expected:
+            escaped = key.replace("~", "~0").replace("/", "~1")
+            compare_canonical(actual[key], expected[key], allowed_parameters, f"{pointer}/{escaped}")
+    elif isinstance(expected, list):
+        if len(actual) != len(expected):
+            raise ProjectionError(f"canonical governing list changed at {pointer or '/'}")
+        for index, item in enumerate(expected):
+            compare_canonical(actual[index], item, allowed_parameters, f"{pointer}/{index}")
+    elif actual != expected:
+        raise ProjectionError(f"canonical governing value changed at {pointer or '/'}")
+
+
+def validate_canonical_profile(inputs: dict[str, object]) -> dict:
+    profile_file = validate_input_path(PROFILE_PATH, COMPILER_INPUTS)
+    staged = subprocess.run(
+        ["git", "show", f":{PROFILE_PATH}"], cwd=ROOT, capture_output=True, check=False
+    )
+    if staged.returncode or staged.stdout != profile_file.read_bytes():
+        raise ProjectionError("bounded compiler profile differs from its tracked index version")
+    try:
+        profile = json.loads(profile_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ProjectionError("bounded compiler profile is invalid JSON") from error
+    require_equal(set(profile), {"schema_version", "documents", "parameters"}, "compiler profile fields")
+    require_equal(profile["schema_version"], "bounded-compiler-profile/v1", "compiler profile version")
+    require_equal(set(profile["documents"]), set(GOVERNING_INPUTS), "compiler profile documents")
+    require_equal(
+        profile["parameters"],
+        {"contracts/edges/trade-history-to-dim-trade-v1.json": [
+            "/history_policy/close_statuses",
+            "/history_policy/limit_creation_status",
+            "/history_policy/market_creation_status",
+            "/history_policy/market_trade_types",
+        ]},
+        "compiler profile parameters",
+    )
+    for path in GOVERNING_INPUTS:
+        indexed = subprocess.run(
+            ["git", "show", f":{path}"], cwd=ROOT, capture_output=True, check=False
+        )
+        if indexed.returncode:
+            raise ProjectionError(f"canonical governing input is absent from index: {path}")
+        expected = (
+            json.loads(indexed.stdout)
+            if path.endswith(".json")
+            else indexed.stdout.decode()
+        )
+        compare_canonical(
+            inputs[path], expected, set(profile["parameters"].get(path, []))
+        )
+        digest = sha256_bytes(
+            normalized_document(inputs[path], profile["parameters"].get(path, []))
+        )
+        require_equal(digest, profile["documents"][path], f"canonical document {path}")
+    return profile
+
+
 def require_equal(actual: object, expected: object, label: str) -> None:
     if actual != expected:
         raise ProjectionError(f"unsupported governing shape at {label}")
@@ -193,6 +288,7 @@ def json_pointer_get(document: object, pointer: str) -> object:
 
 def preflight(inputs: dict[str, object]) -> None:
     require_equal(set(inputs), set(GOVERNING_INPUTS), "compiler input set")
+    validate_canonical_profile(inputs)
     sketch = inputs["sketches/trade-dim-v1.md"]
     for required in (
         "status: incomplete",
@@ -351,10 +447,12 @@ def preflight(inputs: dict[str, object]) -> None:
         "edge governed rules",
     )
     policy = edge["history_policy"]
-    require_equal(policy["market_trade_types"], ["TMB", "TMS"], "market trade types")
-    require_equal(policy["market_creation_status"], "SBMT", "market creation status")
-    require_equal(policy["limit_creation_status"], "PNDG", "limit creation status")
-    require_equal(policy["close_statuses"], ["CMPT", "CNCL"], "close statuses")
+    for key in ("market_trade_types", "close_statuses"):
+        if not isinstance(policy[key], list) or not policy[key] or len(policy[key]) != len(set(policy[key])):
+            raise ProjectionError(f"{key} must be a nonempty distinct finite enum")
+    for key in ("market_creation_status", "limit_creation_status"):
+        if not isinstance(policy[key], str):
+            raise ProjectionError(f"{key} must be a finite enum code")
     for value in [*policy["market_trade_types"], policy["market_creation_status"], policy["limit_creation_status"], *policy["close_statuses"]]:
         if not POLICY_CODE.fullmatch(value):
             raise ProjectionError("policy code is outside the finite safe enum")
@@ -584,6 +682,16 @@ def lineage_manifest(inputs: dict[str, object]) -> list[dict]:
             "source": {"path": edge_path, "pointer": f"/mappings/{index}", "authority": mapping["authority"]},
             "targets": {"models": ["governed.trade_lifecycle", "governed.dim_trade"], "columns": [column], "expressions": expression, "audits": ["valid_lifecycle_order"] if expression else ["not_null_trade_id"]},
         })
+    for key, expressions in (
+        ("market_trade_types", ["trade_creation_timestamp"]),
+        ("market_creation_status", ["trade_creation_timestamp"]),
+        ("limit_creation_status", ["trade_creation_timestamp"]),
+        ("close_statuses", ["trade_close_timestamp"]),
+    ):
+        entries.append({
+            "source": {"path": edge_path, "pointer": f"/history_policy/{key}", "authority": "tpc-di-1.1.0-4.5.8.2-create-close"},
+            "targets": {"models": ["governed.trade_lifecycle"], "columns": ["created_at" if expressions == ["trade_creation_timestamp"] else "closed_at"], "expressions": expressions, "audits": ["valid_lifecycle_order"]},
+        })
     source_path = "contracts/sources/tpcdi-trade-source-v1.json"
     model_by_clause = {"2.2.2.13": "status_type_reference", "2.2.2.16": "trade_history_stage", "2.2.2.17": "trade_stage", "2.2.2.18": "trade_type_reference"}
     for index, authority in enumerate(inputs[source_path]["authority"]):
@@ -605,7 +713,7 @@ def build_manifest(inputs: dict[str, object], files: dict[str, str], expressions
     return {
         "schema_version": "projection-manifest/v1",
         "classification": "replaceable_projection_evidence",
-        "compiler_inputs": [{"path": path, "sha256": sha256_bytes((ROOT / path).read_bytes())} for path in GOVERNING_INPUTS],
+        "compiler_inputs": [{"path": path, "sha256": sha256_bytes((ROOT / path).read_bytes())} for path in COMPILER_INPUTS],
         "excluded_context": list(FORBIDDEN_CONTEXT),
         "dependencies": {name: importlib.metadata.version(name) for name in ("duckdb", "sqlglot", "sqlmesh")},
         "files": file_hashes,
