@@ -1,0 +1,90 @@
+{
+  "claim": "bounded historical Trade slice; correctness precedes cone size",
+  "cone": {
+    "all_revalidation_nodes": [
+      "duckdb.dim_trade",
+      "governed.dim_trade",
+      "governed.trade_lifecycle",
+      "logical.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
+    "change_id": "edge.create_status",
+    "changed_pointer": "/history_policy/market_creation_status",
+    "check_count": 5,
+    "checks": [
+      "edge-trade-history-create-time-v1",
+      "invariant.dim_trade_identity",
+      "invariant.lifecycle_duration",
+      "local-trade-type-name-v1",
+      "sqlmesh.audits"
+    ],
+    "escaped_regressions": [],
+    "executable_revalidation": [
+      "governed.dim_trade",
+      "governed.trade_lifecycle"
+    ],
+    "execution": {
+      "elapsed_ms": 1238.774,
+      "results": {
+        "edge-trade-history-create-time-v1": true,
+        "invariant.dim_trade_identity": true,
+        "invariant.lifecycle_duration": true,
+        "local-trade-type-name-v1": true,
+        "sqlmesh.audits": true
+      }
+    },
+    "node_count": 5,
+    "precision": 1.0,
+    "recall": 1.0,
+    "semantic_descendants": [
+      "duckdb.dim_trade",
+      "logical.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
+    "unnecessary_recomputation": []
+  },
+  "full_replay_control": {
+    "check_count": 5,
+    "escaped_regressions": [],
+    "execution": {
+      "elapsed_ms": 1196.84,
+      "results": {
+        "edge-trade-history-create-time-v1": true,
+        "invariant.dim_trade_identity": true,
+        "invariant.lifecycle_duration": true,
+        "local-trade-type-name-v1": true,
+        "sqlmesh.audits": true
+      }
+    },
+    "node_count": 14,
+    "nodes": [
+      "duckdb.dim_trade.lifecycle",
+      "duckdb.dim_trade.type",
+      "edge.trade_history_to_dim_trade.create_close_time",
+      "edge.trade_type_to_dim_trade",
+      "governed.dim_trade",
+      "governed.status_type_reference",
+      "governed.trade_history_stage",
+      "governed.trade_lifecycle",
+      "governed.trade_stage",
+      "governed.trade_type_reference",
+      "logical.dim_trade.lifecycle",
+      "logical.dim_trade.type",
+      "metric.trade_lifecycle_seconds",
+      "stage.trade_type_reference.type_name"
+    ],
+    "precision": 0.6,
+    "recall": 1.0,
+    "unnecessary_recomputation": [
+      "edge.trade_type_to_dim_trade",
+      "stage.trade_type_reference.type_name"
+    ]
+  },
+  "schema_version": "revalidation-report/v1",
+  "separation": {
+    "accepted_ce_archive": "counterexamples/archive/index-v1.json",
+    "curated_regression_set": "regressions/curated-v1.json",
+    "executable_dependencies": "contracts/revalidation-profile-v1.json#/executable_dependencies",
+    "semantic_dependencies": "contracts/revalidation-profile-v1.json#/semantic_dependencies"
+  }
+}
