@@ -121,8 +121,22 @@
         },
         "fields": {
           "items": {
-            "minLength": 1,
-            "type": "string"
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "semantic_type": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "semantic_type"
+            ],
+            "type": "object"
           },
           "minItems": 1,
           "type": "array",

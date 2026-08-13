@@ -39,7 +39,9 @@ The issue #3 candidate therefore survives issue #4 adjudication as a bounded edg
 
 - Trade and TradeHistory producer mappings pass independently.
 - The DimTrade consumer faithfully copies the supplied typed handoff and passes its local time-order check.
-- The handoff binds `trade_record_timestamp` to `trade_creation_timestamp` and supplies the wrong value; the edge contract fails.
+- The handoff binds the Trade producer's `trade_recorded_at` field where the edge requires the TradeHistory producer's status-qualified field and supplies the wrong value; the edge contract fails.
+
+The adjudicator resolves every evidence binding through its referenced producer contract and checks the edge target against the consumer's semantic-type-bearing input contract. Evidence cannot declare its own semantic type. The identity join is also executable: every history observation in a checked lifecycle must carry the same `trade_id` as its Trade row; missing, foreign, or mixed identities are rejected.
 
 This result retires the edge-versus-local risk only for this historical case. Incremental lifecycle composition remains an explicit hole.
 

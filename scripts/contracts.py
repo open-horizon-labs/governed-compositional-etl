@@ -81,9 +81,13 @@ def validate_hole(hole: object) -> dict:
 
 def require_policy_authority(authority: object) -> dict:
     value = exact_keys(authority, {"kind", "id", "source", "locator"}, "authority")
+    for field in ("id", "source", "locator"):
+        nonempty_string(value[field], f"authority.{field}")
     if value["kind"] == "tpc_di_rule":
         if not TPC_RULE.fullmatch(value["id"]):
             raise ContractError("TPC-DI policy authority must name a 1.1.0 rule")
+        if not value["source"].startswith("https://www.tpc.org/"):
+            raise ContractError("TPC-DI policy authority must name the TPC specification")
     elif value["kind"] == "approved_decision":
         if not value["source"].startswith(".oh/"):
             raise ContractError("approved policy authority must name a repository decision")
@@ -117,6 +121,74 @@ def validate_semantic_mapping(mapping: dict, semantic_types: dict[str, dict]) ->
         )
 
 
+def validate_rule_order(contract: dict, name: str) -> None:
+    rule_ids = [rule.get("id") for rule in contract.get("rules", [])]
+    rule_order = contract.get("rule_order", [])
+    if len(rule_ids) != len(set(rule_ids)) or rule_order != list(
+        dict.fromkeys(rule_order)
+    ):
+        raise ContractError(f"{name} rule ids and rule order must be unique")
+    if set(rule_ids) != set(rule_order):
+        raise ContractError(
+            f"{name} rule_order must exactly cover declared rules; verification is separate"
+        )
+
+
+def output_field(contract: dict, field_name: str) -> dict:
+    matches = [
+        field
+        for field in contract.get("output", {}).get("fields", [])
+        if field.get("name") == field_name
+    ]
+    if len(matches) != 1:
+        raise ContractError(
+            f"{contract.get('contract_id')} must expose exactly one output field {field_name}"
+        )
+    return matches[0]
+
+
+def validate_edge_bindings(
+    stages: dict[str, dict], edge: dict, semantic_types: dict[str, dict]
+) -> None:
+    producer_ids = edge["producer"]["contracts"]
+    producers = {
+        stages[contract_id]["stage_id"]: stages[contract_id]
+        for contract_id in producer_ids
+    }
+    consumer = stages[edge["consumer"]["contract"]]
+    consumer_entity = consumer["input"]["entity"]
+    consumer_fields = {
+        field["name"]: field["semantic_type"] for field in consumer["input"]["fields"]
+    }
+
+    identity = edge["producer"]["identity_join"]
+    if identity != "trade_id":
+        raise ContractError("bounded lifecycle edge identity_join must be trade_id")
+    for producer in producers.values():
+        if output_field(producer, identity)["semantic_type"] != "trade_id":
+            raise ContractError("every lifecycle producer identity must have trade_id meaning")
+
+    for mapping in edge["mappings"]:
+        stage_id, separator, source_name = mapping["from"].rpartition(".")
+        if not separator or stage_id not in producers:
+            raise ContractError("edge mapping must reference a declared producer output")
+        derived_source_type = output_field(producers[stage_id], source_name)[
+            "semantic_type"
+        ]
+        if mapping["source_semantic_type"] != derived_source_type:
+            raise ContractError(
+                "edge source semantic type must match the referenced producer contract"
+            )
+        target_entity, separator, target_name = mapping["to"].rpartition(".")
+        if not separator or target_entity != consumer_entity:
+            raise ContractError("edge mapping must target the declared consumer entity")
+        if consumer_fields.get(target_name) != mapping["target_semantic_type"]:
+            raise ContractError(
+                "edge target semantic type must match the consumer input contract"
+            )
+        validate_semantic_mapping(mapping, semantic_types)
+
+
 def validate_repair_authority(record: dict) -> None:
     if record.get("schema_version") != "repair-authority/v1":
         raise ContractError("repair authority version is invalid")
@@ -136,8 +208,15 @@ def validate_repair_authority(record: dict) -> None:
     active = exact_keys(
         record.get("active_authority"), {"hat", "scope", "basis"}, "active authority"
     )
-    if not active["hat"] or not active["scope"] or not active["basis"]:
+    if (
+        not active["hat"]
+        or not active["scope"]
+        or not isinstance(active["basis"], list)
+        or not active["basis"]
+    ):
         raise ContractError("repair authority must name the active conceptual hat and basis")
+    for authority in active["basis"]:
+        require_policy_authority(authority)
 
 
 def validate_projection_classification(classification: dict) -> None:
@@ -251,6 +330,7 @@ def validate_bundle() -> dict:
             raise ContractError("stage contract ids must be unique")
         stage_documents[contract_id] = contract
         holes.extend(validate_hole(hole) for hole in contract.get("holes", []))
+        validate_rule_order(contract, contract_id)
         rule_order = contract.get("rule_order", [])
         for rule in contract.get("rules", []):
             if rule.get("id") not in rule_order or not TPC_RULE.fullmatch(
@@ -260,6 +340,9 @@ def validate_bundle() -> dict:
         for field in contract.get("output", {}).get("fields", []):
             if field.get("semantic_type") not in semantic_types:
                 raise ContractError("stage output references an unknown semantic type")
+        for field in contract.get("input", {}).get("fields", []):
+            if field.get("semantic_type") not in semantic_types:
+                raise ContractError("stage input references an unknown semantic type")
 
     edge = load_json(ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json")
     validate_instance(schemas["edge-contract-v1.schema.json"], edge, "edge contract")
@@ -271,14 +354,11 @@ def validate_bundle() -> dict:
             raise ContractError("edge producer references an unknown stage contract")
     if edge.get("consumer", {}).get("contract") not in stage_documents:
         raise ContractError("edge consumer references an unknown stage contract")
-    edge_rule_ids = {rule.get("id") for rule in edge.get("rules", [])}
-    if not edge_rule_ids <= set(edge.get("rule_order", [])):
-        raise ContractError("edge rule order omits a governed rule")
+    validate_rule_order(edge, edge["contract_id"])
     for rule in edge.get("rules", []):
         if not TPC_RULE.fullmatch(rule.get("authority", "")):
             raise ContractError("edge rules need named TPC-DI authority")
-    for mapping in edge.get("mappings", []):
-        validate_semantic_mapping(mapping, semantic_types)
+    validate_edge_bindings(stage_documents, edge, semantic_types)
 
     repair_records = []
     for path in sorted((ROOT / "contracts/repair-authority").glob("*.json")):
@@ -337,6 +417,21 @@ def validate_consumer(contract: dict, handoff: dict, output: dict) -> bool:
 
 def expected_edge_handoff(edge: dict, trade: dict, history: list[dict]) -> dict:
     policy = edge["history_policy"]
+    identity_join = edge["producer"]["identity_join"]
+    if identity_join not in trade:
+        raise ContractError("trade producer output is missing the governed edge identity")
+    trade_id = trade[identity_join]
+    if not history:
+        raise ContractError("candidate history is empty")
+    foreign_rows = [
+        row
+        for row in history
+        if identity_join not in row or row[identity_join] != trade_id
+    ]
+    if foreign_rows:
+        raise ContractError(
+            "candidate history contains a missing, foreign, or mixed trade identity"
+        )
     creation_status = (
         policy["market_creation_status"]
         if trade["trade_type_id"] in policy["market_trade_types"]
@@ -353,16 +448,37 @@ def expected_edge_handoff(edge: dict, trade: dict, history: list[dict]) -> dict:
     if len(created) != 1 or len(closed) != 1:
         raise ContractError("candidate history does not satisfy edge status selectors")
     return {
-        "trade_id": trade["trade_id"],
+        "trade_id": trade_id,
         "created_at": created[0],
         "closed_at": closed[0],
     }
 
 
-def adjudicate_candidate(
-    stages: dict[str, dict], edge: dict, semantic_types: dict[str, dict]
+def resolve_evidence_binding(
+    binding: object, stages: dict[str, dict], edge: dict
 ) -> dict:
-    case = load_json(ROOT / "evidence/issue-4/candidate-edge-check-v1.json")
+    value = exact_keys(
+        binding, {"producer_contract", "source_field"}, "evidence handoff binding"
+    )
+    contract_id = value["producer_contract"]
+    if contract_id not in edge["producer"]["contracts"] or contract_id not in stages:
+        raise ContractError("evidence binding must reference a declared producer contract")
+    producer = stages[contract_id]
+    field = output_field(producer, value["source_field"])
+    return {
+        "reference": f"{producer['stage_id']}.{field['name']}",
+        "semantic_type": field["semantic_type"],
+    }
+
+
+def adjudicate_candidate(
+    stages: dict[str, dict],
+    edge: dict,
+    semantic_types: dict[str, dict],
+    case: dict | None = None,
+) -> dict:
+    if case is None:
+        case = load_json(ROOT / "evidence/issue-4/candidate-edge-check-v1.json")
     trade_contract = stages["stage.trade.v1"]
     history_contract = stages["stage.trade_history.v1"]
     consumer_contract = stages["stage.dim_trade_consumer.v1"]
@@ -378,14 +494,23 @@ def adjudicate_candidate(
     expected_handoff = expected_edge_handoff(
         edge, case["trade_stage_output"], case["history_stage_output"]
     )
-    created_mapping = next(
-        mapping for mapping in edge["mappings"] if mapping["to"].endswith("created_at")
+    mappings = {mapping["to"].rpartition(".")[2]: mapping for mapping in edge["mappings"]}
+    if set(case["handoff_bindings"]) != set(mappings):
+        raise ContractError("evidence must bind every and only governed handoff field")
+    resolved_bindings = {
+        name: resolve_evidence_binding(binding, stages, edge)
+        for name, binding in case["handoff_bindings"].items()
+    }
+    binding_pass = all(
+        resolved_bindings[name]["reference"] == mapping["from"]
+        and resolved_bindings[name]["semantic_type"]
+        == mapping["source_semantic_type"]
+        for name, mapping in mappings.items()
     )
-    actual_type = case["handoff_bindings"]["created_at"]["source_semantic_type"]
-    required_type = created_mapping["target_semantic_type"]
-    edge_pass = expected_handoff == case["consumer_input"] and semantic_type_compatible(
-        actual_type, required_type
-    )
+    edge_pass = expected_handoff == case["consumer_input"] and binding_pass
+    created_binding = resolved_bindings["created_at"]
+    actual_type = created_binding["semantic_type"]
+    required_type = mappings["created_at"]["target_semantic_type"]
     if not (trade_pass and history_pass and consumer_pass) or edge_pass:
         raise ContractError(
             "candidate does not demonstrate local producer/consumer passes with edge failure"

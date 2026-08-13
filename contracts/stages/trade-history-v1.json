@@ -18,9 +18,18 @@
   "input": {
     "entity": "raw.trade_history",
     "fields": [
-      "th_t_id",
-      "th_dts",
-      "th_st_id"
+      {
+        "name": "th_t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "th_dts",
+        "semantic_type": "status_update_timestamp"
+      },
+      {
+        "name": "th_st_id",
+        "semantic_type": "status_id"
+      }
     ]
   },
   "output": {
@@ -43,8 +52,7 @@
     ]
   },
   "rule_order": [
-    "trade-history.structural-copy",
-    "trade-history.local-verification"
+    "trade-history.structural-copy"
   ],
   "rules": [
     {

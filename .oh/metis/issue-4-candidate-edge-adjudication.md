@@ -25,7 +25,7 @@ The independent issue #4 checks retain distinct local meanings:
 - the DimTrade consumer copies the supplied, typed lifecycle handoff and passes its local copy and time-order checks;
 - the handoff incorrectly binds `trade_record_timestamp` to the consumer's `trade_creation_timestamp`; both are physical `TIMESTAMP` values, but their nominal meanings differ, and the observed timestamp is not the `SBMT` history timestamp required by clause 4.5.8.2.
 
-`scripts/contracts.py verify` recomputes these checks from the contracts and `evidence/issue-4/candidate-edge-check-v1.json`, then requires the result to equal the retained adjudication.
+`scripts/contracts.py verify` recomputes these checks from the contracts and `evidence/issue-4/candidate-edge-check-v1.json`, then requires the result to equal the retained adjudication. Evidence names only a producer contract and output field. The verifier derives that field's semantic type from the producer contract, checks the target type against the consumer input contract, and rejects evidence-declared types. It also rejects missing, foreign, or mixed `trade_id` values before selecting lifecycle timestamps.
 
 ## Choices
 

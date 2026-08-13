@@ -12,12 +12,16 @@
   },
   "handoff_bindings": {
     "closed_at": {
-      "source_field": "stage.trade_history.status_updated_at",
-      "source_semantic_type": "status_update_timestamp"
+      "producer_contract": "stage.trade_history.v1",
+      "source_field": "status_updated_at"
     },
     "created_at": {
-      "source_field": "stage.trade.trade_recorded_at",
-      "source_semantic_type": "trade_record_timestamp"
+      "producer_contract": "stage.trade.v1",
+      "source_field": "trade_recorded_at"
+    },
+    "trade_id": {
+      "producer_contract": "stage.trade.v1",
+      "source_field": "trade_id"
     }
   },
   "history_stage_output": [

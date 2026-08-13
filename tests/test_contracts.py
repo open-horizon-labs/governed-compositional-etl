@@ -40,6 +40,15 @@ class GovernedContractTests(unittest.TestCase):
                 "adversarial stage",
             )
 
+        missing_input_semantic_type = copy.deepcopy(stage)
+        del missing_input_semantic_type["input"]["fields"][0]["semantic_type"]
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "semantic_type.*required"):
+            CONTRACTS.validate_instance(
+                schemas["stage-contract-v1.schema.json"],
+                missing_input_semantic_type,
+                "adversarial stage input",
+            )
+
         authority = CONTRACTS.load_json(
             ROOT / "contracts/repair-authority/trade-lifecycle-edge-v1.json"
         )
@@ -115,6 +124,100 @@ class GovernedContractTests(unittest.TestCase):
             ),
             case["consumer_input"],
         )
+
+    def test_evidence_cannot_declare_its_own_semantic_type(self):
+        case = CONTRACTS.load_json(
+            ROOT / "evidence/issue-4/candidate-edge-check-v1.json"
+        )
+        stages = {
+            contract["contract_id"]: contract
+            for contract in [
+                CONTRACTS.load_json(path)
+                for path in sorted((ROOT / "contracts/stages").glob("*.json"))
+            ]
+        }
+        edge = CONTRACTS.load_json(
+            ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json"
+        )
+        registry = CONTRACTS.load_json(
+            ROOT / "contracts/semantic-types/trade-types-v1.json"
+        )
+        types = {item["id"]: item for item in registry["types"]}
+
+        falsified = copy.deepcopy(case)
+        falsified["handoff_bindings"]["created_at"]["source_semantic_type"] = (
+            "trade_creation_timestamp"
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "evidence handoff binding"):
+            CONTRACTS.adjudicate_candidate(stages, edge, types, falsified)
+
+    def test_cross_document_binding_rejects_incompatible_producer_output(self):
+        stages = {
+            contract["contract_id"]: contract
+            for contract in [
+                CONTRACTS.load_json(path)
+                for path in sorted((ROOT / "contracts/stages").glob("*.json"))
+            ]
+        }
+        edge = CONTRACTS.load_json(
+            ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json"
+        )
+        registry = CONTRACTS.load_json(
+            ROOT / "contracts/semantic-types/trade-types-v1.json"
+        )
+        types = {item["id"]: item for item in registry["types"]}
+        incompatible = copy.deepcopy(stages)
+        history = incompatible["stage.trade_history.v1"]
+        next(
+            field
+            for field in history["output"]["fields"]
+            if field["name"] == "status_updated_at"
+        )["semantic_type"] = "trade_record_timestamp"
+        with self.assertRaisesRegex(
+            CONTRACTS.ContractError, "match the referenced producer contract"
+        ):
+            CONTRACTS.validate_edge_bindings(incompatible, edge, types)
+
+        incompatible_consumer = copy.deepcopy(stages)
+        consumer = incompatible_consumer["stage.dim_trade_consumer.v1"]
+        next(
+            field
+            for field in consumer["input"]["fields"]
+            if field["name"] == "created_at"
+        )["semantic_type"] = "trade_record_timestamp"
+        with self.assertRaisesRegex(
+            CONTRACTS.ContractError, "match the consumer input contract"
+        ):
+            CONTRACTS.validate_edge_bindings(incompatible_consumer, edge, types)
+
+    def test_edge_identity_rejects_foreign_mixed_and_missing_trade_ids(self):
+        case = CONTRACTS.load_json(
+            ROOT / "evidence/issue-4/candidate-edge-check-v1.json"
+        )
+        edge = CONTRACTS.load_json(
+            ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json"
+        )
+        mixed = copy.deepcopy(case["history_stage_output"])
+        mixed.append(
+            {
+                "status_id": "SBMT",
+                "status_updated_at": "2012-07-07T00:01:14",
+                "trade_id": 99,
+            }
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "foreign, or mixed"):
+            CONTRACTS.expected_edge_handoff(edge, case["trade_stage_output"], mixed)
+
+        foreign = copy.deepcopy(case["history_stage_output"])
+        for row in foreign:
+            row["trade_id"] = 99
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "foreign, or mixed"):
+            CONTRACTS.expected_edge_handoff(edge, case["trade_stage_output"], foreign)
+
+        missing = copy.deepcopy(case["trade_stage_output"])
+        del missing["trade_id"]
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "missing.*identity"):
+            CONTRACTS.expected_edge_handoff(edge, missing, case["history_stage_output"])
 
     def test_physical_timestamp_equality_does_not_imply_semantic_compatibility(self):
         registry = CONTRACTS.load_json(
@@ -198,6 +301,46 @@ class GovernedContractTests(unittest.TestCase):
         weakened["conflict_behavior"]["projection_edit"] = "allow_hotfix"
         with self.assertRaisesRegex(CONTRACTS.ContractError, "incomplete"):
             CONTRACTS.validate_repair_authority(weakened)
+
+        for forbidden_kind in ("raw_data", "target_schema", "projection"):
+            structural_basis = copy.deepcopy(record)
+            structural_basis["active_authority"]["basis"] = [
+                {
+                    "id": f"forbidden-{forbidden_kind}",
+                    "kind": forbidden_kind,
+                    "locator": "plausible structure",
+                    "source": forbidden_kind,
+                }
+            ]
+            with self.subTest(forbidden_kind=forbidden_kind), self.assertRaisesRegex(
+                CONTRACTS.ContractError, "cannot fill policy holes"
+            ):
+                CONTRACTS.validate_repair_authority(structural_basis)
+
+        disguised_projection = copy.deepcopy(record)
+        disguised_projection["active_authority"]["basis"] = [
+            {
+                "id": "tpc-di-1.1.0-fake",
+                "kind": "tpc_di_rule",
+                "locator": "generated expression",
+                "source": "generated_sql.dim_trade",
+            }
+        ]
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "TPC specification"):
+            CONTRACTS.validate_repair_authority(disguised_projection)
+
+    def test_rule_order_exactly_covers_rules_and_excludes_verification(self):
+        stage = CONTRACTS.load_json(ROOT / "contracts/stages/trade-v1.json")
+        CONTRACTS.validate_rule_order(stage, stage["contract_id"])
+        phantom = copy.deepcopy(stage)
+        phantom["rule_order"].append("trade.local-verification")
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "exactly cover"):
+            CONTRACTS.validate_rule_order(phantom, phantom["contract_id"])
+
+        missing = copy.deepcopy(stage)
+        missing["rule_order"] = []
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "exactly cover"):
+            CONTRACTS.validate_rule_order(missing, missing["contract_id"])
 
 
 if __name__ == "__main__":

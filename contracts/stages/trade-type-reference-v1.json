@@ -17,10 +17,22 @@
   "input": {
     "entity": "raw.trade_type",
     "fields": [
-      "tt_id",
-      "tt_name",
-      "tt_is_sell",
-      "tt_is_mrkt"
+      {
+        "name": "tt_id",
+        "semantic_type": "trade_type_id"
+      },
+      {
+        "name": "tt_name",
+        "semantic_type": "trade_type_name"
+      },
+      {
+        "name": "tt_is_sell",
+        "semantic_type": "boolean_flag"
+      },
+      {
+        "name": "tt_is_mrkt",
+        "semantic_type": "boolean_flag"
+      }
     ]
   },
   "output": {
@@ -48,8 +60,7 @@
     ]
   },
   "rule_order": [
-    "trade-type.copy-authorized-reference",
-    "trade-type.local-verification"
+    "trade-type.copy-authorized-reference"
   ],
   "rules": [
     {

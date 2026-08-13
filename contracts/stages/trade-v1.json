@@ -29,12 +29,30 @@
   "input": {
     "entity": "raw.trade",
     "fields": [
-      "t_id",
-      "t_dts",
-      "t_st_id",
-      "t_tt_id",
-      "t_qty",
-      "t_bid_price"
+      {
+        "name": "t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "t_dts",
+        "semantic_type": "trade_record_timestamp"
+      },
+      {
+        "name": "t_st_id",
+        "semantic_type": "status_id"
+      },
+      {
+        "name": "t_tt_id",
+        "semantic_type": "trade_type_id"
+      },
+      {
+        "name": "t_qty",
+        "semantic_type": "share_quantity"
+      },
+      {
+        "name": "t_bid_price",
+        "semantic_type": "usd_per_share"
+      }
     ]
   },
   "output": {
@@ -72,8 +90,7 @@
     ]
   },
   "rule_order": [
-    "trade.structural-copy",
-    "trade.local-verification"
+    "trade.structural-copy"
   ],
   "rules": [
     {

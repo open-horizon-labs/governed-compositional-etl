@@ -8,8 +8,35 @@
       "properties": {
         "basis": {
           "items": {
-            "minLength": 1,
-            "type": "string"
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "tpc_di_rule",
+                  "approved_decision",
+                  "approved_counterexample"
+                ]
+              },
+              "locator": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "source": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "source",
+              "locator"
+            ],
+            "type": "object"
           },
           "minItems": 1,
           "type": "array",

@@ -1,8 +1,12 @@
 {
   "active_authority": {
     "basis": [
-      "tpc-di-1.1.0-4.5.8.2-type",
-      "oracle.local-trade-type-name-v1"
+      {
+        "id": "tpc-di-1.1.0-4.5.8.2-type",
+        "kind": "tpc_di_rule",
+        "locator": "Clause 4.5.8.2 TradeType name lookup",
+        "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+      }
     ],
     "hat": "data-product-owner",
     "scope": "trade-type reference interpretation"

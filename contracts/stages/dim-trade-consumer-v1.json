@@ -29,9 +29,18 @@
   "input": {
     "entity": "handoff.trade_lifecycle",
     "fields": [
-      "trade_id",
-      "created_at",
-      "closed_at"
+      {
+        "name": "trade_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "created_at",
+        "semantic_type": "trade_creation_timestamp"
+      },
+      {
+        "name": "closed_at",
+        "semantic_type": "trade_close_timestamp"
+      }
     ]
   },
   "output": {
@@ -54,8 +63,7 @@
     ]
   },
   "rule_order": [
-    "dim-trade.copy-authorized-handoff",
-    "dim-trade.local-order-check"
+    "dim-trade.copy-authorized-handoff"
   ],
   "rules": [
     {

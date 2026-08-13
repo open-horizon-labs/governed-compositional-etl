@@ -1,9 +1,24 @@
 {
   "active_authority": {
     "basis": [
-      "tpc-di-1.1.0-4.5.8.1",
-      "tpc-di-1.1.0-4.5.8.2-create-close",
-      ".oh/metis/issue-4-candidate-edge-adjudication.md"
+      {
+        "id": "tpc-di-1.1.0-4.5.8.1",
+        "kind": "tpc_di_rule",
+        "locator": "Clause 4.5.8.1 historical Trade and TradeHistory identity join",
+        "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+      },
+      {
+        "id": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "kind": "tpc_di_rule",
+        "locator": "Clause 4.5.8.2 status-qualified creation and close timestamps",
+        "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+      },
+      {
+        "id": "issue-4-candidate-edge-adjudication",
+        "kind": "approved_decision",
+        "locator": "Decision",
+        "source": ".oh/metis/issue-4-candidate-edge-adjudication.md"
+      }
     ],
     "hat": "data-product-owner",
     "scope": "historical Trade and TradeHistory lifecycle handoff"
