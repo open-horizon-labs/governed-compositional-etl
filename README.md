@@ -16,6 +16,8 @@ The issue #3 [semantic repair oracle](docs/semantic-repair-oracle.md) freezes a 
 
 The issue #4 [semantic contracts and change authority](docs/semantic-contracts.md) keep known rules, explicit holes, nominal semantic types, repair surfaces, and replaceable projections separate.
 
+The issue #5 [replaceable SQLMesh projection](docs/executable-projection.md) compiles only the current Sketch, structural anchors, and contracts into SQLGlot-built expressions, deterministic SQLMesh audits, and persistent DuckDB results.
+
 ## Intended architecture
 
 ```text
