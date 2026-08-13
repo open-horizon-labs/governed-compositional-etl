@@ -78,7 +78,8 @@ class ExperimentV2AdversarialTests(unittest.TestCase):
 
     def test_static_output_shortcut_absent(self):
         source = (ROOT / "scripts/experiment_v2.py").read_text()
-        self.assertIn("SELECT count(*) FROM governed.dim_trade", source)
+        self.assertIn("SELECT count(*) FROM experiment_observed.dim_trade", source)
+        self.assertIn("materialize_observed", source)
         self.assertIn("date_diff('second', created_at, closed_at)", source)
         self.assertNotIn("score_live_probe", source)
 
