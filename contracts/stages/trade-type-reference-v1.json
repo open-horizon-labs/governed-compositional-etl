@@ -1,0 +1,85 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.trade_type_reference.v1",
+  "disposition": "approved",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.18",
+      "tpc-di-1.1.0-4.5.8.2-type"
+    ]
+  },
+  "grain": "one interpreted reference row per trade-type identifier",
+  "holes": [],
+  "identifiers": [
+    "trade_type_id"
+  ],
+  "input": {
+    "entity": "raw.trade_type",
+    "fields": [
+      {
+        "name": "tt_id",
+        "semantic_type": "trade_type_id"
+      },
+      {
+        "name": "tt_name",
+        "semantic_type": "trade_type_name"
+      },
+      {
+        "name": "tt_is_sell",
+        "semantic_type": "boolean_flag"
+      },
+      {
+        "name": "tt_is_mrkt",
+        "semantic_type": "boolean_flag"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "trade_type_id",
+        "semantic_type": "trade_type_id",
+        "source": "tt_id"
+      },
+      {
+        "name": "type_name",
+        "semantic_type": "trade_type_name",
+        "source": "tt_name"
+      },
+      {
+        "name": "is_sell",
+        "semantic_type": "boolean_flag",
+        "source": "tt_is_sell"
+      },
+      {
+        "name": "is_market",
+        "semantic_type": "boolean_flag",
+        "source": "tt_is_mrkt"
+      }
+    ]
+  },
+  "rule_order": [
+    "trade-type.copy-authorized-reference"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2-type",
+      "id": "trade-type.copy-authorized-reference",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v1",
+  "stage_id": "stage.trade_type_reference",
+  "verification": [
+    {
+      "id": "trade-type.exact-mapping",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "trade-type.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

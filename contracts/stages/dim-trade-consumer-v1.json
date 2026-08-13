@@ -1,0 +1,92 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.dim_trade_consumer.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-4.5.8.2"
+    ]
+  },
+  "grain": "one projected logical row per trade identifier",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "dim-trade-consumer.out-of-slice-keys",
+      "owner_hat": "data-product-owner",
+      "question": "How are out-of-slice surrogate keys supplied?",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "trade_id"
+  ],
+  "input": {
+    "entity": "handoff.trade_lifecycle",
+    "fields": [
+      {
+        "name": "trade_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "created_at",
+        "semantic_type": "trade_creation_timestamp"
+      },
+      {
+        "name": "closed_at",
+        "semantic_type": "trade_close_timestamp"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "trade_id",
+        "semantic_type": "trade_id",
+        "source": "trade_id"
+      },
+      {
+        "name": "created_at",
+        "semantic_type": "trade_creation_timestamp",
+        "source": "created_at"
+      },
+      {
+        "name": "closed_at",
+        "semantic_type": "trade_close_timestamp",
+        "source": "closed_at"
+      }
+    ]
+  },
+  "rule_order": [
+    "dim-trade.copy-authorized-handoff"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2",
+      "id": "dim-trade.copy-authorized-handoff",
+      "operation": "copy_semantically_typed_handoff",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v1",
+  "stage_id": "stage.dim_trade_consumer",
+  "verification": [
+    {
+      "id": "dim-trade.exact-consumer-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "dim-trade.created-not-after-close",
+      "kind": "local_invariant"
+    },
+    {
+      "id": "dim-trade.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

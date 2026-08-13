@@ -1,0 +1,68 @@
+{
+  "case_id": "edge-trade-history-create-time-v1",
+  "consumer_input": {
+    "closed_at": "2012-07-07T00:02:34",
+    "created_at": "2012-07-07T00:02:34",
+    "trade_id": 0
+  },
+  "consumer_output": {
+    "closed_at": "2012-07-07T00:02:34",
+    "created_at": "2012-07-07T00:02:34",
+    "trade_id": 0
+  },
+  "handoff_bindings": {
+    "closed_at": {
+      "producer_contract": "stage.trade_history.v1",
+      "source_field": "status_updated_at"
+    },
+    "created_at": {
+      "producer_contract": "stage.trade.v1",
+      "source_field": "trade_recorded_at"
+    },
+    "trade_id": {
+      "producer_contract": "stage.trade.v1",
+      "source_field": "trade_id"
+    }
+  },
+  "history_stage_output": [
+    {
+      "status_id": "SBMT",
+      "status_updated_at": "2012-07-07T00:01:13",
+      "trade_id": 0
+    },
+    {
+      "status_id": "CMPT",
+      "status_updated_at": "2012-07-07T00:02:34",
+      "trade_id": 0
+    }
+  ],
+  "raw_history": [
+    {
+      "th_dts": "2012-07-07T00:01:13",
+      "th_st_id": "SBMT",
+      "th_t_id": 0
+    },
+    {
+      "th_dts": "2012-07-07T00:02:34",
+      "th_st_id": "CMPT",
+      "th_t_id": 0
+    }
+  ],
+  "raw_trade": {
+    "t_bid_price": 9.57,
+    "t_dts": "2012-07-07T00:02:34",
+    "t_id": 0,
+    "t_qty": 2939,
+    "t_st_id": "CMPT",
+    "t_tt_id": "TMB"
+  },
+  "schema_version": "candidate-edge-check/v1",
+  "trade_stage_output": {
+    "bid_price": 9.57,
+    "quantity": 2939,
+    "status_id": "CMPT",
+    "trade_id": 0,
+    "trade_recorded_at": "2012-07-07T00:02:34",
+    "trade_type_id": "TMB"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.trade.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "batch",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.17"
+    ]
+  },
+  "grain": "one normalized row per Trade.T_ID",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "trade-stage.execution-pricing-policy",
+      "owner_hat": "domain-reviewer",
+      "question": "Which pricing fields participate in downstream measures beyond direct copies?",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "trade_id"
+  ],
+  "input": {
+    "entity": "raw.trade",
+    "fields": [
+      {
+        "name": "t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "t_dts",
+        "semantic_type": "trade_record_timestamp"
+      },
+      {
+        "name": "t_st_id",
+        "semantic_type": "status_id"
+      },
+      {
+        "name": "t_tt_id",
+        "semantic_type": "trade_type_id"
+      },
+      {
+        "name": "t_qty",
+        "semantic_type": "share_quantity"
+      },
+      {
+        "name": "t_bid_price",
+        "semantic_type": "usd_per_share"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "trade_id",
+        "semantic_type": "trade_id",
+        "source": "t_id"
+      },
+      {
+        "name": "trade_recorded_at",
+        "semantic_type": "trade_record_timestamp",
+        "source": "t_dts"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "status_id",
+        "source": "t_st_id"
+      },
+      {
+        "name": "trade_type_id",
+        "semantic_type": "trade_type_id",
+        "source": "t_tt_id"
+      },
+      {
+        "name": "quantity",
+        "semantic_type": "share_quantity",
+        "source": "t_qty"
+      },
+      {
+        "name": "bid_price",
+        "semantic_type": "usd_per_share",
+        "source": "t_bid_price"
+      }
+    ]
+  },
+  "rule_order": [
+    "trade.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.17",
+      "id": "trade.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v1",
+  "stage_id": "stage.trade",
+  "verification": [
+    {
+      "id": "trade.exact-mapping",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "trade.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

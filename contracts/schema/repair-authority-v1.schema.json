@@ -1,0 +1,117 @@
+{
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:repair-authority:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_authority": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "tpc_di_rule",
+                  "approved_decision",
+                  "approved_counterexample"
+                ]
+              },
+              "locator": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "source": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "source",
+              "locator"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "hat": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "scope": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "hat",
+        "scope",
+        "basis"
+      ],
+      "type": "object"
+    },
+    "allowed_artifacts": {
+      "items": {
+        "pattern": "^sketch\\.",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "authority_id": {
+      "pattern": "^[a-z0-9._-]+$",
+      "type": "string"
+    },
+    "conflict_behavior": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_conflict": {
+          "const": "stop_and_adjudicate_under_domain_reviewer_hat"
+        },
+        "projection_edit": {
+          "const": "reject_and_regenerate_from_governing_sketch"
+        },
+        "raw_or_schema_inference": {
+          "const": "reject_as_non_authority"
+        }
+      },
+      "required": [
+        "authority_conflict",
+        "projection_edit",
+        "raw_or_schema_inference"
+      ],
+      "type": "object"
+    },
+    "forbidden_adjacent_policy": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "const": "repair-authority/v1"
+    }
+  },
+  "required": [
+    "schema_version",
+    "authority_id",
+    "active_authority",
+    "allowed_artifacts",
+    "forbidden_adjacent_policy",
+    "conflict_behavior"
+  ],
+  "title": "Repair authority record v1",
+  "type": "object"
+}

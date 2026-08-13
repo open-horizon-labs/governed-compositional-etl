@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "hole": {
+      "additionalProperties": false,
+      "properties": {
+        "fill_policy": {
+          "const": "named_authority_or_approved_counterexample"
+        },
+        "forbidden_evidence": {
+          "items": {
+            "enum": [
+              "raw_data",
+              "target_schema",
+              "projection"
+            ]
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "owner_hat": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "question": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "status": {
+          "const": "open"
+        }
+      },
+      "required": [
+        "id",
+        "question",
+        "owner_hat",
+        "status",
+        "fill_policy",
+        "forbidden_evidence"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:logical-model:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attributes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "nullable": {
+            "type": "boolean"
+          },
+          "semantic_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "source_rule": {
+            "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "semantic_type",
+          "source_rule",
+          "nullable"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "disposition": {
+      "enum": [
+        "partial",
+        "approved"
+      ]
+    },
+    "grain": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "holes": {
+      "items": {
+        "$ref": "#/$defs/hole"
+      },
+      "type": "array"
+    },
+    "identifiers": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "model_id": {
+      "pattern": "^[a-z0-9._-]+$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "logical-model/v1"
+    },
+    "verification": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 2,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "model_id",
+    "grain",
+    "identifiers",
+    "attributes",
+    "holes",
+    "verification",
+    "disposition"
+  ],
+  "title": "Logical model descriptor v1",
+  "type": "object"
+}

@@ -1,0 +1,77 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.trade_history.v1",
+  "disposition": "approved",
+  "evidence": {
+    "granularity": "batch",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.16"
+    ]
+  },
+  "grain": "one normalized status observation per trade, timestamp, and status",
+  "holes": [],
+  "identifiers": [
+    "trade_id",
+    "status_updated_at",
+    "status_id"
+  ],
+  "input": {
+    "entity": "raw.trade_history",
+    "fields": [
+      {
+        "name": "th_t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "th_dts",
+        "semantic_type": "status_update_timestamp"
+      },
+      {
+        "name": "th_st_id",
+        "semantic_type": "status_id"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "trade_id",
+        "semantic_type": "trade_id",
+        "source": "th_t_id"
+      },
+      {
+        "name": "status_updated_at",
+        "semantic_type": "status_update_timestamp",
+        "source": "th_dts"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "status_id",
+        "source": "th_st_id"
+      }
+    ]
+  },
+  "rule_order": [
+    "trade-history.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.16",
+      "id": "trade-history.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v1",
+  "stage_id": "stage.trade_history",
+  "verification": [
+    {
+      "id": "trade-history.exact-mapping",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "trade-history.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

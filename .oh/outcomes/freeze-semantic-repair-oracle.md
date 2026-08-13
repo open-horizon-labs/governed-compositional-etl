@@ -38,4 +38,4 @@ The fixture schema is complete, reviewers agree on the pilot cases, and the expe
 
 ## Current evidence
 
-Issue #3 freezes one adjudicated local case, one authority-backed candidate composition case with an ambiguous earliest boundary, and one unresolved ambiguous case in `oracle/corpus-v1.json`. `scripts/oracle.py verify` validates the authority boundary and scores the example structural submissions without an explanation field. Four private held-outs are frozen by public SHA-256 commitments. The edge-versus-local risk remains pending until issue #4 defines the local contracts; no repair surface is authorized for the candidate before that adjudication.
+Issue #3 froze one local case, one authority-backed candidate composition case, and one unresolved ambiguous case in `oracle/corpus-v1.json`. Issue #4 then adjudicated the candidate as an edge failure using independent local contracts and authorized only its edge Sketch. `scripts/oracle.py verify` validates the updated oracle and scores structural submissions without an explanation field. Four private held-outs remain frozen by public SHA-256 commitments.

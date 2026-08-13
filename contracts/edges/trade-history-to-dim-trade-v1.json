@@ -1,0 +1,123 @@
+{
+  "confidence": "frozen_rule",
+  "consumer": {
+    "contract": "stage.dim_trade_consumer.v1",
+    "grain": "one row per trade_id"
+  },
+  "contract_id": "edge.trade_history_to_dim_trade.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-4.5.8.1",
+      "tpc-di-1.1.0-4.5.8.2-create-close"
+    ]
+  },
+  "history_policy": {
+    "close_statuses": [
+      "CMPT",
+      "CNCL"
+    ],
+    "limit_creation_status": "PNDG",
+    "market_creation_status": "SBMT",
+    "market_trade_types": [
+      "TMB",
+      "TMS"
+    ],
+    "ordering": "status_updated_at ascending within trade_id",
+    "resolution": "one second"
+  },
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "edge.incremental-update-lifecycle",
+      "owner_hat": "domain-reviewer",
+      "question": "How does the historical history-based handoff compose with incremental Trade-only updates?",
+      "status": "open"
+    }
+  ],
+  "mappings": [
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.1",
+      "from": "stage.trade.trade_id",
+      "source_semantic_type": "trade_id",
+      "target_semantic_type": "trade_id",
+      "to": "handoff.trade_lifecycle.trade_id"
+    },
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+      "from": "stage.trade_history.status_updated_at",
+      "selector": "creation_status_for_trade_type",
+      "source_semantic_type": "status_update_timestamp",
+      "target_semantic_type": "trade_creation_timestamp",
+      "to": "handoff.trade_lifecycle.created_at"
+    },
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+      "from": "stage.trade_history.status_updated_at",
+      "selector": "close_status",
+      "source_semantic_type": "status_update_timestamp",
+      "target_semantic_type": "trade_close_timestamp",
+      "to": "handoff.trade_lifecycle.closed_at"
+    }
+  ],
+  "producer": {
+    "contracts": [
+      "stage.trade.v1",
+      "stage.trade_history.v1"
+    ],
+    "identity_join": "trade_id"
+  },
+  "rule_order": [
+    "edge.require-identity",
+    "edge.select-creation-status",
+    "edge.select-close-status",
+    "edge.emit-lifecycle-handoff"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.1",
+      "id": "edge.require-identity",
+      "operation": "join_on_trade_id",
+      "status": "known"
+    },
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+      "id": "edge.select-creation-status",
+      "operation": "select_status_qualified_history_time",
+      "status": "known"
+    },
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+      "id": "edge.select-close-status",
+      "operation": "select_status_qualified_history_time",
+      "status": "known"
+    },
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+      "id": "edge.emit-lifecycle-handoff",
+      "operation": "assign_semantic_types",
+      "status": "known"
+    }
+  ],
+  "schema_version": "edge-contract/v1",
+  "verification": [
+    {
+      "id": "edge.lifecycle.expected-handoff",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "edge.lifecycle.semantic-type-compatibility",
+      "kind": "contract_check"
+    },
+    {
+      "id": "edge.lifecycle.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "authority": [
+    {
+      "id": "tpc-di-1.1.0-2.2.2.13",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.13 StatusType source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-2.2.2.16",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.16 TradeHistory source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-2.2.2.17",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.17 Trade source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-2.2.2.18",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.18 TradeType source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    }
+  ],
+  "entities": [
+    {
+      "fields": [
+        {
+          "name": "st_id",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "status_id"
+        },
+        {
+          "name": "st_name",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "status_name"
+        }
+      ],
+      "grain": "one reference row per status identifier",
+      "identifiers": [
+        "st_id"
+      ],
+      "name": "raw.status_type"
+    },
+    {
+      "fields": [
+        {
+          "name": "tt_id",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "trade_type_id"
+        },
+        {
+          "name": "tt_name",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "trade_type_name"
+        },
+        {
+          "name": "tt_is_sell",
+          "nullable": false,
+          "physical_type": "BOOLEAN",
+          "semantic_type": "boolean_flag"
+        },
+        {
+          "name": "tt_is_mrkt",
+          "nullable": false,
+          "physical_type": "BOOLEAN",
+          "semantic_type": "boolean_flag"
+        }
+      ],
+      "grain": "one reference row per trade-type identifier",
+      "identifiers": [
+        "tt_id"
+      ],
+      "name": "raw.trade_type"
+    },
+    {
+      "fields": [
+        {
+          "name": "t_id",
+          "nullable": false,
+          "physical_type": "BIGINT",
+          "semantic_type": "trade_id"
+        },
+        {
+          "name": "t_dts",
+          "nullable": false,
+          "physical_type": "TIMESTAMP",
+          "semantic_type": "trade_record_timestamp"
+        },
+        {
+          "name": "t_st_id",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "status_id"
+        },
+        {
+          "name": "t_tt_id",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "trade_type_id"
+        },
+        {
+          "name": "t_qty",
+          "nullable": false,
+          "physical_type": "BIGINT",
+          "semantic_type": "share_quantity"
+        },
+        {
+          "name": "t_bid_price",
+          "nullable": false,
+          "physical_type": "DECIMAL",
+          "semantic_type": "usd_per_share"
+        }
+      ],
+      "grain": "one final historical source row per trade identifier",
+      "identifiers": [
+        "t_id"
+      ],
+      "name": "raw.trade"
+    },
+    {
+      "fields": [
+        {
+          "name": "th_t_id",
+          "nullable": false,
+          "physical_type": "BIGINT",
+          "semantic_type": "trade_id"
+        },
+        {
+          "name": "th_dts",
+          "nullable": false,
+          "physical_type": "TIMESTAMP",
+          "semantic_type": "status_update_timestamp"
+        },
+        {
+          "name": "th_st_id",
+          "nullable": false,
+          "physical_type": "VARCHAR",
+          "semantic_type": "status_id"
+        }
+      ],
+      "grain": "one status observation per trade identifier, timestamp, and status",
+      "identifiers": [
+        "th_t_id",
+        "th_dts",
+        "th_st_id"
+      ],
+      "name": "raw.trade_history"
+    }
+  ],
+  "evidence": {
+    "anchor": "evidence/issue-2/sf3-manifest.json",
+    "granularity": "batch and selected source file"
+  },
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "source.incremental-cdc",
+      "owner_hat": "domain-reviewer",
+      "question": "How do incremental CDC records alter the historical-only contract?",
+      "status": "open"
+    }
+  ],
+  "schema_version": "source/v1",
+  "source_id": "tpcdi.trade-slice"
+}

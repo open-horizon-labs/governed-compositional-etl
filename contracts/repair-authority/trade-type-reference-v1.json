@@ -1,0 +1,32 @@
+{
+  "active_authority": {
+    "basis": [
+      {
+        "id": "tpc-di-1.1.0-4.5.8.2-type",
+        "kind": "tpc_di_rule",
+        "locator": "Clause 4.5.8.2 TradeType name lookup",
+        "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+      }
+    ],
+    "hat": "data-product-owner",
+    "scope": "trade-type reference interpretation"
+  },
+  "allowed_artifacts": [
+    "sketch.stage.trade_type_reference"
+  ],
+  "authority_id": "repair.trade-type-reference.v1",
+  "conflict_behavior": {
+    "authority_conflict": "stop_and_adjudicate_under_domain_reviewer_hat",
+    "projection_edit": "reject_and_regenerate_from_governing_sketch",
+    "raw_or_schema_inference": "reject_as_non_authority"
+  },
+  "forbidden_adjacent_policy": [
+    "sketch.edge.trade_type_to_dim_trade",
+    "sketch.stage.trade",
+    "sqlmesh.model.dim_trade",
+    "sqlglot.ast.dim_trade",
+    "generated_sql.dim_trade",
+    "duckdb.dim_trade"
+  ],
+  "schema_version": "repair-authority/v1"
+}

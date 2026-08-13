@@ -12,7 +12,9 @@ Start with [.oh/tpcdi-governed-etl.md](.oh/tpcdi-governed-etl.md). It records th
 
 The reproducible issue #2 substrate is documented in [docs/tpcdi-raw-substrate.md](docs/tpcdi-raw-substrate.md). After personally acquiring TPC-DI 1.1.0 tools, its smoke command generates the scale-factor-3 source, verifies retained checksums and counts, and structurally loads the selected trade slice into persistent DuckDB.
 
-The issue #3 [semantic repair oracle](docs/semantic-repair-oracle.md) freezes a policy-authorized local case, a candidate edge/composition case pending issue #4 contract adjudication, and an ambiguous case plus narrative-free scoring before experiment execution.
+The issue #3 [semantic repair oracle](docs/semantic-repair-oracle.md) freezes a policy-authorized local case, an issue #4 contract-adjudicated edge/composition case, and an ambiguous case plus narrative-free scoring before experiment execution.
+
+The issue #4 [semantic contracts and change authority](docs/semantic-contracts.md) keep known rules, explicit holes, nominal semantic types, repair surfaces, and replaceable projections separate.
 
 ## Intended architecture
 

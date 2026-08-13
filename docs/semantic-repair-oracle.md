@@ -22,10 +22,10 @@ The [oracle-substrate decision](../.oh/metis/issue-3-oracle-substrate-decision.m
 The public pilot corpus freezes:
 
 1. A local semantic failure: a trade-type identifier (`TMS`) escapes reference interpretation instead of producing `Market Sell`.
-2. A candidate edge/composition failure: the observed historical output uses `Trade.T_DTS` for creation time instead of the `SBMT`-qualified `TradeHistory.TH_DTS` required by clause 4.5.8.2. The corrected output is authority-backed, but the earliest responsible boundary is not yet adjudicated.
+2. An edge/composition failure: the observed historical output uses `Trade.T_DTS` for creation time instead of the `SBMT`-qualified `TradeHistory.TH_DTS` required by clause 4.5.8.2. Issue #4 independently verifies both producers and the consumer locally before the handoff fails.
 3. An ambiguous failure: an observed status identifier leak does not reveal whether the reference stage or its outgoing edge first made the wrong choice. No repair artifact is authorized until intermediate evidence resolves the boundary.
 
-The candidate is deliberately classified `candidate_edge_composition` with an ambiguous location spanning the Trade stage, TradeHistory stage, and their handoff. It authorizes no repair. Issue #4 must define and apply the local contracts before reviewers can determine whether the case survives as an edge/composition failure or reduces to a local semantic defect. The edge-risk review trigger remains pending—not fired and not retired. Issue #7 must separately demonstrate equivalent seeds across experiment arms.
+Issue #4 adjudicates the earliest location as `edge.trade_history_to_dim_trade.create_close_time`: `Trade.T_DTS` remains a `trade_record_timestamp`, history observations retain `status_update_timestamp`, and the consumer passes when copying a typed lifecycle handoff. The incorrect binding occurs at the handoff. Only `sketch.edge.trade_history_to_dim_trade` is authorized for repair. Issue #7 must separately demonstrate equivalent seeds across experiment arms.
 
 ## Narrative-free scoring
 
@@ -73,4 +73,4 @@ Agreement requires the same named authority, failure class, earliest location, a
 4. If the evidence resolves the dispute, record the alternatives, evidence, decision hat, and justification in a repository-native decision record, then update the fixture version before any arm sees it.
 5. If two or more locations remain defensible, set `disposition` to `ambiguous`, retain every candidate location, authorize no repair artifact, and exclude the case from location-effect estimates. Use `failure_class: ambiguous` when even the class is unresolved; retain `candidate_edge_composition` only when the authority-backed output qualifies it for issue #4 edge-versus-local adjudication. Ambiguity is a result, not a forced stage label.
 
-Issue #4 is the planned adjudication point for the candidate boundary. The review trigger remains pending while those local contracts are absent. It fires if contract-backed reviewers cannot stabilize the boundary or if the candidate reduces to an ordinary local defect; that evidence must be preserved and the corpus reframed rather than tuned post hoc.
+Issue #4 is the recorded adjudication point for the candidate boundary. The bounded historical case survives as an edge failure under independent local checks. The trigger remains active for other cases and fires if contract-backed reviewers cannot stabilize a boundary or if a future candidate reduces to an ordinary local defect; that evidence must be preserved rather than tuned post hoc.

@@ -1,0 +1,280 @@
+{
+  "$defs": {
+    "hole": {
+      "additionalProperties": false,
+      "properties": {
+        "fill_policy": {
+          "const": "named_authority_or_approved_counterexample"
+        },
+        "forbidden_evidence": {
+          "items": {
+            "enum": [
+              "raw_data",
+              "target_schema",
+              "projection"
+            ]
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "owner_hat": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "question": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "status": {
+          "const": "open"
+        }
+      },
+      "required": [
+        "id",
+        "question",
+        "owner_hat",
+        "status",
+        "fill_policy",
+        "forbidden_evidence"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:stage-contract:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "confidence": {
+      "enum": [
+        "frozen_rule",
+        "reviewed_decision",
+        "unknown"
+      ]
+    },
+    "contract_id": {
+      "pattern": "^[a-z0-9._-]+$",
+      "type": "string"
+    },
+    "disposition": {
+      "enum": [
+        "partial",
+        "approved"
+      ]
+    },
+    "evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "granularity": {
+          "enum": [
+            "batch",
+            "decision_class",
+            "row"
+          ]
+        },
+        "rule_ids": {
+          "items": {
+            "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "granularity",
+        "rule_ids"
+      ],
+      "type": "object"
+    },
+    "grain": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "holes": {
+      "items": {
+        "$ref": "#/$defs/hole"
+      },
+      "type": "array"
+    },
+    "identifiers": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "input": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "semantic_type": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "semantic_type"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "entity",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "semantic_type": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "source": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "semantic_type",
+              "source"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "fields"
+      ],
+      "type": "object"
+    },
+    "rule_order": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "rules": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "const": "known"
+          }
+        },
+        "required": [
+          "id",
+          "authority",
+          "operation",
+          "status"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "stage-contract/v1"
+    },
+    "stage_id": {
+      "pattern": "^[a-z0-9._-]+$",
+      "type": "string"
+    },
+    "verification": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "deterministic_gate",
+              "local_invariant",
+              "contract_check",
+              "sketch_review"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "minItems": 2,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "contract_id",
+    "stage_id",
+    "grain",
+    "identifiers",
+    "input",
+    "output",
+    "rule_order",
+    "rules",
+    "holes",
+    "evidence",
+    "confidence",
+    "verification",
+    "disposition"
+  ],
+  "title": "Semantic stage contract v1",
+  "type": "object"
+}
