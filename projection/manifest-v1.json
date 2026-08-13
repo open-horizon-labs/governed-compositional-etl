@@ -1,0 +1,185 @@
+{
+  "acceptance": {
+    "deterministic_audits": [
+      "not_null_trade_id",
+      "valid_lifecycle_order"
+    ],
+    "sketch_review": "required_separately_against_sketches/trade-dim-v1.md"
+  },
+  "arms": {
+    "compositional_cess": {
+      "projection_sha256": "91d3ea7b9be83c635b8a2a3dd302f23228e61fb6f9742aa1bd5cf6c61822dd7c"
+    },
+    "native": {
+      "projection_sha256": "91d3ea7b9be83c635b8a2a3dd302f23228e61fb6f9742aa1bd5cf6c61822dd7c"
+    },
+    "stage_local_cess": {
+      "projection_sha256": "91d3ea7b9be83c635b8a2a3dd302f23228e61fb6f9742aa1bd5cf6c61822dd7c"
+    }
+  },
+  "classification": "replaceable_projection_evidence",
+  "compiler_inputs": [
+    {
+      "path": "sketches/trade-dim-v1.md",
+      "sha256": "5ccecbad4aa2e0198e4a40b4e01c2a943e11dfa72c6402fd48b5ae9c3d53e0fc"
+    },
+    {
+      "path": "evidence/issue-3/source-anchors-v1.json",
+      "sha256": "4eb7cfe2d81fe3e53154593cf080e2808588445770032ec2c51201ef91826088"
+    },
+    {
+      "path": "contracts/sources/tpcdi-trade-source-v1.json",
+      "sha256": "72daf42929b559ff7c148325fd6798505cf1c1712096c569b392fcb0b82daec1"
+    },
+    {
+      "path": "contracts/logical-models/dim-trade-v1.json",
+      "sha256": "8e549857be44e64e5189188c07749cf6d552054d75a2cf8adcf639cc5ca9fc63"
+    },
+    {
+      "path": "contracts/semantic-types/trade-types-v1.json",
+      "sha256": "5a9184d16b25cf646c0bc654ffa563e5a6dc848ad08d212c68fef0dd2e280fa9"
+    },
+    {
+      "path": "contracts/stages/trade-v1.json",
+      "sha256": "86d83af4a7a7d927303fc370e46eea6e53b53a99b2ed663cbe1d92415615ddd9"
+    },
+    {
+      "path": "contracts/stages/trade-history-v1.json",
+      "sha256": "6fb058b3b0b22edbf85b13140b48fd1ba2df259da8db4a3172e26bbda9ddfff8"
+    },
+    {
+      "path": "contracts/stages/trade-type-reference-v1.json",
+      "sha256": "0e0bfa2bf7d5b0cc7e8a9407c854110907a2bc56daf1b2ddcbc4aea96c4b0702"
+    },
+    {
+      "path": "contracts/stages/dim-trade-consumer-v1.json",
+      "sha256": "2ac6b9fd122b98a88dd1e901d6d1c2f89a3a9c3ceb8cf98f62865f30d306e2ca"
+    },
+    {
+      "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+      "sha256": "207ed605993438d9792827c61f12795b0599e062efc1da298bdd9b175e6f788e"
+    },
+    {
+      "path": "contracts/repair-authority/trade-lifecycle-edge-v1.json",
+      "sha256": "78ab47871c756e57b13c2de3d97168c622e1d7dc4ec2c6f34101f2acfff81270"
+    },
+    {
+      "path": "contracts/artifact-classification-v1.json",
+      "sha256": "c2bd4f203211121c4aaacea210e1c8f3f7257bbe8294f7c6d51560af9d9dc7bb"
+    }
+  ],
+  "dependencies": {
+    "duckdb": "1.5.5",
+    "sqlglot": "30.8.0",
+    "sqlmesh": "0.236.1"
+  },
+  "excluded_context": [
+    "oracle/",
+    "counterexamples/archive/",
+    "oracle/fixtures/held-out/",
+    "oracle/submissions/held-out/"
+  ],
+  "files": {
+    "audits/not_null_trade_id.sql": "a4d5618001dfd53c64fdbeacada312397267b57082c25cd44f708e614bed42f3",
+    "audits/valid_lifecycle_order.sql": "ca20f520f39f3ce72ecab34dfa90d578c0b8776a130d186595352349bd4ac433",
+    "config.yaml": "b910bcbb827135d49939438838dcd350c39e5595458a9f127f361fa2d81275ca",
+    "models/dim_trade.sql": "85f4470d8798dc29b285435bd88eec000642aa8fc84f154b1cddb60c5d1ff730",
+    "models/status_type_reference.sql": "a75b036b6334f703a39be1b9baa5e321b5d9eb56613789be0222716a796fed4b",
+    "models/trade_history_stage.sql": "bb58e2dbf6237ed68023b4bfbbb2b44178748aeb31f6fbfa35a4fc0d48c71442",
+    "models/trade_lifecycle.sql": "94404616a5e001d21f3ba2f63b34a9e0a91db18f45bd05fcc74840f0456dce24",
+    "models/trade_stage.sql": "c22f2cabb4843e4f1b03073aa3fc98a421c45726aed83d8e19225758c3ddb343",
+    "models/trade_type_reference.sql": "005f4562a3333a18c39d0f428e51cb3eaf99547cda9c4ec816dcd3eab1c83696"
+  },
+  "lineage": [
+    {
+      "audits": [
+        "not_null_trade_id"
+      ],
+      "authority": [
+        "tpc-di-1.1.0-2.2.2.17"
+      ],
+      "expressions": [],
+      "models": [
+        "governed.trade_stage"
+      ]
+    },
+    {
+      "audits": [
+        "not_null_trade_id"
+      ],
+      "authority": [
+        "tpc-di-1.1.0-2.2.2.16"
+      ],
+      "expressions": [],
+      "models": [
+        "governed.trade_history_stage"
+      ]
+    },
+    {
+      "audits": [],
+      "authority": [
+        "tpc-di-1.1.0-2.2.2.18",
+        "tpc-di-1.1.0-4.5.8.2-type"
+      ],
+      "expressions": [],
+      "models": [
+        "governed.trade_type_reference",
+        "governed.dim_trade"
+      ]
+    },
+    {
+      "audits": [],
+      "authority": [
+        "tpc-di-1.1.0-2.2.2.13",
+        "tpc-di-1.1.0-4.5.8.2-status"
+      ],
+      "expressions": [],
+      "models": [
+        "governed.status_type_reference",
+        "governed.dim_trade"
+      ]
+    },
+    {
+      "audits": [
+        "not_null_trade_id"
+      ],
+      "authority": [
+        "tpc-di-1.1.0-4.5.8.2-copy"
+      ],
+      "expressions": [],
+      "models": [
+        "governed.dim_trade"
+      ]
+    },
+    {
+      "audits": [
+        "valid_lifecycle_order"
+      ],
+      "authority": [
+        "tpc-di-1.1.0-4.5.8.1",
+        "tpc-di-1.1.0-4.5.8.2-create-close"
+      ],
+      "expressions": [
+        "trade_close_timestamp",
+        "trade_creation_timestamp"
+      ],
+      "models": [
+        "governed.trade_lifecycle",
+        "governed.dim_trade"
+      ]
+    }
+  ],
+  "policy_expressions": {
+    "trade_close_timestamp": {
+      "ast_class": "Min",
+      "rendered_sql": "MIN(CASE WHEN h.status_id IN ('CMPT', 'CNCL') THEN h.status_updated_at END)",
+      "sha256": "ac404def9e01af227aa9a85e8f22aee4f881f987b857ce3ebfd1038099344861"
+    },
+    "trade_creation_timestamp": {
+      "ast_class": "Min",
+      "rendered_sql": "MIN(CASE WHEN (t.trade_type_id IN ('TMB', 'TMS') AND h.status_id = 'SBMT') OR (NOT t.trade_type_id IN ('TMB', 'TMS') AND h.status_id = 'PNDG') THEN h.status_updated_at END)",
+      "sha256": "d54a7c0421303f57ce606b6b30fc486bc75f0906521397ec1769b8c330145098"
+    }
+  },
+  "schema_version": "projection-manifest/v1"
+}

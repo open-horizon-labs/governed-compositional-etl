@@ -1,0 +1,13 @@
+{
+  "audit_errors": 0,
+  "database": "build/tpcdi.duckdb",
+  "dim_trade_rows": 390978,
+  "distinct_trade_ids": 390978,
+  "schema_version": "sqlmesh-execution/v1",
+  "trade_id_0": {
+    "closed_at": "2012-07-07T00:02:34",
+    "created_at": "2012-07-07T00:01:13",
+    "status": "Completed",
+    "type": "Market Buy"
+  }
+}
