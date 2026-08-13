@@ -8,13 +8,13 @@
   },
   "arms": {
     "compositional_cess": {
-      "projection_sha256": "91d3ea7b9be83c635b8a2a3dd302f23228e61fb6f9742aa1bd5cf6c61822dd7c"
+      "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08"
     },
     "native": {
-      "projection_sha256": "91d3ea7b9be83c635b8a2a3dd302f23228e61fb6f9742aa1bd5cf6c61822dd7c"
+      "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08"
     },
     "stage_local_cess": {
-      "projection_sha256": "91d3ea7b9be83c635b8a2a3dd302f23228e61fb6f9742aa1bd5cf6c61822dd7c"
+      "projection_sha256": "0669f058ba76e13763e930385896a774ce452348fdf735e6f57e58b739d90f08"
     }
   },
   "classification": "replaceable_projection_evidence",
@@ -83,7 +83,7 @@
     "audits/not_null_trade_id.sql": "a4d5618001dfd53c64fdbeacada312397267b57082c25cd44f708e614bed42f3",
     "audits/valid_lifecycle_order.sql": "ca20f520f39f3ce72ecab34dfa90d578c0b8776a130d186595352349bd4ac433",
     "config.yaml": "b910bcbb827135d49939438838dcd350c39e5595458a9f127f361fa2d81275ca",
-    "models/dim_trade.sql": "85f4470d8798dc29b285435bd88eec000642aa8fc84f154b1cddb60c5d1ff730",
+    "models/dim_trade.sql": "d232dea7999c87efce83a378a1df7c6d88a620f3078e2c44883421ff18765b1b",
     "models/status_type_reference.sql": "a75b036b6334f703a39be1b9baa5e321b5d9eb56613789be0222716a796fed4b",
     "models/trade_history_stage.sql": "bb58e2dbf6237ed68023b4bfbbb2b44178748aeb31f6fbfa35a4fc0d48c71442",
     "models/trade_lifecycle.sql": "94404616a5e001d21f3ba2f63b34a9e0a91db18f45bd05fcc74840f0456dce24",
@@ -92,81 +92,407 @@
   },
   "lineage": [
     {
-      "audits": [
-        "not_null_trade_id"
-      ],
-      "authority": [
-        "tpc-di-1.1.0-2.2.2.17"
-      ],
-      "expressions": [],
-      "models": [
-        "governed.trade_stage"
-      ]
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.1",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/mappings/0"
+      },
+      "targets": {
+        "audits": [
+          "not_null_trade_id"
+        ],
+        "columns": [
+          "trade_id"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.trade_lifecycle",
+          "governed.dim_trade"
+        ]
+      }
     },
     {
-      "audits": [
-        "not_null_trade_id"
-      ],
-      "authority": [
-        "tpc-di-1.1.0-2.2.2.16"
-      ],
-      "expressions": [],
-      "models": [
-        "governed.trade_history_stage"
-      ]
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/mappings/1"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [
+          "created_at"
+        ],
+        "expressions": [
+          "trade_creation_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle",
+          "governed.dim_trade"
+        ]
+      }
     },
     {
-      "audits": [],
-      "authority": [
-        "tpc-di-1.1.0-2.2.2.18",
-        "tpc-di-1.1.0-4.5.8.2-type"
-      ],
-      "expressions": [],
-      "models": [
-        "governed.trade_type_reference",
-        "governed.dim_trade"
-      ]
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/mappings/2"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [
+          "closed_at"
+        ],
+        "expressions": [
+          "trade_close_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle",
+          "governed.dim_trade"
+        ]
+      }
     },
     {
-      "audits": [],
-      "authority": [
-        "tpc-di-1.1.0-2.2.2.13",
-        "tpc-di-1.1.0-4.5.8.2-status"
-      ],
-      "expressions": [],
-      "models": [
-        "governed.status_type_reference",
-        "governed.dim_trade"
-      ]
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.1",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/rules/0"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [],
+        "expressions": [],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
     },
     {
-      "audits": [
-        "not_null_trade_id"
-      ],
-      "authority": [
-        "tpc-di-1.1.0-4.5.8.2-copy"
-      ],
-      "expressions": [],
-      "models": [
-        "governed.dim_trade"
-      ]
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/rules/1"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [],
+        "expressions": [
+          "trade_creation_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
     },
     {
-      "audits": [
-        "valid_lifecycle_order"
-      ],
-      "authority": [
-        "tpc-di-1.1.0-4.5.8.1",
-        "tpc-di-1.1.0-4.5.8.2-create-close"
-      ],
-      "expressions": [
-        "trade_close_timestamp",
-        "trade_creation_timestamp"
-      ],
-      "models": [
-        "governed.trade_lifecycle",
-        "governed.dim_trade"
-      ]
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/rules/2"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [],
+        "expressions": [
+          "trade_close_timestamp"
+        ],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create-close",
+        "path": "contracts/edges/trade-history-to-dim-trade-v1.json",
+        "pointer": "/rules/3"
+      },
+      "targets": {
+        "audits": [
+          "valid_lifecycle_order"
+        ],
+        "columns": [],
+        "expressions": [],
+        "models": [
+          "governed.trade_lifecycle"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-copy",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/0"
+      },
+      "targets": {
+        "audits": [
+          "not_null_trade_id"
+        ],
+        "columns": [
+          "trade_id"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-create",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/1"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "created_at"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-close",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/2"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "closed_at"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-status",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/3"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "status"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-type",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/4"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "type"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-copy",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/5"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "quantity"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-copy",
+        "path": "contracts/logical-models/dim-trade-v1.json",
+        "pointer": "/attributes/6"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "bid_price"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-2.2.2.13",
+        "path": "contracts/sources/tpcdi-trade-source-v1.json",
+        "pointer": "/authority/0"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [],
+        "expressions": [],
+        "models": [
+          "governed.status_type_reference"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-2.2.2.16",
+        "path": "contracts/sources/tpcdi-trade-source-v1.json",
+        "pointer": "/authority/1"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [],
+        "expressions": [],
+        "models": [
+          "governed.trade_history_stage"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-2.2.2.17",
+        "path": "contracts/sources/tpcdi-trade-source-v1.json",
+        "pointer": "/authority/2"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [],
+        "expressions": [],
+        "models": [
+          "governed.trade_stage"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-2.2.2.18",
+        "path": "contracts/sources/tpcdi-trade-source-v1.json",
+        "pointer": "/authority/3"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [],
+        "expressions": [],
+        "models": [
+          "governed.trade_type_reference"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2",
+        "path": "contracts/stages/dim-trade-consumer-v1.json",
+        "pointer": "/rules/0"
+      },
+      "targets": {
+        "audits": [
+          "not_null_trade_id"
+        ],
+        "columns": [
+          "closed_at",
+          "created_at",
+          "trade_id"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.dim_trade"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-2.2.2.16",
+        "path": "contracts/stages/trade-history-v1.json",
+        "pointer": "/rules/0"
+      },
+      "targets": {
+        "audits": [
+          "not_null_trade_id"
+        ],
+        "columns": [
+          "status_id",
+          "status_updated_at",
+          "trade_id"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.trade_history_stage"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-4.5.8.2-type",
+        "path": "contracts/stages/trade-type-reference-v1.json",
+        "pointer": "/rules/0"
+      },
+      "targets": {
+        "audits": [],
+        "columns": [
+          "is_market",
+          "is_sell",
+          "trade_type_id",
+          "type_name"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.trade_type_reference"
+        ]
+      }
+    },
+    {
+      "source": {
+        "authority": "tpc-di-1.1.0-2.2.2.17",
+        "path": "contracts/stages/trade-v1.json",
+        "pointer": "/rules/0"
+      },
+      "targets": {
+        "audits": [
+          "not_null_trade_id"
+        ],
+        "columns": [
+          "bid_price",
+          "quantity",
+          "status_id",
+          "trade_id",
+          "trade_recorded_at",
+          "trade_type_id"
+        ],
+        "expressions": [],
+        "models": [
+          "governed.trade_stage"
+        ]
+      }
     }
   ],
   "policy_expressions": {
