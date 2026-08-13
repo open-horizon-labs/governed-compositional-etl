@@ -10,7 +10,7 @@
         "live_result": {"null_trade_ids": 0},
         "location": "projection.dim_trade.trade_id"
       },
-      "heldout_relation": "v21-ho-projection-identity",
+      "heldout_relation": "v22-ho-projection-neighbor",
       "id": "v2-projection-null-trade-id",
       "injection": {
         "artifact": "models/dim_trade.sql",
@@ -30,7 +30,7 @@
         "live_result": {"hole": "trade-stage.execution-pricing-policy", "status": "open"},
         "location": "hole.trade-stage.execution-pricing-policy"
       },
-      "heldout_relation": "v21-ho-policy-neighbor",
+      "heldout_relation": "v22-ho-policy-neighbor",
       "id": "v2-missing-pricing-policy",
       "injection": {"artifact": "sketches/trade-dim-v1.md", "kind": "existing_open_hole", "target": "trade-stage.execution-pricing-policy"},
       "source_authority": [{"id": "explicit-open-hole", "source": "sketches/trade-dim-v1.md#explicit-holes"}]
@@ -45,7 +45,7 @@
         "live_result": {"dim_trade_audits": 2},
         "location": "verification.dim_trade.lifecycle_audit"
       },
-      "heldout_relation": "v21-ho-verification-neighbor",
+      "heldout_relation": "v22-ho-verification-neighbor",
       "id": "v2-verification-audit-gap",
       "injection": {"artifact": "models/dim_trade.sql", "kind": "text_replace", "replacement": "audits (not_null_trade_id)", "target": "audits (not_null_trade_id, valid_lifecycle_order)"},
       "source_authority": [{"id": "sketch-verify-twice", "source": "sketches/trade-dim-v1.md#known-rule-8"}]
@@ -60,7 +60,7 @@
         "live_result": {"created_at": "2012-07-07T00:01:13"},
         "location": "edge.trade_history_to_dim_trade.create_close_time"
       },
-      "heldout_relation": "v21-ho-edge-neighbor",
+      "heldout_relation": "v22-ho-edge-creation",
       "id": "v2-edge-creation-time",
       "injection": {"artifact": "contracts/edges/trade-history-to-dim-trade-v1.json", "kind": "json_pointer_replace", "pointer": "/history_policy/market_creation_status", "replacement": "CMPT", "target": "SBMT"},
       "local_pass_requirement": true,
@@ -76,7 +76,7 @@
         "live_result": {"trade_id_0_lifecycle_seconds": 81},
         "location": "path.dim_trade_to_lifecycle_metric.timestamp_roles"
       },
-      "heldout_relation": "v21-ho-path-duration",
+      "heldout_relation": "v22-ho-path-neighbor",
       "id": "v2-path-lifecycle-duration",
       "injection": {"artifact": "path/lifecycle_metric.sql", "kind": "text_replace", "replacement": "date_diff('second', created_at, created_at)", "target": "date_diff('second', created_at, closed_at)"},
       "source_authority": [{"id": "tpc-di-1.1.0-4.5.8.2-create-close", "source": "contracts/edges/trade-history-to-dim-trade-v1.json#/mappings"}]

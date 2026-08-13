@@ -1,0 +1,73 @@
+{
+  "budgets": {"context_bytes_per_case": 16384, "model_calls_per_arm": 0, "model_tokens_per_arm": 0, "repair_attempts_per_case": 1},
+  "corpus_requirements": {
+    "balanced_classes": ["projection_defect", "missing_policy", "verification_gap", "edge_contract_mismatch", "end_to_end_composition"],
+    "local_pass_local_pass_edge_minimum": 1,
+    "visible_case_count": 5
+  },
+  "cost_ceiling": {"compositional_operator_work_unit_multiple_vs_native": 4.0, "wall_time_role": "descriptive_only"},
+  "decision_rules": {
+    "adopt": {
+      "active_repair_rate_min": 0.8,
+      "authority_violations_max": 0,
+      "escaped_composition_failures_max": 0,
+      "heldout_regressions_max": 0,
+      "incremental_edge_or_composition_catches_min": 2,
+      "localization_accuracy_min": 0.8,
+      "revalidation_recall_min": 1.0
+    },
+    "reject": {"incremental_edge_or_composition_catches_max": 0},
+    "revise": "Any intermediate result or safety/cost breach."
+  },
+  "frozen_hashes": {
+    "corpus_sha256": "be2e20325de846369889e4756ec5d3f5d536baad1fd287bd03bcbe415a8468f8",
+    "harness_files": {
+      "scripts/experiment_scorer_v2.py": "8b7295fd8010af1586c83ce4e46fda6893e1ace671f5ab058b355739dbf03680",
+      "scripts/experiment_v2.py": "9dd6c9d239f9acbcc2492a76ea946fd81a519333d3277b7345e430dfaca99f44",
+      "scripts/sealed_custodian_v2.py": "e961a1d6fadee9b0ef30c6d55690834362e1ef49abb1e0daa417c7fd05ed4234",
+      "scripts/sketch_review_v2.py": "cd7773575605be49f917080974cf48cc0809fe7413f91be2ea2cef956b0727c4",
+      "scripts/verify_experiment_v2.py": "841b9d6b6aad6772ef3c7d3ebec0f876dffb463e7c445d3df587e7473b5356cf"
+    },
+    "projection_manifest_sha256": "fc3baf16fdcff8fbd47ba4af9b132fc70d420ba6b7a2106b4a475c2cfa5cc9f3",
+    "raw_database_sha256": "0300573629cb5fa372187cc01aecb1dff6e27837b532ca122d3f36a9fea59657",
+    "raw_manifest_sha256": "04417e8bfc3600ffebe369f5ae6b5af8a13d8cb735fb6925947948901d641226"
+  },
+  "heldout_custody": {
+    "answer_submission_files_tracked": 0,
+    "case_count": 2,
+    "commitment_sha256": "aca9f5857914af3fc0b19da7fe2f6265a5e433710d62e7cb23a9eef204928be6",
+    "custodian_output": "aggregate_counts_only",
+    "rotated_after_v2_1_invalidation": true,
+    "runner_access": "forbidden"
+  },
+  "metric_definitions": {
+    "active_repair_rate": "passing deterministic and separate Sketch review / four resolved cases",
+    "authority_violations": "diffs outside allowed or touching forbidden surfaces",
+    "escaped_composition_failures": "uncaught edge/path cases / two composition cases",
+    "heldout_regressions": "sealed cases scored minus passed",
+    "incremental_edge_or_composition_catches": "compositional catches minus best other arm",
+    "localization_accuracy": "exact locations / five visible cases",
+    "operator_work_units": "evidence items, edits, deterministic scores, and Sketch reviews; not time",
+    "revalidation_precision": "affected selected / all semantic selected",
+    "revalidation_recall": "affected selected / frozen exhaustive descendants",
+    "wall_time": "time.perf_counter_ns; descriptive only"
+  },
+  "owner_hat": "research-sponsor",
+  "pilot_basis": {
+    "decision": "retain thresholds; replace invalid live-probe mechanics only",
+    "rationale": "V2.1 was invalidated before publication because its live probe read a prior clean table. V2.2 materializes the exact injected and repaired disposable model SQL into isolated experiment tables and retains both outputs. No prior score is reused."
+  },
+  "publication_gates": ["human_review_required", "no_compliant_tpc_di_benchmark_claim", "no_comparative_tpc_performance_claim", "claims_bounded_to_scripted_agents_and_selected_slice"],
+  "reveal_order": ["v2-projection-null-trade-id", "v2-missing-pricing-policy", "v2-verification-audit-gap", "v2-edge-creation-time", "v2-path-lifecycle-duration"],
+  "run": {"nonce": "issue7-v22-run-20260813-c", "seed": 20260815},
+  "schema_version": "experiment-preregistration/v2.2",
+  "status": "frozen_before_v2_scored_run",
+  "treatment": {
+    "native": ["pipeline"],
+    "stage_local_cess": ["pipeline", "stage"],
+    "compositional_cess": ["pipeline", "stage", "contract", "path"],
+    "repair_policy": "one deterministic algorithm; no arm input or branch"
+  },
+  "versions": {"corpus": "executable-experiment-corpus/v2.2", "harness": "matched-experiment/v2.2", "policy": "deterministic-first-visible-semantic-finding/v2", "scorer": "v2-score/v1", "sealed_custodian": "sealed-v2-aggregate/v1", "sketch_review": "sketch-review-v2/v1", "verifier": "tamper-evident-envelope/v2.2"},
+  "prior_attempts": {"v1": "invalid", "v2_attempt_a": "invalid", "v2_1": "invalid"}
+}
