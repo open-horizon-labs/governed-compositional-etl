@@ -18,10 +18,10 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "experiments/corpus-v2.json"
-PREREG = ROOT / "experiments/preregistration-v2.json"
-RESULT = ROOT / "evidence/issue-7/experiment-result-v2.json"
-TRACES = ROOT / "evidence/issue-7/traces-v2"
-ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.json"
+PREREG = ROOT / "experiments/preregistration-v2.1.json"
+RESULT = ROOT / "evidence/issue-7/experiment-result-v2.1.json"
+TRACES = ROOT / "evidence/issue-7/traces-v2.1"
+ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.1.json"
 ARMS = {
     "native": ("pipeline",),
     "stage_local_cess": ("pipeline", "stage"),
@@ -261,7 +261,8 @@ def run(retain: bool = True) -> dict:
                 work = Path(directory)
                 database = work / "tpcdi.duckdb"
                 shutil.copy2(ROOT / "build/tpcdi.duckdb", database)
-                if digest(database) != raw_digest:
+                start_database_sha256 = digest(database)
+                if start_database_sha256 != raw_digest:
                     raise ExperimentV2Error("arm/case database copy is not identical")
                 output = work / "projection"
                 COMPILER.compile_projection(output, retain=False, database=database)
@@ -282,7 +283,7 @@ def run(retain: bool = True) -> dict:
                     if local_edge != {"producer": "pass", "consumer": "pass", "edge_binding": "fail"}:
                         raise ExperimentV2Error("local-pass/local-pass edge proof failed")
                 work_units += len(evidence) + len(diff["changed_artifacts"]) + 2
-                traces.append({"case_id": case["id"], "sequence": sequence, "attempt": 1, "layers_visible": list(layers), "database_copy_sha256": digest(database), "defect_artifact_sha256": hashlib.sha256(injected.encode()).hexdigest(), "defect_execution": defect, "proposal": proposal, "artifact_diff": diff, "repaired_execution": repaired["execution"], "live_result": repaired["live_result"], "deterministic_score": score, "sketch_review": review, "local_edge_proof": local_edge})
+                traces.append({"case_id": case["id"], "sequence": sequence, "attempt": 1, "layers_visible": list(layers), "start_database_sha256": start_database_sha256, "post_execution_database_sha256": digest(database), "defect_artifact_sha256": hashlib.sha256(injected.encode()).hexdigest(), "defect_execution": defect, "proposal": proposal, "artifact_diff": diff, "repaired_execution": repaired["execution"], "live_result": repaired["live_result"], "deterministic_score": score, "sketch_review": review, "local_edge_proof": local_edge})
         visible_complete = len(traces) == 5 and all(item["attempt"] == 1 for item in traces)
         heldout = subprocess_json("sealed_custodian_v2.py", {"visible_phase_complete": visible_complete, "layers": list(layers), "run_nonce": prereg["run"]["nonce"]})
         replay = REV.execute("edge.create_status", retain=False)
@@ -302,7 +303,7 @@ def run(retain: bool = True) -> dict:
     cost_pass = cost_multiple <= prereg["cost_ceiling"]["compositional_operator_work_unit_multiple_vs_native"]
     decision = "adopt" if quality_pass and cost_pass else ("reject" if incremental <= prereg["decision_rules"]["reject"]["incremental_edge_or_composition_catches_max"] else "revise")
     prereg_commit = git("log", "-1", "--format=%H", "--", str(PREREG.relative_to(ROOT)))
-    report = {"schema_version": "matched-experiment-result/v2", "v1_status": "invalid-no-scores-counted", "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero", "preregistration_commit": prereg_commit, "preregistration_sha256": digest(PREREG), "run_nonce": prereg["run"]["nonce"], "matched_controls": {"raw_database_sha256": raw_digest, "projection_sha256": next(iter(load(ROOT / "projection/manifest-v1.json")["arms"].values()))["projection_sha256"], "reveal_order": corpus["reveal_order"], "repair_attempts_per_case": 1, "model_tokens": 0}, "arms": arm_results, "summaries": summaries, "incremental_edge_or_composition_catches": incremental, "threshold_evaluation": {"quality_pass": quality_pass, "cost_pass": cost_pass, "operator_work_unit_multiple": cost_multiple, "decision": decision}, "review_trigger": {"fired": False, "reason": None}, "publication_gates": prereg["publication_gates"]}
+    report = {"schema_version": "matched-experiment-result/v2.1", "prior_attempts": {"v1": "invalid", "v2_attempt_a": "invalid"}, "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero", "preregistration_commit": prereg_commit, "preregistration_sha256": digest(PREREG), "run_nonce": prereg["run"]["nonce"], "matched_controls": {"raw_database_sha256": raw_digest, "projection_sha256": next(iter(load(ROOT / "projection/manifest-v1.json")["arms"].values()))["projection_sha256"], "reveal_order": corpus["reveal_order"], "repair_attempts_per_case": 1, "model_tokens": 0}, "arms": arm_results, "summaries": summaries, "incremental_edge_or_composition_catches": incremental, "threshold_evaluation": {"quality_pass": quality_pass, "cost_pass": cost_pass, "operator_work_unit_multiple": cost_multiple, "decision": decision}, "review_trigger": {"fired": False, "reason": None}, "publication_gates": prereg["publication_gates"]}
     if retain:
         RESULT.parent.mkdir(parents=True, exist_ok=True)
         TRACES.mkdir(parents=True, exist_ok=True)

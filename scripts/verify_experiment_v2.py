@@ -11,8 +11,8 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.json"
-RESULT = ROOT / "evidence/issue-7/experiment-result-v2.json"
+ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.1.json"
+RESULT = ROOT / "evidence/issue-7/experiment-result-v2.1.json"
 
 
 class VerificationError(ValueError):
@@ -43,7 +43,7 @@ def verify(envelope: dict, result: dict, root: Path = ROOT) -> None:
     if tree != envelope["preregistration_tree"]:
         raise VerificationError("preregistration tree does not match commit")
     for name, expected in envelope["trace_object_sha256"].items():
-        trace = json.loads((root / f"evidence/issue-7/traces-v2/{name}.json").read_text())
+        trace = json.loads((root / f"evidence/issue-7/traces-v2.1/{name}.json").read_text())
         if hashlib.sha256(canonical(trace).encode()).hexdigest() != expected:
             raise VerificationError(f"trace object tampered: {name}")
         replay = trace["localized_replay"]
@@ -52,7 +52,7 @@ def verify(envelope: dict, result: dict, root: Path = ROOT) -> None:
         full = trace["full_replay_control"]
         if full["recall"] != 1.0 or len(full["execution"]["executed_models"]) != 6:
             raise VerificationError("fake or incomplete full replay control")
-        if any(item["database_copy_sha256"] != result["matched_controls"]["raw_database_sha256"] for item in trace["traces"]):
+        if any(item["start_database_sha256"] != result["matched_controls"]["raw_database_sha256"] for item in trace["traces"]):
             raise VerificationError("arm did not start from identical database copies")
         if any(item["attempt"] != 1 or not item["live_result"] for item in trace["traces"]):
             raise VerificationError("attempt budget or live output evidence is invalid")
@@ -64,7 +64,7 @@ def verify(envelope: dict, result: dict, root: Path = ROOT) -> None:
     if hashlib.sha256(canonical(summary).encode()).hexdigest() != envelope["root_sha256"]:
         raise VerificationError("envelope root digest is invalid")
     for name, arm in result["arms"].items():
-        retained = json.loads((root / f"evidence/issue-7/traces-v2/{name}.json").read_text())
+        retained = json.loads((root / f"evidence/issue-7/traces-v2.1/{name}.json").read_text())
         if retained != arm:
             raise VerificationError("result embeds a trace different from retained evidence")
 
