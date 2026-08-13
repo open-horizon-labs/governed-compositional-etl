@@ -1,9 +1,27 @@
 {
   "authority": [
     {
-      "id": "tpc-di-1.1.0-2.2.2.13-18",
+      "id": "tpc-di-1.1.0-2.2.2.13",
       "kind": "tpc_di_rule",
-      "locator": "Clauses 2.2.2.13, 2.2.2.16, 2.2.2.17, and 2.2.2.18",
+      "locator": "Clause 2.2.2.13 StatusType source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-2.2.2.16",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.16 TradeHistory source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-2.2.2.17",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.17 Trade source fields",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-2.2.2.18",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.18 TradeType source fields",
       "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
     }
   ],

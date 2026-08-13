@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
+import subprocess
 import sys
+from urllib.parse import unquote
 
 try:
     from jsonschema import Draft202012Validator
@@ -29,6 +31,10 @@ HOLE_KEYS = {
 }
 FORBIDDEN_HOLE_EVIDENCE = {"raw_data", "target_schema", "projection"}
 PROJECTIONS = {"sqlmesh_model", "sqlglot_ast", "generated_sql", "duckdb_table"}
+TPC_SPEC_URL = "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+TPC_LOCATOR = re.compile(r"^Clauses? [0-9][0-9A-Za-z., -]*$")
+DECISION_ROOT = PurePosixPath(".oh/metis")
+COUNTEREXAMPLE_ROOT = PurePosixPath("counterexamples/archive")
 
 
 class ContractError(ValueError):
@@ -86,21 +92,79 @@ def require_policy_authority(authority: object) -> dict:
     if value["kind"] == "tpc_di_rule":
         if not TPC_RULE.fullmatch(value["id"]):
             raise ContractError("TPC-DI policy authority must name a 1.1.0 rule")
-        if not value["source"].startswith("https://www.tpc.org/"):
-            raise ContractError("TPC-DI policy authority must name the TPC specification")
-    elif value["kind"] == "approved_decision":
-        if not value["source"].startswith(".oh/"):
-            raise ContractError("approved policy authority must name a repository decision")
-    elif value["kind"] == "approved_counterexample":
-        if not value["source"].startswith("counterexamples/archive/"):
+        if value["source"] != TPC_SPEC_URL or not TPC_LOCATOR.fullmatch(
+            value["locator"]
+        ):
             raise ContractError(
-                "approved counterexample authority must name the complete CE archive"
+                "TPC-DI policy authority must name the canonical specification and clause"
             )
+        clause = re.match(
+            r"[0-9]+(?:\.[0-9]+)+",
+            value["id"].removeprefix("tpc-di-1.1.0-"),
+        )
+        if clause is None or clause.group() not in value["locator"]:
+            raise ContractError("TPC-DI authority locator must match its named rule")
+    elif value["kind"] == "approved_decision":
+        require_tracked_authority_path(value["source"], DECISION_ROOT, "decision")
+    elif value["kind"] == "approved_counterexample":
+        require_tracked_authority_path(
+            value["source"], COUNTEREXAMPLE_ROOT, "counterexample"
+        )
     else:
         raise ContractError(
             "raw data, target structure, and projections cannot fill policy holes"
         )
     return value
+
+
+def require_tracked_authority_path(source: str, root: PurePosixPath, kind: str) -> str:
+    if (
+        source != unquote(source)
+        or "%" in source
+        or "\\" in source
+        or "://" in source
+        or source.startswith("/")
+        or "//" in source
+        or any(ord(character) < 32 for character in source)
+    ):
+        raise ContractError(f"approved {kind} authority path is not canonical")
+    path = PurePosixPath(source)
+    if any(part in {"", ".", ".."} for part in path.parts) or str(path) != source:
+        raise ContractError(f"approved {kind} authority path is not canonical")
+    try:
+        path.relative_to(root)
+    except ValueError as error:
+        raise ContractError(
+            f"approved {kind} authority must be under {root.as_posix()}"
+        ) from error
+    if path == root or path.suffix not in {".md", ".json"}:
+        raise ContractError(f"approved {kind} authority must name an artifact")
+    artifact = ROOT / path
+    allowed_root = (ROOT / root).resolve()
+    try:
+        artifact.resolve().relative_to(allowed_root)
+    except ValueError as error:
+        raise ContractError(f"approved {kind} authority path escapes its root") from error
+    tracked = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", "--", source],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if tracked.returncode != 0 or not artifact.is_file() or artifact.is_symlink():
+        raise ContractError(
+            f"approved {kind} authority must name an existing tracked artifact"
+        )
+    return source
+
+
+def named_policy_authority_ids(source_descriptor: dict) -> set[str]:
+    authorities = list(source_descriptor.get("authority", []))
+    for path in sorted((ROOT / "contracts/repair-authority").glob("*.json")):
+        record = load_json(path)
+        authorities.extend(record.get("active_authority", {}).get("basis", []))
+    return {require_policy_authority(authority)["id"] for authority in authorities}
 
 
 def semantic_type_compatible(actual: str, required: str) -> bool:
@@ -132,6 +196,82 @@ def validate_rule_order(contract: dict, name: str) -> None:
         raise ContractError(
             f"{name} rule_order must exactly cover declared rules; verification is separate"
         )
+
+
+def validate_stage_bindings(
+    contract: dict,
+    source_descriptor: dict,
+    semantic_types: dict[str, dict],
+    intermediates: dict[str, str] | None = None,
+) -> None:
+    input_entity = contract["input"]["entity"]
+    input_fields = contract["input"]["fields"]
+    input_names = [field["name"] for field in input_fields]
+    if len(input_names) != len(set(input_names)):
+        raise ContractError("stage input fields must resolve uniquely by name")
+    for field in input_fields:
+        if field["semantic_type"] not in semantic_types:
+            raise ContractError("stage input references an unknown semantic type")
+
+    if input_entity.startswith("raw."):
+        entities = [
+            entity
+            for entity in source_descriptor["entities"]
+            if entity["name"] == input_entity
+        ]
+        if len(entities) != 1:
+            raise ContractError(
+                "raw stage input entity must resolve uniquely in the source descriptor"
+            )
+        source_fields = entities[0]["fields"]
+        for declared in input_fields:
+            matches = [
+                field for field in source_fields if field["name"] == declared["name"]
+            ]
+            if len(matches) != 1:
+                raise ContractError(
+                    "raw stage input must resolve uniquely to a source field"
+                )
+            if matches[0]["semantic_type"] != declared["semantic_type"]:
+                raise ContractError(
+                    "raw stage input semantic type must match the source descriptor"
+                )
+
+    available = [(field["name"], field["semantic_type"]) for field in input_fields]
+    available.extend((intermediates or {}).items())
+    rules = {rule["id"]: rule for rule in contract["rules"]}
+    evidence_rules = set(contract["evidence"]["rule_ids"])
+    policy_authorities = named_policy_authority_ids(source_descriptor)
+    for output in contract["output"]["fields"]:
+        matches = [
+            semantic_type
+            for name, semantic_type in available
+            if name == output["source"]
+        ]
+        if len(matches) != 1:
+            raise ContractError(
+                "stage output source must resolve uniquely to an input or intermediate"
+            )
+        source_type = matches[0]
+        target_type = output["semantic_type"]
+        if target_type not in semantic_types:
+            raise ContractError("stage output references an unknown semantic type")
+        if source_type == target_type:
+            if "conversion_rule" in output:
+                raise ContractError("copy-preserving stage output cannot claim a conversion")
+            continue
+        rule_id = output.get("conversion_rule")
+        rule = rules.get(rule_id)
+        if (
+            rule is None
+            or rule.get("operation") != "convert_semantic_type"
+            or rule["authority"] not in evidence_rules
+            or rule["authority"] not in policy_authorities
+        ):
+            raise ContractError(
+                "stage semantic conversion requires an explicit named conversion rule "
+                "with policy authority"
+            )
 
 
 def output_field(contract: dict, field_name: str) -> dict:
@@ -318,6 +458,7 @@ def validate_bundle() -> dict:
         nonempty_string(attribute.get("source_rule"), "logical attribute source_rule")
 
     stage_documents = {}
+    stage_policy_authorities = named_policy_authority_ids(source)
     for path in sorted((ROOT / "contracts/stages").glob("*.json")):
         contract = load_json(path)
         validate_instance(
@@ -333,16 +474,12 @@ def validate_bundle() -> dict:
         validate_rule_order(contract, contract_id)
         rule_order = contract.get("rule_order", [])
         for rule in contract.get("rules", []):
-            if rule.get("id") not in rule_order or not TPC_RULE.fullmatch(
-                rule.get("authority", "")
+            if (
+                rule.get("id") not in rule_order
+                or rule.get("authority") not in stage_policy_authorities
             ):
-                raise ContractError("stage rules need ordered, named TPC-DI authority")
-        for field in contract.get("output", {}).get("fields", []):
-            if field.get("semantic_type") not in semantic_types:
-                raise ContractError("stage output references an unknown semantic type")
-        for field in contract.get("input", {}).get("fields", []):
-            if field.get("semantic_type") not in semantic_types:
-                raise ContractError("stage input references an unknown semantic type")
+                raise ContractError("stage rules need ordered, named policy authority")
+        validate_stage_bindings(contract, source, semantic_types)
 
     edge = load_json(ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json")
     validate_instance(schemas["edge-contract-v1.schema.json"], edge, "edge contract")
@@ -479,6 +616,12 @@ def adjudicate_candidate(
 ) -> dict:
     if case is None:
         case = load_json(ROOT / "evidence/issue-4/candidate-edge-check-v1.json")
+    source_descriptor = load_json(
+        ROOT / "contracts/sources/tpcdi-trade-source-v1.json"
+    )
+    for contract in stages.values():
+        validate_stage_bindings(contract, source_descriptor, semantic_types)
+    validate_edge_bindings(stages, edge, semantic_types)
     trade_contract = stages["stage.trade.v1"]
     history_contract = stages["stage.trade_history.v1"]
     consumer_contract = stages["stage.dim_trade_consumer.v1"]

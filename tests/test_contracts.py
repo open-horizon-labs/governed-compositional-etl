@@ -190,6 +190,114 @@ class GovernedContractTests(unittest.TestCase):
         ):
             CONTRACTS.validate_edge_bindings(incompatible_consumer, edge, types)
 
+    def test_generic_stage_bindings_reject_semantic_and_source_mutations(self):
+        source = CONTRACTS.load_json(
+            ROOT / "contracts/sources/tpcdi-trade-source-v1.json"
+        )
+        registry = CONTRACTS.load_json(
+            ROOT / "contracts/semantic-types/trade-types-v1.json"
+        )
+        types = {item["id"]: item for item in registry["types"]}
+        consumer = CONTRACTS.load_json(
+            ROOT / "contracts/stages/dim-trade-consumer-v1.json"
+        )
+        trade = CONTRACTS.load_json(ROOT / "contracts/stages/trade-v1.json")
+
+        wrong_consumer_output = copy.deepcopy(consumer)
+        next(
+            field
+            for field in wrong_consumer_output["output"]["fields"]
+            if field["name"] == "created_at"
+        )["semantic_type"] = "trade_record_timestamp"
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "conversion rule"):
+            CONTRACTS.validate_stage_bindings(
+                wrong_consumer_output, source, types
+            )
+
+        wrong_trade_input = copy.deepcopy(trade)
+        next(
+            field
+            for field in wrong_trade_input["input"]["fields"]
+            if field["name"] == "t_dts"
+        )["semantic_type"] = "status_update_timestamp"
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "source descriptor"):
+            CONTRACTS.validate_stage_bindings(wrong_trade_input, source, types)
+
+        ambiguous_raw_source = copy.deepcopy(source)
+        raw_trade = next(
+            entity
+            for entity in ambiguous_raw_source["entities"]
+            if entity["name"] == "raw.trade"
+        )
+        raw_trade["fields"].append(copy.deepcopy(raw_trade["fields"][1]))
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "resolve uniquely"):
+            CONTRACTS.validate_stage_bindings(trade, ambiguous_raw_source, types)
+
+        missing_source = copy.deepcopy(consumer)
+        next(
+            field
+            for field in missing_source["output"]["fields"]
+            if field["name"] == "created_at"
+        )["source"] = "missing_created_at"
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "resolve uniquely"):
+            CONTRACTS.validate_stage_bindings(missing_source, source, types)
+
+        ambiguous_source = copy.deepcopy(consumer)
+        ambiguous_source["input"]["fields"].append(
+            {"name": "created_at", "semantic_type": "trade_record_timestamp"}
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "resolve uniquely"):
+            CONTRACTS.validate_stage_bindings(ambiguous_source, source, types)
+
+        unauthorized_conversion = copy.deepcopy(consumer)
+        converted = next(
+            field
+            for field in unauthorized_conversion["output"]["fields"]
+            if field["name"] == "created_at"
+        )
+        converted["semantic_type"] = "trade_record_timestamp"
+        converted["conversion_rule"] = "dim-trade.unauthorized-conversion"
+        unauthorized_conversion["rules"].append(
+            {
+                "authority": "tpc-di-1.1.0-9.9.9",
+                "id": "dim-trade.unauthorized-conversion",
+                "operation": "convert_semantic_type",
+                "status": "known",
+            }
+        )
+        unauthorized_conversion["evidence"]["rule_ids"].append(
+            "tpc-di-1.1.0-9.9.9"
+        )
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "policy authority"):
+            CONTRACTS.validate_stage_bindings(
+                unauthorized_conversion, source, types
+            )
+
+    def test_adjudication_runs_generic_stage_binding_validation(self):
+        stages = {
+            contract["contract_id"]: contract
+            for contract in [
+                CONTRACTS.load_json(path)
+                for path in sorted((ROOT / "contracts/stages").glob("*.json"))
+            ]
+        }
+        edge = CONTRACTS.load_json(
+            ROOT / "contracts/edges/trade-history-to-dim-trade-v1.json"
+        )
+        registry = CONTRACTS.load_json(
+            ROOT / "contracts/semantic-types/trade-types-v1.json"
+        )
+        types = {item["id"]: item for item in registry["types"]}
+        mutated = copy.deepcopy(stages)
+        consumer = mutated["stage.dim_trade_consumer.v1"]
+        next(
+            field
+            for field in consumer["output"]["fields"]
+            if field["name"] == "created_at"
+        )["semantic_type"] = "trade_record_timestamp"
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "conversion rule"):
+            CONTRACTS.adjudicate_candidate(mutated, edge, types)
+
     def test_edge_identity_rejects_foreign_mixed_and_missing_trade_ids(self):
         case = CONTRACTS.load_json(
             ROOT / "evidence/issue-4/candidate-edge-check-v1.json"
@@ -326,8 +434,70 @@ class GovernedContractTests(unittest.TestCase):
                 "source": "generated_sql.dim_trade",
             }
         ]
-        with self.assertRaisesRegex(CONTRACTS.ContractError, "TPC specification"):
+        with self.assertRaisesRegex(CONTRACTS.ContractError, "canonical specification"):
             CONTRACTS.validate_repair_authority(disguised_projection)
+
+    def test_authority_references_reject_prefix_traversal_and_encoding_bypasses(self):
+        decision_template = {
+            "id": "decision",
+            "kind": "approved_decision",
+            "locator": "Decision",
+            "source": ".oh/metis/issue-4-candidate-edge-adjudication.md",
+        }
+        invalid_decisions = [
+            ".oh/metis/../AGENTS.md",
+            "/.oh/metis/issue-4-candidate-edge-adjudication.md",
+            "file://.oh/metis/issue-4-candidate-edge-adjudication.md",
+            ".oh/metis/%2e%2e/AGENTS.md",
+            ".oh%2fmetis%2fissue-4-candidate-edge-adjudication.md",
+            ".oh\\metis\\issue-4-candidate-edge-adjudication.md",
+        ]
+        for source in invalid_decisions:
+            authority = copy.deepcopy(decision_template)
+            authority["source"] = source
+            with self.subTest(source=source), self.assertRaises(
+                CONTRACTS.ContractError
+            ):
+                CONTRACTS.require_policy_authority(authority)
+
+        counterexample = {
+            "id": "ce-bypass",
+            "kind": "approved_counterexample",
+            "locator": "approved clause",
+            "source": "counterexamples/archive/../fixture.json",
+        }
+        with self.assertRaises(CONTRACTS.ContractError):
+            CONTRACTS.require_policy_authority(counterexample)
+        counterexample["source"] = "counterexamples/archive/not-approved.json"
+        with self.assertRaisesRegex(
+            CONTRACTS.ContractError, "existing tracked artifact"
+        ):
+            CONTRACTS.require_policy_authority(counterexample)
+
+        tpc = {
+            "id": "tpc-di-1.1.0-4.5.8.2",
+            "kind": "tpc_di_rule",
+            "locator": "Clause 4.5.8.2",
+            "source": "https://www.tpc.org.evil.example/tpc-di_v1.1.0.pdf",
+        }
+        with self.assertRaisesRegex(
+            CONTRACTS.ContractError, "canonical specification"
+        ):
+            CONTRACTS.require_policy_authority(tpc)
+        for suffix in ("?download=1", "#clause", "%3ftampered"):
+            encoded = copy.deepcopy(tpc)
+            encoded["source"] = CONTRACTS.TPC_SPEC_URL + suffix
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(
+                CONTRACTS.ContractError, "canonical specification"
+            ):
+                CONTRACTS.require_policy_authority(encoded)
+        disguised_locator = copy.deepcopy(tpc)
+        disguised_locator["source"] = CONTRACTS.TPC_SPEC_URL
+        disguised_locator["locator"] = "Clause 4.5.8.2 https://evil.example"
+        with self.assertRaisesRegex(
+            CONTRACTS.ContractError, "canonical specification"
+        ):
+            CONTRACTS.require_policy_authority(disguised_locator)
 
     def test_rule_order_exactly_covers_rules_and_excludes_verification(self):
         stage = CONTRACTS.load_json(ROOT / "contracts/stages/trade-v1.json")
