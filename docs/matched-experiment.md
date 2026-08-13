@@ -1,4 +1,6 @@
-# Matched scripted experiment
+# Invalid v1 scripted experiment
+
+> **Invalidated:** No v1 score, comparison, or decision counts. This file is retained only to explain the failed harness. See the v2 preregistration and evidence for the replacement run.
 
 Issue #7 uses deterministic scripted agents because an LLM comparison with stable model and reviewer budgets was not available in this environment. Model calls and tokens are therefore exactly zero. This is a simulation of the information boundaries, not evidence about general model performance.
 

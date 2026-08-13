@@ -32,6 +32,7 @@
     "revise": "Any result between adopt and reject, any cost-ceiling breach, or any threshold instability."
   },
   "frozen_before_scored_run": true,
+  "invalidation_reason": "Synthetic non-executing repairs, readable held-out answer submissions, and mislabeled operator units invalidate all v1 scores and decisions.",
   "owner_hat": "research-sponsor",
   "pilot_basis": {
     "issue_3_public_oracle_cases": 3,
@@ -48,5 +49,6 @@
     "no_comparative_tpc_performance_claim",
     "claims_bounded_to_scripted_agents_and_selected_slice"
   ],
-  "schema_version": "experiment-preregistration/v1"
+  "schema_version": "experiment-preregistration/v1",
+  "status": "invalidated_before_v2"
 }

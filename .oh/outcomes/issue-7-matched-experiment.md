@@ -1,11 +1,11 @@
 ---
 id: issue-7-matched-experiment
-status: achieved
+status: invalidated
 owner_hat: data-architect
 ---
 
-# Outcome
+# Invalidated v1 outcome
 
-In the bounded deterministic simulation, governed contracts and path invariants caught two composition failures missed by native and stage-local controls. The genuine edge retained independent producer and consumer local passes. The edge/composition-reduces-to-local review trigger did not fire, and matched projection/raw/reveal/attempt/model budgets remained stable.
+The v1 scores and `revise` decision are invalid and must not be used. The harness selected synthetic findings without injecting, repairing, and executing defects in independent real pipeline copies. Its runner could read prewritten held-out submissions. It also labeled deterministic work units as milliseconds. Those defects break the claimed comparison and custody.
 
-The compositional quality thresholds passed, but its scripted operator-cost multiple exceeded the preregistered ceiling. The research-sponsor decision is `revise`. This result is bounded to the five scripted cases and zero-model simulation; human review remains required before publication.
+The retained v1 artifacts are failed-harness learning only. V2 rotates held-outs, freezes executable injections and honest units before scoring, uses one arm-neutral repair algorithm, and requires tamper-verifiable real execution evidence.

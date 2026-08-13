@@ -1,5 +1,5 @@
 {
-  "agent_mode": "deterministic scripted simulation; no LLM/model calls",
+  "agent_mode": "INVALIDATED deterministic scripted simulation; no scores count",
   "arms": {
     "compositional_cess": {
       "arm_kind": "deterministic_scripted_agent",
@@ -768,6 +768,7 @@
     }
   },
   "incremental_edge_or_composition_catches": 2,
+  "invalidation": "Synthetic repairs did not execute real defects; held-out answer submissions were readable; operator units were mislabeled.",
   "matched_controls": {
     "context_budget_bytes": 8192,
     "model_tokens": 0,
