@@ -116,6 +116,25 @@ class TpcdiSubstrateTests(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, "manifest requires 1.1.0"):
                     TPCDI.verify_tools(tools, Path("/java"), manifest)
 
+    def test_fatal_version_probe_is_rejected_before_printed_version(self):
+        manifest = copy.deepcopy(self.manifest)
+        with tempfile.TemporaryDirectory() as directory:
+            tools = Path(directory)
+            for relative in manifest["tool_artifacts"]:
+                path = tools / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(relative.encode())
+                manifest["tool_artifacts"][relative] = TPCDI.sha256(path)
+            fatal = subprocess.CompletedProcess(
+                args=[],
+                returncode=255,
+                stdout="DIGen Version: 1.1.0\n",
+                stderr="fatal launcher error\n",
+            )
+            with mock.patch.object(TPCDI.subprocess, "run", return_value=fatal):
+                with self.assertRaisesRegex(SystemExit, "probe failed with exit 255"):
+                    TPCDI.verify_tools(tools, Path("/java"), manifest)
+
     def test_report_must_match_manifest_version_scale_and_totals(self):
         expected = self.manifest["digen"]
 

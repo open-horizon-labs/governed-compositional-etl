@@ -113,6 +113,31 @@ def validate_manifest(manifest: object) -> None:
             reject(f"tool_artifacts.{relative} must be 64 lowercase hex characters")
 
 
+def run_digen_version_probe(java: Path, tools_dir: Path) -> subprocess.CompletedProcess:
+    result = subprocess.run(
+        [str(java), "-jar", str(tools_dir / "DIGen.jar"), "-v"],
+        cwd=tools_dir,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    # DIGen 1.1.0 calls System.exit(-1) after its successful -v path. Normalize
+    # only that exact, stderr-free legacy sentinel; all other failures remain
+    # nonzero for verify_tools to reject before trusting the printed version.
+    if (
+        result.returncode == 255
+        and not result.stderr
+        and re.fullmatch(r"DIGen Version:\s*\S+\s*", result.stdout)
+    ):
+        return subprocess.CompletedProcess(
+            args=result.args,
+            returncode=0,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
+    return result
+
+
 def verify_tools(tools_dir: Path, java: Path, manifest: dict) -> None:
     expected = manifest["tool_artifacts"]
     for relative, wanted in expected.items():
@@ -125,13 +150,12 @@ def verify_tools(tools_dir: Path, java: Path, manifest: dict) -> None:
                 f"unexpected SHA-256 for {relative}: {actual} (expected {wanted})"
             )
 
-    version = subprocess.run(
-        [str(java), "-jar", str(tools_dir / "DIGen.jar"), "-v"],
-        cwd=tools_dir,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    version = run_digen_version_probe(java, tools_dir)
+    if version.returncode != 0:
+        raise SystemExit(
+            "DIGen version probe failed "
+            f"with exit {version.returncode}: {version.stderr.strip() or version.stdout.strip()}"
+        )
     output = version.stdout + version.stderr
     expected_version = manifest["digen"]["version"]
     match = re.search(r"^DIGen Version:\s*(\S+)\s*$", output, re.MULTILINE)
