@@ -138,6 +138,11 @@ class RevalidationConeTests(unittest.TestCase):
         value = json.loads(json.dumps(self.profile)); value["semantic_public_nodes"]["logical.dim_trade.type"] = "duckdb.dim_trade"; mutations.append(value)
         value = json.loads(json.dumps(self.profile)); value["node_checks"]["governed.dim_trade"] = []; mutations.append(value)
         value = json.loads(json.dumps(self.profile)); value["path_invariants"]["invariant.lifecycle_duration"]["sources"] = []; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["path_invariants"]["invariant.lifecycle_duration"]["nodes"].append("edge.trade_type_to_dim_trade"); mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["node_checks"]["metric.trade_lifecycle_seconds"].append("local-trade-type-name-v1"); mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); del value["node_checks"]["stage.trade_type_reference.type_name"]; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); value["node_checks"]["unknown.semantic.node"] = ["sqlmesh.audits"]; mutations.append(value)
+        value = json.loads(json.dumps(self.profile)); del value["node_checks"]["governed.trade_lifecycle"]; mutations.append(value)
         value = json.loads(json.dumps(self.profile)); value["unexpected"] = True; mutations.append(value)
         for mutated in mutations:
             with self.assertRaises(REVALIDATION.RevalidationError):

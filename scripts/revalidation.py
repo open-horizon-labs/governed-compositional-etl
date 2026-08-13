@@ -21,7 +21,7 @@ from sqlmesh.core.context import Context
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "contracts/revalidation-profile-v1.json"
-PROFILE_SHA256 = "5b122ae8d09dbddd6e91892955dd7b1908c5630406760c8b4155c42fbaa91ba5"
+PROFILE_SHA256 = "76384107b3a20197b2f59ef7c8a451307e65ee8b21e50942b620b1e61bd0b723"
 EVIDENCE = ROOT / "evidence/issue-6/revalidation-report-v1.json"
 ORACLE_SPEC = importlib.util.spec_from_file_location("governed_oracle", ROOT / "scripts/oracle.py")
 ORACLE = importlib.util.module_from_spec(ORACLE_SPEC)
@@ -128,7 +128,22 @@ def validate_profile(profile: dict) -> None:
         if change["semantic_source"] not in semantic_nodes or not change["executable_sources"]:
             raise RevalidationError("change source is undeclared or empty")
     valid_checks = {profile["active_case"], *profile["curated_regression_set"], "sqlmesh.audits", *profile["path_invariants"]}
-    if any(not checks or set(checks) - valid_checks for checks in profile["node_checks"].values()):
+    semantic_affected = set()
+    executable_affected = set()
+    change_sources = set()
+    for change in profile["changes"].values():
+        change_sources.add(change["semantic_source"])
+        semantic_affected |= {
+            aliases.get(node, node)
+            for node in descendants(profile["semantic_dependencies"], [change["semantic_source"]])
+        }
+        executable_affected |= set(change["executable_sources"]) | descendants(
+            normalized_executable, change["executable_sources"]
+        )
+    bounded_check_nodes = change_sources | semantic_affected | executable_affected
+    if set(profile["node_checks"]) != bounded_check_nodes:
+        raise RevalidationError("node_checks keys must exactly cover bounded changed and affected nodes")
+    if any(not checks or len(checks) != len(set(checks)) or set(checks) - valid_checks for checks in profile["node_checks"].values()):
         raise RevalidationError("node checks must be nonempty and name a bounded check")
     public_nodes = {aliases.get(node, node) for node in semantic_nodes}
     for name, invariant in profile["path_invariants"].items():
@@ -136,6 +151,28 @@ def validate_profile(profile: dict) -> None:
             raise RevalidationError(f"path invariant is incomplete: {name}")
         if set(invariant["nodes"]) - public_nodes or set(invariant["sources"]) - semantic_nodes:
             raise RevalidationError(f"path invariant references an unknown node: {name}")
+        for source in invariant["sources"]:
+            if not set(invariant["nodes"]) <= set(profile["frozen_descendant_oracle"][source]):
+                raise RevalidationError(f"path invariant includes a node unrelated to source: {name}")
+        for node in invariant["nodes"]:
+            if name not in profile["node_checks"][node]:
+                raise RevalidationError(f"path invariant is missing its reverse node mapping: {name}")
+    for node, checks in profile["node_checks"].items():
+        for check in set(checks) & set(profile["path_invariants"]):
+            if node not in profile["path_invariants"][check]["nodes"]:
+                raise RevalidationError(f"path invariant is mapped to an unrelated node: {check}")
+    case_sources = {
+        profile["active_case"]: "edge.trade_history_to_dim_trade.create_close_time",
+        profile["curated_regression_set"][0]: "stage.trade_type_reference.type_name",
+    }
+    for node, checks in profile["node_checks"].items():
+        for case_id, source in case_sources.items():
+            if case_id in checks:
+                related = {source, *profile["frozen_descendant_oracle"][source]}
+                related |= set(profile["changes"][next(key for key, item in profile["changes"].items() if item["semantic_source"] == source)]["executable_sources"])
+                related |= descendants(normalized_executable, list(related & executable_nodes))
+                if node not in related:
+                    raise RevalidationError(f"case check is mapped to an unrelated node: {case_id}")
     for source, expected in profile["frozen_descendant_oracle"].items():
         fixture_id = profile["active_case"] if source.startswith("edge.trade_history") else profile["curated_regression_set"][0]
         fixture = load_json(ROOT / f"oracle/fixtures/public/{fixture_id}.json")
@@ -165,12 +202,31 @@ def calculate(profile: dict, change_id: str, proposed: set[str] | None = None) -
         raise RevalidationError(f"known affected descendants escaped revalidation: {sorted(escaped)}")
     precision = len(expected & calculated) / len(calculated) if calculated else 0.0
     recall = len(expected & calculated) / len(expected) if expected else 1.0
-    invariants = sorted(name for name, detail in profile["path_invariants"].items() if change["semantic_source"] in detail["sources"])
     nodes = calculated | executable
     uncovered = nodes - set(profile["node_checks"])
     if uncovered:
         raise RevalidationError(f"affected revalidation nodes lack checks: {sorted(uncovered)}")
-    checks = {profile["active_case"], *profile["curated_regression_set"], *invariants, "sqlmesh.audits"}
+    mapped_nodes = nodes | {change["semantic_source"]}
+    checks = {
+        check
+        for node in mapped_nodes
+        for check in profile["node_checks"].get(node, [])
+        if check == "sqlmesh.audits"
+        or change["semantic_source"] in profile["path_invariants"].get(check, {}).get("sources", [])
+        or check == profile["active_case"]
+        or check in profile["curated_regression_set"]
+    }
+    expected_mapped = {
+        check
+        for node in mapped_nodes
+        for check in profile["node_checks"][node]
+        if check == "sqlmesh.audits"
+        or change["semantic_source"] in profile["path_invariants"].get(check, {}).get("sources", [])
+        or check == profile["active_case"]
+        or check in profile["curated_regression_set"]
+    }
+    if checks != expected_mapped or not checks:
+        raise RevalidationError("calculated checks do not cover every affected node mapping")
     return {
         "change_id": change_id,
         "changed_pointer": change["pointer"],
@@ -178,6 +234,7 @@ def calculate(profile: dict, change_id: str, proposed: set[str] | None = None) -
         "executable_revalidation": sorted(executable),
         "all_revalidation_nodes": sorted(nodes),
         "checks": sorted(checks),
+        "check_nodes": sorted(mapped_nodes),
         "node_count": len(nodes),
         "check_count": len(checks),
         "precision": precision,
@@ -358,7 +415,9 @@ def execute(change_id: str, retain: bool = True) -> dict:
         "wall_ms": cone["execution"]["wall_ms"],
     }
     full_nodes = set(profile["semantic_dependencies"]) | set(profile["executable_dependencies"])
-    full_checks = {profile["active_case"], *profile["curated_regression_set"], *profile["path_invariants"], "sqlmesh.audits"}
+    full_checks = {
+        check for checks in profile["node_checks"].values() for check in checks
+    }
     full_models = set(profile["executable_dependencies"])
     full_execution = replay(profile, sorted(full_checks), full_models, full=True)
     full_unnecessary = semantic_universe - expected

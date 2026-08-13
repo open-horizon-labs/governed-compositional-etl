@@ -11,6 +11,14 @@
     "change_id": "edge.create_status",
     "changed_pointer": "/history_policy/market_creation_status",
     "check_count": 5,
+    "check_nodes": [
+      "duckdb.dim_trade",
+      "edge.trade_history_to_dim_trade.create_close_time",
+      "governed.dim_trade",
+      "governed.trade_lifecycle",
+      "logical.dim_trade",
+      "metric.trade_lifecycle_seconds"
+    ],
     "checks": [
       "edge-trade-history-create-time-v1",
       "invariant.dim_trade_identity",
@@ -112,7 +120,7 @@
         "governed.trade_type_reference",
         "governed.dim_trade"
       ],
-      "wall_ms": 1928.877
+      "wall_ms": 1856.463
     },
     "execution_metrics": {
       "audit_count": 6,
@@ -120,7 +128,7 @@
       "restaged_model_count": 2,
       "restaged_rows": 781956,
       "reused_ancestor_count": 4,
-      "wall_ms": 1928.877
+      "wall_ms": 1856.463
     },
     "node_count": 5,
     "precision": 1.0,
@@ -244,7 +252,7 @@
         "governed.trade_type_reference",
         "governed.dim_trade"
       ],
-      "wall_ms": 2140.217
+      "wall_ms": 2102.725
     },
     "execution_metrics": {
       "audit_count": 6,
@@ -252,7 +260,7 @@
       "restaged_model_count": 6,
       "restaged_rows": 2155125,
       "reused_ancestor_count": 0,
-      "wall_ms": 2140.217
+      "wall_ms": 2102.725
     },
     "node_count": 14,
     "nodes": [

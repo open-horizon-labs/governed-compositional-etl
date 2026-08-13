@@ -62,7 +62,11 @@
   },
   "node_checks": {
     "duckdb.dim_trade": [
-      "invariant.dim_trade_identity"
+      "invariant.dim_trade_identity",
+      "invariant.lifecycle_duration"
+    ],
+    "edge.trade_history_to_dim_trade.create_close_time": [
+      "edge-trade-history-create-time-v1"
     ],
     "edge.trade_type_to_dim_trade": [
       "local-trade-type-name-v1"
@@ -74,11 +78,13 @@
       "sqlmesh.audits"
     ],
     "governed.trade_type_reference": [
-      "local-trade-type-name-v1"
+      "sqlmesh.audits"
     ],
     "logical.dim_trade": [
       "edge-trade-history-create-time-v1",
-      "local-trade-type-name-v1"
+      "local-trade-type-name-v1",
+      "invariant.dim_trade_identity",
+      "invariant.lifecycle_duration"
     ],
     "metric.trade_lifecycle_seconds": [
       "invariant.lifecycle_duration"
