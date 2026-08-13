@@ -56,7 +56,7 @@ class ExperimentV2AdversarialTests(unittest.TestCase):
                 EXP.restore_and_execute(case, project, ROOT / "build/tpcdi.duckdb", target, "NULL AS trade_id", proposal)
 
     def test_heldout_custodian_rejects_before_visible_acceptance(self):
-        request = {"visible_phase_complete": False, "layers": ["pipeline"], "run_nonce": "issue7-v21-run-20260813-b"}
+        request = {"visible_phase_complete": False, "layers": ["pipeline"], "run_nonce": "issue7-v22-run-20260813-c"}
         run = subprocess.run([str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/sealed_custodian_v2.py")], input=json.dumps(request), text=True)
         self.assertNotEqual(run.returncode, 0)
 

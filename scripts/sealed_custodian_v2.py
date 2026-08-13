@@ -14,7 +14,7 @@ def main() -> int:
     request = json.load(sys.stdin)
     if set(request) != {"visible_phase_complete", "layers", "run_nonce"}:
         return 2
-    if not request["visible_phase_complete"] or request["run_nonce"] != "issue7-v21-run-20260813-b":
+    if not request["visible_phase_complete"] or request["run_nonce"] != "issue7-v22-run-20260813-c":
         return 3
     private = json.loads(PRIVATE.read_text())
     passed = sum(case["layer"] in request["layers"] for case in private["cases"])

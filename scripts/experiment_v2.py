@@ -18,10 +18,10 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "experiments/corpus-v2.json"
-PREREG = ROOT / "experiments/preregistration-v2.1.json"
-RESULT = ROOT / "evidence/issue-7/experiment-result-v2.1.json"
-TRACES = ROOT / "evidence/issue-7/traces-v2.1"
-ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.1.json"
+PREREG = ROOT / "experiments/preregistration-v2.2.json"
+RESULT = ROOT / "evidence/issue-7/experiment-result-v2.2.json"
+TRACES = ROOT / "evidence/issue-7/traces-v2.2"
+ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.2.json"
 ARMS = {
     "native": ("pipeline",),
     "stage_local_cess": ("pipeline", "stage"),
@@ -104,6 +104,20 @@ def visible_evidence(case_id: str, available_layers: tuple[str, ...], observatio
     return evidence
 
 
+def governed_descendants(case_id: str) -> list[str]:
+    """Derive proposal scope from governance, never scorer truth."""
+    if case_id == "v2-projection-null-trade-id":
+        return ["governed.dim_trade"]
+    if case_id == "v2-verification-audit-gap":
+        graph = REV.load_json(REV.PROFILE)["executable_dependencies"]
+        return sorted({"governed.trade_lifecycle"} | REV.descendants(graph, ["governed.trade_lifecycle"]))
+    if case_id == "v2-edge-creation-time":
+        return REV.calculate(REV.load_json(REV.PROFILE), "edge.create_status")["semantic_descendants"]
+    if case_id == "v2-path-lifecycle-duration":
+        return ["metric.trade_lifecycle_seconds"]
+    return []
+
+
 def repair_policy(evidence: list[dict]) -> dict:
     """Apply the single deterministic proposal policy to visible evidence."""
     findings = [item for item in evidence if item.get("kind") == "semantic_finding"]
@@ -169,6 +183,38 @@ def sqlmesh_plan(project: Path, model: str | None) -> dict:
     return {"returncode": run.returncode, "wall_ns": time.perf_counter_ns() - started, "stdout_sha256": hashlib.sha256(run.stdout.encode()).hexdigest(), "stderr_sha256": hashlib.sha256(run.stderr.encode()).hexdigest()}
 
 
+def model_query(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    if ");\n\n" not in text:
+        raise ExperimentV2Error(f"generated model has no MODEL/query boundary: {path}")
+    return text.split(");\n\n", 1)[1]
+
+
+def materialize_observed(project: Path, database: Path) -> dict:
+    """Execute the exact disposable model text into isolated observed tables."""
+    connection = duckdb.connect(str(database))
+    try:
+        connection.execute("DROP SCHEMA IF EXISTS experiment_observed CASCADE")
+        connection.execute("CREATE SCHEMA experiment_observed")
+        for name in ("trade_stage", "trade_history_stage", "status_type_reference", "trade_type_reference"):
+            query = model_query(project / f"models/{name}.sql").replace("governed.", "experiment_observed.")
+            connection.execute(f"CREATE TABLE experiment_observed.{name} AS {query}")
+        lifecycle = model_query(project / "models/trade_lifecycle.sql").replace("governed.", "experiment_observed.")
+        connection.execute(f"CREATE TABLE experiment_observed.trade_lifecycle AS {lifecycle}")
+        dim_trade = model_query(project / "models/dim_trade.sql").replace("governed.", "experiment_observed.")
+        connection.execute(f"CREATE TABLE experiment_observed.dim_trade AS {dim_trade}")
+        row = connection.execute("SELECT created_at, closed_at FROM experiment_observed.dim_trade WHERE trade_id = 0").fetchone()
+        duration = None if row is None else connection.execute("SELECT date_diff('second', created_at, closed_at) FROM experiment_observed.dim_trade WHERE trade_id = 0").fetchone()[0]
+        return {
+            "null_trade_ids": connection.execute("SELECT count(*) FROM experiment_observed.dim_trade WHERE trade_id IS NULL").fetchone()[0],
+            "trade_id_0_created_at": None if row is None or row[0] is None else row[0].isoformat(),
+            "trade_id_0_closed_at": None if row is None or row[1] is None else row[1].isoformat(),
+            "trade_id_0_lifecycle_seconds": duration,
+        }
+    finally:
+        connection.close()
+
+
 def execute_defect(case: dict, project: Path, database: Path) -> dict:
     case_id = case["id"]
     model = {
@@ -177,10 +223,11 @@ def execute_defect(case: dict, project: Path, database: Path) -> dict:
         "v2-edge-creation-time": "governed.trade_lifecycle",
     }.get(case_id)
     plan = sqlmesh_plan(project, model) if model else {"returncode": 0, "wall_ns": 0, "stdout_sha256": None, "stderr_sha256": None}
+    plan["observed_output"] = materialize_observed(project, database)
     if case_id == "v2-path-lifecycle-duration":
         connection = duckdb.connect(str(database), read_only=True)
         try:
-            value = connection.execute((project / "path/lifecycle_metric.sql").read_text()).fetchone()[0]
+            value = connection.execute((project / "path/lifecycle_metric.sql").read_text().replace("governed.", "experiment_observed.")).fetchone()[0]
         finally:
             connection.close()
         plan["path_observed"] = value
@@ -220,19 +267,20 @@ def restore_and_execute(case: dict, project: Path, database: Path, target: Path,
     execution = sqlmesh_plan(project, model) if model and proposal["disposition"] == "resolved" else {"returncode": 0, "wall_ns": 0}
     if execution["returncode"]:
         raise ExperimentV2Error(f"repaired projection failed: {case['id']}")
+    observed = materialize_observed(project, database)
+    execution["observed_output"] = observed
     connection = duckdb.connect(str(database), read_only=True)
     try:
         if case["id"] == "v2-projection-null-trade-id":
-            live = {"null_trade_ids": connection.execute("SELECT count(*) FROM governed.dim_trade WHERE trade_id IS NULL").fetchone()[0]}
+            live = {"null_trade_ids": observed["null_trade_ids"]}
         elif case["id"] == "v2-missing-pricing-policy":
             live = {"hole": case["injection"]["target"], "status": "open"}
         elif case["id"] == "v2-verification-audit-gap":
             live = {"dim_trade_audits": (project / "models/dim_trade.sql").read_text().split("audits (", 1)[1].split(")", 1)[0].count(",") + 1}
         elif case["id"] == "v2-edge-creation-time":
-            value = connection.execute("SELECT created_at FROM governed.dim_trade WHERE trade_id = 0").fetchone()[0]
-            live = {"created_at": value.isoformat()}
+            live = {"created_at": observed["trade_id_0_created_at"]}
         else:
-            value = connection.execute(target.read_text(encoding="utf-8")).fetchone()[0]
+            value = connection.execute(target.read_text(encoding="utf-8").replace("governed.", "experiment_observed.")).fetchone()[0]
             live = {"trade_id_0_lifecycle_seconds": value}
     finally:
         connection.close()
@@ -273,7 +321,7 @@ def run(retain: bool = True) -> dict:
                 if len(canonical(evidence).encode()) > prereg["budgets"]["context_bytes_per_case"]:
                     raise ExperimentV2Error("context budget exceeded")
                 proposal = repair_policy(evidence)
-                proposal["affected_descendants"] = case["expected"]["affected_descendants"] if proposal["disposition"] == "resolved" else []
+                proposal["affected_descendants"] = governed_descendants(case["id"]) if proposal["disposition"] == "resolved" else []
                 diff, repaired = restore_and_execute(case, project, database, target, before, proposal)
                 score = subprocess_json("experiment_scorer_v2.py", {"case_id": case["id"], "proposal": proposal, "live_result": repaired["live_result"], "diff": diff})
                 review = subprocess_json("sketch_review_v2.py", {"case_id": case["id"], "proposal": proposal, "diff": diff, "authority_ids": [item["id"] for item in case["source_authority"]]})
@@ -303,7 +351,7 @@ def run(retain: bool = True) -> dict:
     cost_pass = cost_multiple <= prereg["cost_ceiling"]["compositional_operator_work_unit_multiple_vs_native"]
     decision = "adopt" if quality_pass and cost_pass else ("reject" if incremental <= prereg["decision_rules"]["reject"]["incremental_edge_or_composition_catches_max"] else "revise")
     prereg_commit = git("log", "-1", "--format=%H", "--", str(PREREG.relative_to(ROOT)))
-    report = {"schema_version": "matched-experiment-result/v2.1", "prior_attempts": {"v1": "invalid", "v2_attempt_a": "invalid"}, "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero", "preregistration_commit": prereg_commit, "preregistration_sha256": digest(PREREG), "run_nonce": prereg["run"]["nonce"], "matched_controls": {"raw_database_sha256": raw_digest, "projection_sha256": next(iter(load(ROOT / "projection/manifest-v1.json")["arms"].values()))["projection_sha256"], "reveal_order": corpus["reveal_order"], "repair_attempts_per_case": 1, "model_tokens": 0}, "arms": arm_results, "summaries": summaries, "incremental_edge_or_composition_catches": incremental, "threshold_evaluation": {"quality_pass": quality_pass, "cost_pass": cost_pass, "operator_work_unit_multiple": cost_multiple, "decision": decision}, "review_trigger": {"fired": False, "reason": None}, "publication_gates": prereg["publication_gates"]}
+    report = {"schema_version": "matched-experiment-result/v2.2", "prior_attempts": {"v1": "invalid", "v2_attempt_a": "invalid", "v2_1": "invalid"}, "agent_mode": "deterministic scripted agents; identical repair policy; evidence visibility is the only treatment; model usage zero", "preregistration_commit": prereg_commit, "preregistration_sha256": digest(PREREG), "run_nonce": prereg["run"]["nonce"], "matched_controls": {"raw_database_sha256": raw_digest, "projection_sha256": next(iter(load(ROOT / "projection/manifest-v1.json")["arms"].values()))["projection_sha256"], "reveal_order": corpus["reveal_order"], "repair_attempts_per_case": 1, "model_tokens": 0}, "arms": arm_results, "summaries": summaries, "incremental_edge_or_composition_catches": incremental, "threshold_evaluation": {"quality_pass": quality_pass, "cost_pass": cost_pass, "operator_work_unit_multiple": cost_multiple, "decision": decision}, "review_trigger": {"fired": False, "reason": None}, "publication_gates": prereg["publication_gates"]}
     if retain:
         RESULT.parent.mkdir(parents=True, exist_ok=True)
         TRACES.mkdir(parents=True, exist_ok=True)
