@@ -1,0 +1,217 @@
+{
+  "$defs": {
+    "authority": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "tpc_di_rule",
+            "approved_decision",
+            "approved_counterexample"
+          ]
+        },
+        "locator": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source",
+        "locator"
+      ],
+      "type": "object"
+    },
+    "field": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "nullable": {
+          "type": "boolean"
+        },
+        "physical_type": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "semantic_type": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "physical_type",
+        "semantic_type",
+        "nullable"
+      ],
+      "type": "object"
+    },
+    "hole": {
+      "additionalProperties": false,
+      "properties": {
+        "fill_policy": {
+          "const": "named_authority_or_approved_counterexample"
+        },
+        "forbidden_evidence": {
+          "allOf": [
+            {
+              "contains": {
+                "const": "raw_data"
+              }
+            },
+            {
+              "contains": {
+                "const": "target_schema"
+              }
+            },
+            {
+              "contains": {
+                "const": "projection"
+              }
+            }
+          ],
+          "items": {
+            "enum": [
+              "raw_data",
+              "target_schema",
+              "projection"
+            ]
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "owner_hat": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "question": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "status": {
+          "const": "open"
+        }
+      },
+      "required": [
+        "id",
+        "question",
+        "owner_hat",
+        "status",
+        "fill_policy",
+        "forbidden_evidence"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:source:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority": {
+      "items": {
+        "$ref": "#/$defs/authority"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "entities": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/$defs/field"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "grain": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "identifiers": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "grain",
+          "identifiers",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "granularity": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "anchor",
+        "granularity"
+      ],
+      "type": "object"
+    },
+    "holes": {
+      "items": {
+        "$ref": "#/$defs/hole"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "source/v1"
+    },
+    "source_id": {
+      "pattern": "^[a-z0-9.-]+$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_id",
+    "authority",
+    "evidence",
+    "entities",
+    "holes"
+  ],
+  "title": "Bounded source descriptor v1",
+  "type": "object"
+}

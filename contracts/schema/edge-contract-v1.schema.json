@@ -1,0 +1,319 @@
+{
+  "$defs": {
+    "hole": {
+      "additionalProperties": false,
+      "properties": {
+        "fill_policy": {
+          "const": "named_authority_or_approved_counterexample"
+        },
+        "forbidden_evidence": {
+          "items": {
+            "enum": [
+              "raw_data",
+              "target_schema",
+              "projection"
+            ]
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "owner_hat": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "question": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "status": {
+          "const": "open"
+        }
+      },
+      "required": [
+        "id",
+        "question",
+        "owner_hat",
+        "status",
+        "fill_policy",
+        "forbidden_evidence"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:edge-contract:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "confidence": {
+      "enum": [
+        "frozen_rule",
+        "reviewed_decision",
+        "unknown"
+      ]
+    },
+    "consumer": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "grain": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract",
+        "grain"
+      ],
+      "type": "object"
+    },
+    "contract_id": {
+      "pattern": "^[a-z0-9._-]+$",
+      "type": "string"
+    },
+    "disposition": {
+      "enum": [
+        "partial",
+        "approved"
+      ]
+    },
+    "evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "granularity": {
+          "enum": [
+            "batch",
+            "decision_class",
+            "row"
+          ]
+        },
+        "rule_ids": {
+          "items": {
+            "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "granularity",
+        "rule_ids"
+      ],
+      "type": "object"
+    },
+    "history_policy": {
+      "additionalProperties": false,
+      "properties": {
+        "close_statuses": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "limit_creation_status": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "market_creation_status": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "market_trade_types": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "ordering": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "close_statuses",
+        "limit_creation_status",
+        "market_creation_status",
+        "market_trade_types",
+        "ordering",
+        "resolution"
+      ],
+      "type": "object"
+    },
+    "holes": {
+      "items": {
+        "$ref": "#/$defs/hole"
+      },
+      "type": "array"
+    },
+    "mappings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "from": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "selector": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "source_semantic_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "target_semantic_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "to": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "source_semantic_type",
+          "target_semantic_type",
+          "authority"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "producer": {
+      "additionalProperties": false,
+      "properties": {
+        "contracts": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "identity_join": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "contracts",
+        "identity_join"
+      ],
+      "type": "object"
+    },
+    "rule_order": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "rules": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "const": "known"
+          }
+        },
+        "required": [
+          "id",
+          "authority",
+          "operation",
+          "status"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "edge-contract/v1"
+    },
+    "verification": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "deterministic_gate",
+              "local_invariant",
+              "contract_check",
+              "sketch_review"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "minItems": 2,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "contract_id",
+    "producer",
+    "consumer",
+    "mappings",
+    "history_policy",
+    "rule_order",
+    "rules",
+    "holes",
+    "evidence",
+    "confidence",
+    "verification",
+    "disposition"
+  ],
+  "title": "Semantic edge contract v1",
+  "type": "object"
+}

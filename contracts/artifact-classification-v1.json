@@ -1,0 +1,53 @@
+{
+  "artifacts": [
+    {
+      "class": "governing",
+      "id": "sketch",
+      "policy_authority": true,
+      "repair_mode": "reviewed_authorized_change"
+    },
+    {
+      "class": "structural_anchor",
+      "id": "source_and_target_schema",
+      "policy_authority": false,
+      "repair_mode": "structure_only"
+    },
+    {
+      "class": "projection",
+      "id": "sqlmesh_model",
+      "policy_authority": false,
+      "repair_mode": "regenerate"
+    },
+    {
+      "class": "projection",
+      "id": "sqlglot_ast",
+      "policy_authority": false,
+      "repair_mode": "regenerate"
+    },
+    {
+      "class": "projection",
+      "id": "generated_sql",
+      "policy_authority": false,
+      "repair_mode": "regenerate"
+    },
+    {
+      "class": "projection",
+      "id": "duckdb_table",
+      "policy_authority": false,
+      "repair_mode": "rebuild"
+    },
+    {
+      "class": "evidence",
+      "id": "deterministic_gate",
+      "policy_authority": false,
+      "repair_mode": "rerun"
+    },
+    {
+      "class": "review",
+      "id": "sketch_review",
+      "policy_authority": false,
+      "repair_mode": "repeat_after_change"
+    }
+  ],
+  "schema_version": "artifact-classification/v1"
+}

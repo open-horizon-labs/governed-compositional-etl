@@ -34,4 +34,4 @@ Under the domain-reviewer hat, choose option 3: the named TPC-DI transformation 
 
 Under the experiment-lead hat, continue the spike on that basis. Personally acquiring the canonical TPC-DI 1.1.0 package, comparing the relevant hashes, and reviewing current TPC/PDGF license and fair-use terms remain mandatory before external publication or any workload-fidelity claim. They are not blockers for internal oracle construction. This decision neither calls the experiment a compliant benchmark nor broadens the slice.
 
-The risk that the candidate composition failure is actually local remains pending. Its corrected output is frozen from named TPC-DI authority, while its earliest location and repair surface remain ambiguous and unauthorized until issue #4 contract adjudication. This risk is neither fired nor retired by issue #3.
+Issue #3 intentionally left the candidate boundary pending. Issue #4 subsequently adjudicated the historical case as an edge failure using independent local producer and consumer contracts; see `.oh/metis/issue-4-candidate-edge-adjudication.md`. That later evidence, not the raw slice or target shape, authorizes the edge repair surface.

@@ -1,0 +1,31 @@
+{
+  "active_authority": {
+    "basis": [
+      "tpc-di-1.1.0-4.5.8.1",
+      "tpc-di-1.1.0-4.5.8.2-create-close",
+      ".oh/metis/issue-4-candidate-edge-adjudication.md"
+    ],
+    "hat": "data-product-owner",
+    "scope": "historical Trade and TradeHistory lifecycle handoff"
+  },
+  "allowed_artifacts": [
+    "sketch.edge.trade_history_to_dim_trade"
+  ],
+  "authority_id": "repair.trade-lifecycle-edge.v1",
+  "conflict_behavior": {
+    "authority_conflict": "stop_and_adjudicate_under_domain_reviewer_hat",
+    "projection_edit": "reject_and_regenerate_from_governing_sketch",
+    "raw_or_schema_inference": "reject_as_non_authority"
+  },
+  "forbidden_adjacent_policy": [
+    "sketch.stage.trade",
+    "sketch.stage.trade_history",
+    "sketch.stage.dim_trade_consumer",
+    "sqlmesh.model.dim_trade",
+    "sqlglot.ast.dim_trade",
+    "generated_sql.dim_trade",
+    "duckdb.dim_trade",
+    "metric.trade_lifecycle_seconds"
+  ],
+  "schema_version": "repair-authority/v1"
+}

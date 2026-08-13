@@ -1,0 +1,83 @@
+{
+  "attributes": [
+    {
+      "name": "trade_id",
+      "nullable": false,
+      "semantic_type": "trade_id",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-copy"
+    },
+    {
+      "name": "created_at",
+      "nullable": false,
+      "semantic_type": "trade_creation_timestamp",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-create"
+    },
+    {
+      "name": "closed_at",
+      "nullable": true,
+      "semantic_type": "trade_close_timestamp",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-close"
+    },
+    {
+      "name": "status",
+      "nullable": false,
+      "semantic_type": "status_name",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-status"
+    },
+    {
+      "name": "type",
+      "nullable": false,
+      "semantic_type": "trade_type_name",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-type"
+    },
+    {
+      "name": "quantity",
+      "nullable": false,
+      "semantic_type": "share_quantity",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-copy"
+    },
+    {
+      "name": "bid_price",
+      "nullable": false,
+      "semantic_type": "usd_per_share",
+      "source_rule": "tpc-di-1.1.0-4.5.8.2-copy"
+    }
+  ],
+  "disposition": "partial",
+  "grain": "one warehouse row per historical trade identifier",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "dim-trade.security-account-keys",
+      "owner_hat": "data-product-owner",
+      "question": "Which effective-dated security, company, account, customer, and broker keys are selected outside the four-file slice?",
+      "status": "open"
+    },
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "dim-trade.batch-id",
+      "owner_hat": "data-product-owner",
+      "question": "How is BatchID assigned when the executable projection is introduced?",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "trade_id"
+  ],
+  "model_id": "logical.dim_trade",
+  "schema_version": "logical-model/v1",
+  "verification": [
+    "gate.dim_trade.approved_output",
+    "review.dim_trade.current_sketch"
+  ]
+}

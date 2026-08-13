@@ -1,0 +1,50 @@
+# Semantic contracts and change authority
+
+Issue #4 represents the bounded trade slice's meaning outside generated SQL. It does not define a universal semantic language. The contracts are small research artifacts whose main job is to make a wrong boundary, an unauthorized repair, or a silently filled hole mechanically visible.
+
+## Contract set
+
+The machine-readable schemas under `contracts/schema/` cover:
+
+- source entities, grain, identifiers, structural fields, evidence, and holes;
+- logical-model grain, attributes, governing rule IDs, verification, and disposition;
+- semantic types with physical type, unit, sign convention, time role, history role, confidence, verification, and disposition;
+- stage contracts with inputs, outputs, rule order, evidence, holes, and separate deterministic and Sketch-review checks;
+- edge contracts with producers, consumer, mappings, history policy, rule order, evidence, and holes;
+- repair-authority records with the active conceptual hat, allowed artifacts, forbidden adjacent policy, and conflict behavior.
+
+The human-reviewable governing policy is [`sketches/trade-dim-v1.md`](../sketches/trade-dim-v1.md). Known rules and open holes are explicit and ordered there. JSON descriptors make those declarations testable; they do not replace review of the Sketch.
+
+Run the retained verification and edge adjudication:
+
+```sh
+python3 -m pip install -r requirements-dev.txt
+python3 scripts/contracts.py verify
+python3 scripts/contracts.py adjudicate
+```
+
+The verifier checks every schema and instance with JSON Schema Draft 2020-12 before applying the cross-document semantic checks.
+
+## Holes and authority
+
+Every open hole names its question, owner hat, permitted resolution, and forbidden evidence. `raw_data`, `target_schema`, and `projection` are explicitly rejected as policy authority. A named TPC-DI rule or a repository-native approved decision may resolve a hole; a plausible raw pattern or convenient destination column may not.
+
+Repair authority is scoped. The data-product-owner hat may authorize the TradeType reference repair at `sketch.stage.trade_type_reference` and the adjudicated lifecycle repair at `sketch.edge.trade_history_to_dim_trade`. Adjacent stage policy, downstream metrics, and physical projections remain forbidden. Domain-authority conflict stops for adjudication.
+
+## Strong nominal distinction
+
+`trade_record_timestamp` and `trade_creation_timestamp` are both physical `TIMESTAMP` values at one-second resolution. They are not substitutable semantic types. The former preserves `Trade.T_DTS`; the latter must be selected from status-qualified `TradeHistory.TH_DTS` under TPC-DI 1.1.0 clause 4.5.8.2. Treating physical equality as semantic compatibility recreates the seeded failure.
+
+The issue #3 candidate therefore survives issue #4 adjudication as a bounded edge/composition failure:
+
+- Trade and TradeHistory producer mappings pass independently.
+- The DimTrade consumer faithfully copies the supplied typed handoff and passes its local time-order check.
+- The handoff binds `trade_record_timestamp` to `trade_creation_timestamp` and supplies the wrong value; the edge contract fails.
+
+This result retires the edge-versus-local risk only for this historical case. Incremental lifecycle composition remains an explicit hole.
+
+## Projections
+
+`contracts/artifact-classification-v1.json` classifies SQLMesh models, SQLGlot ASTs, generated SQL, and DuckDB tables as projections with no policy authority. Successful execution cannot promote them. Repair means changing an authorized governing Sketch and regenerating or rebuilding projections.
+
+The complete accepted-counterexample archive, curated regression set, deterministic gates, and Sketch review remain separate even after executable projections are introduced in issue #5.

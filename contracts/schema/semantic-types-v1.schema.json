@@ -1,0 +1,95 @@
+{
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:semantic-types:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "semantic-types/v1"
+    },
+    "types": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_values": {
+            "items": {},
+            "type": "array"
+          },
+          "confidence": {
+            "enum": [
+              "frozen_rule",
+              "reviewed_decision",
+              "unknown"
+            ]
+          },
+          "disposition": {
+            "enum": [
+              "known",
+              "hole"
+            ]
+          },
+          "history_role": {
+            "enum": [
+              "none",
+              "status_observation",
+              "effective_interval"
+            ]
+          },
+          "id": {
+            "pattern": "^[a-z0-9._-]+$",
+            "type": "string"
+          },
+          "physical_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "semantic_kind": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "sign_convention": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "time_role": {
+            "enum": [
+              "none",
+              "event",
+              "effective",
+              "load"
+            ]
+          },
+          "unit": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "verification": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "physical_type",
+          "semantic_kind",
+          "unit",
+          "sign_convention",
+          "time_role",
+          "history_role",
+          "allowed_values",
+          "confidence",
+          "verification",
+          "disposition"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "types"
+  ],
+  "title": "Semantic type registry v1",
+  "type": "object"
+}

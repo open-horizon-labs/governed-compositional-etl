@@ -1,0 +1,27 @@
+{
+  "authority": [
+    "tpc-di-1.1.0-4.5.8.1",
+    "tpc-di-1.1.0-4.5.8.2-create-close"
+  ],
+  "case_id": "edge-trade-history-create-time-v1",
+  "checks": {
+    "consumer_local": "pass",
+    "edge_composition": "fail",
+    "history_producer_local": "pass",
+    "trade_producer_local": "pass"
+  },
+  "decision": {
+    "allowed_artifacts": [
+      "sketch.edge.trade_history_to_dim_trade"
+    ],
+    "failure_class": "edge_composition",
+    "location": "edge.trade_history_to_dim_trade.create_close_time",
+    "status": "adjudicated"
+  },
+  "schema_version": "candidate-edge-adjudication/v1",
+  "semantic_distinction": {
+    "actual": "trade_record_timestamp",
+    "physical_type": "TIMESTAMP",
+    "required": "trade_creation_timestamp"
+  }
+}

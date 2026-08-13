@@ -26,7 +26,7 @@ class SemanticRepairOracleTests(unittest.TestCase):
         self.assertTrue(result["passed"])
         self.assertEqual(result["cases_scored"], 3)
         self.assertEqual(result["cases_passed"], 3)
-        self.assertEqual(result["ambiguous_cases"], 2)
+        self.assertEqual(result["ambiguous_cases"], 1)
         self.assertEqual(result["held_outs_committed"], 4)
         self.assertIn(
             (result["held_outs_present"], result["held_outs_verified"]),
@@ -174,23 +174,38 @@ class SemanticRepairOracleTests(unittest.TestCase):
         with self.assertRaisesRegex(ORACLE.OracleError, "submission keys"):
             ORACLE.score(expected, wrong)
 
-    def test_candidate_composition_case_authorizes_no_boundary_or_repair_yet(self):
+    def test_contract_adjudicated_edge_has_one_authorized_repair_surface(self):
         expected = fixture("edge-trade-history-create-time-v1")
         actual = submission("edge-trade-history-create-time-v1")
-        self.assertEqual(expected["failure_class"], "candidate_edge_composition")
-        self.assertEqual(expected["location"]["kind"], "ambiguous")
-        self.assertEqual(expected["allowed_artifacts"], [])
+        self.assertEqual(expected["failure_class"], "edge_composition")
+        self.assertEqual(expected["location"]["kind"], "edge")
+        self.assertEqual(
+            expected["allowed_artifacts"],
+            ["sketch.edge.trade_history_to_dim_trade"],
+        )
+        self.assertTrue(
+            {
+                "sketch.stage.trade",
+                "sketch.stage.trade_history",
+                "sketch.stage.dim_trade_consumer",
+                "sqlmesh.model.dim_trade",
+                "sqlglot.ast.dim_trade",
+                "generated_sql.dim_trade",
+                "duckdb.dim_trade",
+                "metric.trade_lifecycle_seconds",
+            }
+            <= set(expected["forbidden_artifacts"])
+        )
         self.assertTrue(ORACLE.score(expected, actual)["passed"])
 
         forced = copy.deepcopy(actual)
-        forced["disposition"] = "resolved"
-        forced["failure_class"] = "edge_composition"
+        forced["failure_class"] = "local_semantic"
         forced["location"] = {
-            "kind": "edge",
-            "id": "edge.trade_history_to_dim_trade.create_close_time",
+            "kind": "stage",
+            "id": "stage.trade",
             "candidates": [],
         }
-        forced["changed_artifacts"] = ["sketch.edge.trade_history_to_dim_trade"]
+        forced["changed_artifacts"] = ["sketch.stage.trade"]
         result = ORACLE.score(expected, forced)
         self.assertFalse(result["passed"])
         self.assertFalse(result["dimensions"]["artifact_authority"])
