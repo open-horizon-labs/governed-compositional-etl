@@ -1,0 +1,113 @@
+{
+  "budgets": {
+    "context_bytes_per_case": 16384,
+    "model_calls_per_arm": 0,
+    "model_tokens_per_arm": 0,
+    "repair_attempts_per_case": 1
+  },
+  "corpus_requirements": {
+    "balanced_classes": [
+      "projection_defect",
+      "missing_policy",
+      "verification_gap",
+      "edge_contract_mismatch",
+      "end_to_end_composition"
+    ],
+    "local_pass_local_pass_edge_minimum": 1,
+    "visible_case_count": 5
+  },
+  "cost_ceiling": {
+    "compositional_operator_work_unit_multiple_vs_native": 4.0,
+    "model_tokens_per_arm": 0,
+    "repair_attempts_per_case": 1,
+    "wall_time_role": "descriptive_only_due_to_single-host_noise"
+  },
+  "decision_rules": {
+    "adopt": {
+      "active_repair_rate_min": 0.8,
+      "authority_violations_max": 0,
+      "escaped_composition_failures_max": 0,
+      "heldout_regressions_max": 0,
+      "incremental_edge_or_composition_catches_min": 2,
+      "localization_accuracy_min": 0.8,
+      "revalidation_recall_min": 1.0
+    },
+    "reject": {"incremental_edge_or_composition_catches_max": 0},
+    "revise": "Any result between adopt and reject or any safety/cost ceiling breach."
+  },
+  "frozen_hashes": {
+    "corpus_sha256": "28ba8dadcb78dc4a506aa68005b7fdc5ff876ea2cc8a55b50c2609d88f1c08ef",
+    "harness_files": {
+      "scripts/experiment_scorer_v2.py": "8b7295fd8010af1586c83ce4e46fda6893e1ace671f5ab058b355739dbf03680",
+      "scripts/experiment_v2.py": "123bc1106e90a0cb1db78bd681a6abecc03f549338a38d9dadbde5cc792237c6",
+      "scripts/sealed_custodian_v2.py": "d0c0de36ced4111b70f54a6ce0a765c4e8f50cfce6581ff96efa368c33b96ae1",
+      "scripts/sketch_review_v2.py": "cd7773575605be49f917080974cf48cc0809fe7413f91be2ea2cef956b0727c4",
+      "scripts/verify_experiment_v2.py": "a056814de36fc471b410c49cef5e1ef8fea5774c9288e6f68b6421b365ba1927"
+    },
+    "projection_manifest_sha256": "fc3baf16fdcff8fbd47ba4af9b132fc70d420ba6b7a2106b4a475c2cfa5cc9f3",
+    "raw_database_sha256": "0300573629cb5fa372187cc01aecb1dff6e27837b532ca122d3f36a9fea59657",
+    "raw_manifest_sha256": "04417e8bfc3600ffebe369f5ae6b5af8a13d8cb735fb6925947948901d641226"
+  },
+  "heldout_custody": {
+    "answer_submission_files_tracked": 0,
+    "case_count": 2,
+    "commitment_sha256": "a55ec0c29e98709cbb40111bd173c2be8d43511c986007f865875f9b0a8f1a22",
+    "custodian_output": "aggregate_counts_only",
+    "rotated_after_invalid_attempt_a": true,
+    "runner_access": "forbidden"
+  },
+  "metric_definitions": {
+    "active_repair_rate": "resolved visible cases passing arm-neutral deterministic scoring and separate Sketch review / four authority-resolved visible cases",
+    "authority_violations": "visible repair diffs touching any artifact outside allowed surfaces or any forbidden surface",
+    "escaped_composition_failures": "edge plus path cases not passing arm-neutral deterministic scoring / two composition cases",
+    "heldout_regressions": "sealed cases scored minus sealed cases passed; aggregates only",
+    "incremental_edge_or_composition_catches": "compositional edge/path passes minus maximum edge/path passes of the other arms",
+    "localization_accuracy": "visible cases with exact authority-backed failure location / five visible cases",
+    "operator_work_units": "one unit per evidence item inspected, artifact edited, deterministic score, or Sketch review; not elapsed time",
+    "revalidation_precision": "known affected semantic descendants selected / all selected semantic descendants",
+    "revalidation_recall": "known affected semantic descendants selected / frozen exhaustive affected descendants",
+    "wall_time": "time.perf_counter_ns around actual arm execution; descriptive only"
+  },
+  "owner_hat": "research-sponsor",
+  "pilot_basis": {
+    "decision": "retain the untouched v2 quality thresholds and honest work-unit ceiling",
+    "issue_4_local_pass_edge_case_survived": true,
+    "issue_6_cone_recall": 1.0,
+    "rationale": "Attempt A was invalidated solely because retained matched-start proof captured a post-execution digest. No attempt-A score is used. The corrected trace freezes both start and post-execution digests. Thresholds are unchanged."
+  },
+  "publication_gates": [
+    "human_review_required",
+    "no_compliant_tpc_di_benchmark_claim",
+    "no_comparative_tpc_performance_claim",
+    "claims_bounded_to_scripted_agents_and_selected_slice"
+  ],
+  "reveal_order": [
+    "v2-projection-null-trade-id",
+    "v2-missing-pricing-policy",
+    "v2-verification-audit-gap",
+    "v2-edge-creation-time",
+    "v2-path-lifecycle-duration"
+  ],
+  "run": {"nonce": "issue7-v21-run-20260813-b", "seed": 20260814},
+  "schema_version": "experiment-preregistration/v2.1",
+  "status": "frozen_before_v2_scored_run",
+  "treatment": {
+    "compositional_cess": ["pipeline", "stage", "contract", "path"],
+    "native": ["pipeline"],
+    "repair_policy": "one deterministic algorithm; no arm input or branch",
+    "stage_local_cess": ["pipeline", "stage"]
+  },
+  "versions": {
+    "corpus": "executable-experiment-corpus/v2.1",
+    "harness": "matched-experiment/v2.1",
+    "policy": "deterministic-first-visible-semantic-finding/v2",
+    "scorer": "v2-score/v1",
+    "sealed_custodian": "sealed-v2-aggregate/v1",
+    "sketch_review": "sketch-review-v2/v1",
+    "verifier": "tamper-evident-envelope/v2.1"
+  },
+  "prior_attempts": {
+    "v1": "invalid_failed_harness_learning_only",
+    "v2_attempt_a": "invalid_failed_matched-start-retention-proof"
+  }
+}
