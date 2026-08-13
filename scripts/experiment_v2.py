@@ -19,9 +19,9 @@ import duckdb
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "experiments/corpus-v2.json"
 PREREG = ROOT / "experiments/preregistration-v2.2.json"
-RESULT = ROOT / "evidence/issue-7/experiment-result-v2.3.json"
-TRACES = ROOT / "evidence/issue-7/traces-v2.3"
-ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.3.json"
+RESULT = ROOT / "evidence/issue-7/experiment-result-v2.4.json"
+TRACES = ROOT / "evidence/issue-7/traces-v2.4"
+ENVELOPE = ROOT / "evidence/issue-7/run-envelope-v2.4.json"
 START_DATABASE = ROOT / "build/issue7-v23-start.duckdb"
 ARMS = {
     "native": ("pipeline",),
