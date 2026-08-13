@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -68,6 +69,14 @@ def canonical_json(value: object) -> str:
     return json.dumps(value, indent=2, sort_keys=True) + "\n"
 
 
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def require_exact_keys(value: object, keys: set[str], name: str) -> dict:
     if not isinstance(value, dict):
         raise OracleError(f"{name} must be an object")
@@ -121,6 +130,7 @@ def validate_fixture(fixture: object) -> dict:
     if value["failure_class"] not in {
         "local_semantic",
         "edge_composition",
+        "candidate_edge_composition",
         "ambiguous",
     }:
         raise OracleError("fixture.failure_class is not recognized")
@@ -196,8 +206,12 @@ def validate_fixture(fixture: object) -> dict:
     )
 
     held_outs = value["held_outs"]
-    if not isinstance(held_outs, list) or not held_outs:
-        raise OracleError("fixture.held_outs must be a non-empty list")
+    if not isinstance(held_outs, list) or (
+        value["visibility"] == "public" and not held_outs
+    ):
+        raise OracleError(
+            "fixture.held_outs must be a list and public fixtures need a neighbor"
+        )
     held_out_ids = []
     for index, item in enumerate(held_outs):
         held_out = require_exact_keys(
@@ -229,8 +243,13 @@ def validate_fixture(fixture: object) -> dict:
         }:
             raise OracleError("edge/composition fixture must locate an edge or path invariant")
     else:
-        if value["failure_class"] != "ambiguous":
-            raise OracleError("ambiguous fixture must have ambiguous failure class")
+        if value["failure_class"] not in {
+            "ambiguous",
+            "candidate_edge_composition",
+        }:
+            raise OracleError(
+                "ambiguous fixture must remain ambiguous or a candidate edge/composition case"
+            )
         if (
             location["kind"] != "ambiguous"
             or location["id"] is not None
@@ -252,6 +271,7 @@ def validate_submission(submission: object) -> dict:
     if value["failure_class"] not in {
         "local_semantic",
         "edge_composition",
+        "candidate_edge_composition",
         "ambiguous",
     }:
         raise OracleError("submission.failure_class is not recognized")
@@ -307,7 +327,7 @@ def score(fixture: object, submission: object, *, allow_held_out: bool = False) 
 def validate_corpus(path: Path = CORPUS) -> tuple[dict, list[tuple[dict, dict]]]:
     corpus = require_exact_keys(
         load_json(path),
-        {"schema_version", "public_cases", "held_out_reservations"},
+        {"schema_version", "public_cases", "held_out_commitments"},
         "corpus",
     )
     if corpus["schema_version"] != "oracle-corpus/v1":
@@ -316,7 +336,7 @@ def validate_corpus(path: Path = CORPUS) -> tuple[dict, list[tuple[dict, dict]]]
         raise OracleError("corpus.public_cases must be a non-empty list")
     pairs = []
     fixture_case_ids = set()
-    referenced_held_outs = set()
+    referenced_held_outs = {}
     for index, item in enumerate(corpus["public_cases"]):
         entry = require_exact_keys(
             item, {"fixture", "example_submission"}, f"corpus.public_cases[{index}]"
@@ -333,31 +353,95 @@ def validate_corpus(path: Path = CORPUS) -> tuple[dict, list[tuple[dict, dict]]]
         if fixture["case_id"] in fixture_case_ids:
             raise OracleError("corpus public case ids must be unique")
         fixture_case_ids.add(fixture["case_id"])
-        referenced_held_outs.update(item["id"] for item in fixture["held_outs"])
+        for held_out in fixture["held_outs"]:
+            if held_out["id"] in referenced_held_outs:
+                raise OracleError("a held-out may neighbor only one public case")
+            referenced_held_outs[held_out["id"]] = {
+                "public_case_id": fixture["case_id"],
+                "relationship": held_out["relationship"],
+            }
         pairs.append((fixture, submission))
 
-    reservations = corpus["held_out_reservations"]
-    if not isinstance(reservations, list) or not reservations:
-        raise OracleError("corpus.held_out_reservations must be a non-empty list")
-    reserved = set()
-    for index, item in enumerate(reservations):
-        reservation = require_exact_keys(
-            item, {"id", "state"}, f"corpus.held_out_reservations[{index}]"
+    commitments = corpus["held_out_commitments"]
+    if not isinstance(commitments, list) or not commitments:
+        raise OracleError("corpus.held_out_commitments must be a non-empty list")
+    committed = {}
+    for index, item in enumerate(commitments):
+        commitment = require_exact_keys(
+            item,
+            {
+                "id",
+                "state",
+                "schema_version",
+                "public_case_id",
+                "relationship",
+                "sha256",
+            },
+            f"corpus.held_out_commitments[{index}]",
         )
-        reserved.add(
-            require_string(
-                reservation["id"],
-                f"corpus.held_out_reservations[{index}].id",
-                HELD_OUT_ID,
-            )
+        case_id = require_string(
+            commitment["id"],
+            f"corpus.held_out_commitments[{index}].id",
+            HELD_OUT_ID,
         )
-        if reservation["state"] != "reserved_sealed":
-            raise OracleError("held-out reservations must remain sealed")
-    if len(reserved) != len(reservations):
-        raise OracleError("held-out reservation ids must be unique")
-    if reserved != referenced_held_outs:
-        raise OracleError("corpus held-out reservations must exactly match fixture neighbors")
+        if case_id in committed:
+            raise OracleError("held-out commitment ids must be unique")
+        if commitment["state"] != "frozen_private":
+            raise OracleError("held-out commitments must remain frozen_private")
+        if commitment["schema_version"] != "failure-fixture/v1":
+            raise OracleError("held-out commitment schema version is not recognized")
+        require_string(commitment["public_case_id"], "held-out public_case_id", CASE_ID)
+        if commitment["relationship"] not in {
+            "same_boundary_neighbor",
+            "downstream_neighbor",
+        }:
+            raise OracleError("held-out commitment relationship is not recognized")
+        if not isinstance(commitment["sha256"], str) or not re.fullmatch(
+            r"[0-9a-f]{64}", commitment["sha256"]
+        ):
+            raise OracleError("held-out commitment sha256 must be 64 lowercase hex")
+        committed[case_id] = commitment
+    if set(committed) != set(referenced_held_outs):
+        raise OracleError("held-out commitments must exactly match fixture neighbors")
+    for case_id, relation in referenced_held_outs.items():
+        for field in ("public_case_id", "relationship"):
+            if committed[case_id][field] != relation[field]:
+                raise OracleError(
+                    "held-out commitment relationship metadata contradicts its public fixture"
+                )
     return corpus, pairs
+
+
+def verify_held_out_commitments(
+    fixture_dir: Path, corpus: dict, *, require_complete: bool
+) -> dict:
+    expected = {item["id"]: item for item in corpus["held_out_commitments"]}
+    paths = sorted(fixture_dir.glob("*.json")) if fixture_dir.is_dir() else []
+    if not paths and not require_complete:
+        return {"present": False, "verified": 0}
+    fixtures = {}
+    fixture_paths = {}
+    for path in paths:
+        fixture = validate_fixture(load_json(path))
+        if fixture["visibility"] != "held_out":
+            raise OracleError("private custody accepts only held-out fixtures")
+        case_id = fixture["case_id"]
+        if case_id in fixtures:
+            raise OracleError("private held-out fixture case ids must be unique")
+        fixtures[case_id] = fixture
+        fixture_paths[case_id] = path
+    if set(fixtures) != set(expected):
+        raise OracleError(
+            "private held-out fixtures must exactly match public commitments (no missing or extra cases)"
+        )
+    for case_id, fixture in fixtures.items():
+        commitment = expected[case_id]
+        if fixture["schema_version"] != commitment["schema_version"]:
+            raise OracleError(f"held-out schema mismatch for {case_id}")
+        actual = sha256(fixture_paths[case_id])
+        if actual != commitment["sha256"]:
+            raise OracleError(f"held-out commitment mismatch for {case_id}")
+    return {"present": True, "verified": len(fixtures)}
 
 
 def safe_repo_path(relative: object, name: str) -> Path:
@@ -374,6 +458,9 @@ def safe_repo_path(relative: object, name: str) -> Path:
 def verify_repository() -> dict:
     corpus, pairs = validate_corpus()
     results = [score(fixture, submission) for fixture, submission in pairs]
+    held_out = verify_held_out_commitments(
+        ROOT / "oracle/fixtures/held-out", corpus, require_complete=False
+    )
     canonical_paths = [CORPUS]
     for entry in corpus["public_cases"]:
         canonical_paths.extend(
@@ -396,7 +483,9 @@ def verify_repository() -> dict:
         ),
         "cases_passed": sum(result["passed"] for result in results),
         "cases_scored": len(results),
-        "held_outs_reserved": len(corpus["held_out_reservations"]),
+        "held_outs_committed": len(corpus["held_out_commitments"]),
+        "held_outs_present": held_out["present"],
+        "held_outs_verified": held_out["verified"],
         "passed": all(result["passed"] for result in results),
         "schema_version": "oracle-verification/v1",
     }
@@ -406,13 +495,14 @@ def score_sealed(
     fixture_dir: Path,
     submission_dir: Path,
     *,
-    reserved_case_ids: set[str] | None = None,
+    commitments: dict | None = None,
 ) -> dict:
-    if reserved_case_ids is None:
+    if commitments is None:
         corpus, _ = validate_corpus()
-        reserved_case_ids = {
-            reservation["id"] for reservation in corpus["held_out_reservations"]
-        }
+    else:
+        corpus = commitments
+    verify_held_out_commitments(fixture_dir, corpus, require_complete=True)
+    committed_case_ids = {item["id"] for item in corpus["held_out_commitments"]}
     fixtures = {}
     for path in sorted(fixture_dir.glob("*.json")):
         fixture = validate_fixture(load_json(path))
@@ -427,8 +517,8 @@ def score_sealed(
         if submission["case_id"] in submissions:
             raise OracleError("sealed submission case ids must be unique")
         submissions[submission["case_id"]] = submission
-    if set(fixtures) != reserved_case_ids:
-        raise OracleError("sealed fixtures must exactly match the reserved held-out case ids")
+    if set(fixtures) != committed_case_ids:
+        raise OracleError("sealed fixtures must exactly match the committed held-out case ids")
     if set(fixtures) != set(submissions):
         raise OracleError("sealed fixture and submission case sets must match")
     results = [score(fixtures[case_id], submissions[case_id], allow_held_out=True) for case_id in fixtures]

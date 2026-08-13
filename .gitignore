@@ -8,4 +8,5 @@ build/
 dist/
 raw/generated/
 oracle/fixtures/held-out/
+oracle/submissions/held-out/
 tmp/

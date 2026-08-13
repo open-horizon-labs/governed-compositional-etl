@@ -26,8 +26,10 @@ class SemanticRepairOracleTests(unittest.TestCase):
         self.assertTrue(result["passed"])
         self.assertEqual(result["cases_scored"], 3)
         self.assertEqual(result["cases_passed"], 3)
-        self.assertEqual(result["ambiguous_cases"], 1)
-        self.assertEqual(result["held_outs_reserved"], 4)
+        self.assertEqual(result["ambiguous_cases"], 2)
+        self.assertEqual(result["held_outs_committed"], 4)
+        self.assertTrue(result["held_outs_present"])
+        self.assertEqual(result["held_outs_verified"], 4)
 
     def test_machine_readable_schemas_cover_issue_fields(self):
         schema = ORACLE.load_json(
@@ -170,6 +172,27 @@ class SemanticRepairOracleTests(unittest.TestCase):
         with self.assertRaisesRegex(ORACLE.OracleError, "submission keys"):
             ORACLE.score(expected, wrong)
 
+    def test_candidate_composition_case_authorizes_no_boundary_or_repair_yet(self):
+        expected = fixture("edge-trade-history-create-time-v1")
+        actual = submission("edge-trade-history-create-time-v1")
+        self.assertEqual(expected["failure_class"], "candidate_edge_composition")
+        self.assertEqual(expected["location"]["kind"], "ambiguous")
+        self.assertEqual(expected["allowed_artifacts"], [])
+        self.assertTrue(ORACLE.score(expected, actual)["passed"])
+
+        forced = copy.deepcopy(actual)
+        forced["disposition"] = "resolved"
+        forced["failure_class"] = "edge_composition"
+        forced["location"] = {
+            "kind": "edge",
+            "id": "edge.trade_history_to_dim_trade.create_close_time",
+            "candidates": [],
+        }
+        forced["changed_artifacts"] = ["sketch.edge.trade_history_to_dim_trade"]
+        result = ORACLE.score(expected, forced)
+        self.assertFalse(result["passed"])
+        self.assertFalse(result["dimensions"]["artifact_authority"])
+
     def test_wrong_output_and_incomplete_revalidation_fail_independently(self):
         expected = fixture("local-trade-type-name-v1")
         actual = submission("local-trade-type-name-v1")
@@ -208,10 +231,11 @@ class SemanticRepairOracleTests(unittest.TestCase):
             (submission_dir / "answer.json").write_text(
                 ORACLE.canonical_json(answer), encoding="utf-8"
             )
+            corpus = self.private_corpus(hidden, fixture_dir / "opaque.json")
             result = ORACLE.score_sealed(
                 fixture_dir,
                 submission_dir,
-                reserved_case_ids={hidden["case_id"]},
+                commitments=corpus,
             )
         self.assertEqual(
             set(result),
@@ -238,23 +262,82 @@ class SemanticRepairOracleTests(unittest.TestCase):
             (submission_dir / "answer.json").write_text(
                 ORACLE.canonical_json(answer), encoding="utf-8"
             )
+            corpus = self.private_corpus(public, fixture_dir / "case.json")
             with self.assertRaisesRegex(ORACLE.OracleError, "only held-out"):
                 ORACLE.score_sealed(
                     fixture_dir,
                     submission_dir,
-                    reserved_case_ids={public["case_id"]},
+                    commitments=corpus,
                 )
 
             public["visibility"] = "held_out"
             (fixture_dir / "case.json").write_text(
                 ORACLE.canonical_json(public), encoding="utf-8"
             )
-            with self.assertRaisesRegex(ORACLE.OracleError, "reserved held-out"):
+            corpus["held_out_commitments"][0]["id"] = "a-different-reserved-case"
+            with self.assertRaisesRegex(ORACLE.OracleError, "public commitments"):
                 ORACLE.score_sealed(
                     fixture_dir,
                     submission_dir,
-                    reserved_case_ids={"a-different-reserved-case"},
+                    commitments=corpus,
                 )
+
+    def test_held_out_commitment_mismatch_and_missing_or_extra_cases_fail(self):
+        hidden = fixture("local-trade-type-name-v1")
+        hidden["case_id"] = "ho-901"
+        hidden["visibility"] = "held_out"
+        hidden["held_outs"] = []
+        with tempfile.TemporaryDirectory() as directory:
+            fixture_dir = Path(directory)
+            path = fixture_dir / "ho-901.json"
+            path.write_text(ORACLE.canonical_json(hidden), encoding="utf-8")
+            corpus = self.private_corpus(hidden, path)
+            self.assertEqual(
+                ORACLE.verify_held_out_commitments(
+                    fixture_dir, corpus, require_complete=True
+                )["verified"],
+                1,
+            )
+
+            tampered = copy.deepcopy(hidden)
+            tampered["title"] = "changed after commitment"
+            path.write_text(ORACLE.canonical_json(tampered), encoding="utf-8")
+            with self.assertRaisesRegex(ORACLE.OracleError, "commitment mismatch"):
+                ORACLE.verify_held_out_commitments(
+                    fixture_dir, corpus, require_complete=True
+                )
+
+            path.unlink()
+            with self.assertRaisesRegex(ORACLE.OracleError, "missing or extra"):
+                ORACLE.verify_held_out_commitments(
+                    fixture_dir, corpus, require_complete=True
+                )
+
+            path.write_text(ORACLE.canonical_json(hidden), encoding="utf-8")
+            extra = copy.deepcopy(hidden)
+            extra["case_id"] = "ho-902"
+            (fixture_dir / "ho-902.json").write_text(
+                ORACLE.canonical_json(extra), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ORACLE.OracleError, "missing or extra"):
+                ORACLE.verify_held_out_commitments(
+                    fixture_dir, corpus, require_complete=True
+                )
+
+    @staticmethod
+    def private_corpus(hidden, path):
+        return {
+            "held_out_commitments": [
+                {
+                    "id": hidden["case_id"],
+                    "public_case_id": "local-trade-type-name-v1",
+                    "relationship": "same_boundary_neighbor",
+                    "schema_version": "failure-fixture/v1",
+                    "sha256": ORACLE.sha256(path),
+                    "state": "frozen_private",
+                }
+            ]
+        }
 
 
 if __name__ == "__main__":

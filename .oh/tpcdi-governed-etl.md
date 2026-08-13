@@ -131,7 +131,7 @@ Use the complete TPC-DI rules as a hidden closed-world oracle. Give the open-wor
 |---|---|---|---|---|
 | TPC-DI tooling is unusable | Retired by evidence | Replace the raw generator with hand-authored fixtures while still claiming workload fidelity | Run current DIGen at a small scale and retain commands and checksums | Tools cannot run reproducibly |
 | Policy leaks into SQL | Retired by evidence | Hand-edit generated SQL to fix an active case | Freshly regenerate the projection from Sketch plus anchors and pass both checks | Regeneration needs archive examples or manual SQL policy |
-| Edge failures are really local defects | Retired by evidence | Rename a local bug as a contract failure | Freeze a case where both local stage checks pass but meanings are incompatible | Reviewers assign every case locally |
+| Edge failures are really local defects | Pending issue #4 contract adjudication | Rename a local bug as a contract failure | Freeze a case where both local stage checks pass but meanings are incompatible | Reviewers assign every case locally |
 | Smaller revalidation is unsafe | Retired by evidence | Report fewer models rerun as success | Measure precision and recall against an exhaustive descendant oracle | Any affected descendant escapes |
 | Existing tooling is sufficient | Triggered | N/A | Compare with native SQLMesh/DuckDB and stage-local CESS arms | Added governance does not reduce meaningful failures |
 | TPC fair-use constraints | Accepted with rationale pending human review | N/A | Avoid TPC performance claims; obtain human review before publishing derived results | Intended publication is not permitted |

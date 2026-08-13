@@ -1,20 +1,36 @@
 {
-  "held_out_reservations": [
+  "held_out_commitments": [
     {
       "id": "ho-001",
-      "state": "reserved_sealed"
+      "public_case_id": "local-trade-type-name-v1",
+      "relationship": "same_boundary_neighbor",
+      "schema_version": "failure-fixture/v1",
+      "sha256": "0c621b06464456269a95e17409ac39bc7841c36adcb97631b309e21fe0437523",
+      "state": "frozen_private"
     },
     {
       "id": "ho-002",
-      "state": "reserved_sealed"
+      "public_case_id": "edge-trade-history-create-time-v1",
+      "relationship": "same_boundary_neighbor",
+      "schema_version": "failure-fixture/v1",
+      "sha256": "19450183fa232206b7f3e0e472b0b452a5cb6b9b160b000eb3406ebdf010f444",
+      "state": "frozen_private"
     },
     {
       "id": "ho-003",
-      "state": "reserved_sealed"
+      "public_case_id": "edge-trade-history-create-time-v1",
+      "relationship": "downstream_neighbor",
+      "schema_version": "failure-fixture/v1",
+      "sha256": "905ce8f5ee3802a54f7c56b606f9f950778e50c06d8a36ea752ecbaf284d0b67",
+      "state": "frozen_private"
     },
     {
       "id": "ho-004",
-      "state": "reserved_sealed"
+      "public_case_id": "ambiguous-status-name-boundary-v1",
+      "relationship": "same_boundary_neighbor",
+      "schema_version": "failure-fixture/v1",
+      "sha256": "0523a30bb37a65fc2f3ec3a46047b65479a613f8ba2b9c4974d90942aa1ae9aa",
+      "state": "frozen_private"
     }
   ],
   "public_cases": [

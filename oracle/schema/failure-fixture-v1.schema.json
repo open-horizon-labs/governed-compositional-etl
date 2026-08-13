@@ -56,7 +56,10 @@
             "maxItems": 0
           },
           "failure_class": {
-            "const": "ambiguous"
+            "enum": [
+              "ambiguous",
+              "candidate_edge_composition"
+            ]
           },
           "location": {
             "properties": {
@@ -119,6 +122,25 @@
                 ]
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "visibility": {
+            "const": "public"
+          }
+        },
+        "required": [
+          "visibility"
+        ]
+      },
+      "then": {
+        "properties": {
+          "held_outs": {
+            "minItems": 1
           }
         }
       }
@@ -236,6 +258,7 @@
       "enum": [
         "local_semantic",
         "edge_composition",
+        "candidate_edge_composition",
         "ambiguous"
       ]
     },
@@ -269,7 +292,6 @@
         ],
         "type": "object"
       },
-      "minItems": 1,
       "type": "array"
     },
     "input": {

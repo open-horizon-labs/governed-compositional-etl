@@ -18,7 +18,7 @@ outcome: governed-compositional-etl-repair
 
 PR #9 pins a redistribution that identifies itself as TPC-DI DIGen 1.1.0, verifies its core tool hashes before execution, and retains deterministic hashes and row counts for the generated scale-factor-3 slice. The selected `StatusType`, `TradeType`, `Trade`, and `TradeHistory` files contain the source records named by TPC-DI 1.1.0 clauses 4.5.8.1 and 4.5.8.2 for the bounded DimTrade historical-load rules used by this pilot.
 
-The retained source rows provide direct examples of reference-name interpretation and the composition of trade rows with ordered status history. They are enough to construct one local semantic failure, one edge/composition failure, and one deliberately ambiguous diagnostic case without inventing business policy.
+The retained source rows provide direct examples of reference-name interpretation and an authority-backed mismatch involving trade rows and ordered status history. They are enough to construct one local semantic failure, one candidate edge/composition case, and one deliberately ambiguous diagnostic case without inventing business policy. They do not establish that both stage-local contracts pass, because issue #4 has not defined those contracts.
 
 The remaining provenance caveat is unchanged: the evaluated redistribution has not yet been compared with a personally acquired canonical registered TPC package, and current license and fair-use terms still require human review.
 
@@ -33,3 +33,5 @@ The remaining provenance caveat is unchanged: the evaluated redistribution has n
 Under the domain-reviewer hat, choose option 3: the named TPC-DI transformation clauses, not raw values or table shapes, authorize the oracle labels and corrected outputs. The four files are provisionally adequate for the pilot cases.
 
 Under the experiment-lead hat, continue the spike on that basis. Personally acquiring the canonical TPC-DI 1.1.0 package, comparing the relevant hashes, and reviewing current TPC/PDGF license and fair-use terms remain mandatory before external publication or any workload-fidelity claim. They are not blockers for internal oracle construction. This decision neither calls the experiment a compliant benchmark nor broadens the slice.
+
+The risk that the candidate composition failure is actually local remains pending. Its corrected output is frozen from named TPC-DI authority, while its earliest location and repair surface remain ambiguous and unauthorized until issue #4 contract adjudication. This risk is neither fired nor retired by issue #3.

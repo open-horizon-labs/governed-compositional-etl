@@ -28,6 +28,7 @@
       "enum": [
         "local_semantic",
         "edge_composition",
+        "candidate_edge_composition",
         "ambiguous"
       ]
     },

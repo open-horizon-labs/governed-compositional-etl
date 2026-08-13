@@ -1,12 +1,12 @@
 # Semantic repair oracle v1
 
-Issue #3 freezes the location and repair authority for a deliberately small pilot corpus before any experiment arm sees a failure. The oracle is a research instrument for the bounded spike, not a claim of complete TPC-DI coverage or benchmark compliance.
+Issue #3 freezes the available location evidence and repair authority for a deliberately small pilot corpus before any experiment arm sees a failure. Adjudicated locations are exact; unresolved locations remain explicit candidates with no authorized repair. The oracle is a research instrument for the bounded spike, not a claim of complete TPC-DI coverage or benchmark compliance.
 
 ## Authority boundary
 
 The corrected meaning in each case is authorized by a named TPC-DI 1.1.0 rule or an approved decision. Source values and table shapes are supporting evidence only; they do not authorize a transformation. An unknown rule stays a Sketch hole and is not made scorable by guessing.
 
-The retained source anchors are in [`evidence/issue-3/source-anchors-v1.json`](../evidence/issue-3/source-anchors-v1.json). The local and edge cases use these TPC-DI 1.1.0 rules:
+The retained source anchors are in [`evidence/issue-3/source-anchors-v1.json`](../evidence/issue-3/source-anchors-v1.json). The local and candidate composition cases use these TPC-DI 1.1.0 rules:
 
 - Clauses 2.2.2.13 and 2.2.2.18 define the status and trade-type reference fields.
 - Clause 2.2.2.16 defines the historical status observations and their update timestamps.
@@ -17,15 +17,15 @@ The [oracle-substrate decision](../.oh/metis/issue-3-oracle-substrate-decision.m
 
 ## Frozen formats and cases
 
-`oracle/schema/failure-fixture-v1.schema.json` is the versioned fixture contract. Every fixture carries its inputs, observed and corrected outputs, failure class, earliest responsible location, authority, allowed and forbidden artifacts, tempting wrong repair, affected descendants, and opaque held-out neighbors. `oracle/schema/repair-submission-v1.schema.json` is the separate structural answer format.
+`oracle/schema/failure-fixture-v1.schema.json` is the versioned fixture contract. Every fixture carries its inputs, observed and corrected outputs, failure class, adjudicated location or unresolved candidates, authority, allowed and forbidden artifacts, tempting wrong repair, affected descendants, and opaque held-out neighbors. `oracle/schema/repair-submission-v1.schema.json` is the separate structural answer format.
 
 The public pilot corpus freezes:
 
 1. A local semantic failure: a trade-type identifier (`TMS`) escapes reference interpretation instead of producing `Market Sell`.
-2. An edge/composition failure: valid Trade and TradeHistory stage outputs compose using `Trade.T_DTS` for historical creation time instead of the `SBMT`-qualified `TradeHistory.TH_DTS` required by clause 4.5.8.2.
+2. A candidate edge/composition failure: the observed historical output uses `Trade.T_DTS` for creation time instead of the `SBMT`-qualified `TradeHistory.TH_DTS` required by clause 4.5.8.2. The corrected output is authority-backed, but the earliest responsible boundary is not yet adjudicated.
 3. An ambiguous failure: an observed status identifier leak does not reveal whether the reference stage or its outgoing edge first made the wrong choice. No repair artifact is authorized until intermediate evidence resolves the boundary.
 
-The edge case is a candidate for the later matched experiment. Its oracle label is genuine at this stage because both producer records remain valid in isolation and the named rule is violated only by their composition. Issue #7 must still demonstrate that the three experiment arms encounter equivalent seeded failures.
+The candidate is deliberately classified `candidate_edge_composition` with an ambiguous location spanning the Trade stage, TradeHistory stage, and their handoff. It authorizes no repair. Issue #4 must define and apply the local contracts before reviewers can determine whether the case survives as an edge/composition failure or reduces to a local semantic defect. The edge-risk review trigger remains pending—not fired and not retired. Issue #7 must separately demonstrate equivalent seeds across experiment arms.
 
 ## Narrative-free scoring
 
@@ -47,14 +47,16 @@ python3 scripts/oracle.py score \
 
 ## Held-outs
 
-The public corpus enumerates opaque held-out IDs and relationships, but contains no held-out inputs, corrected outputs, or labels. Actual held-out fixtures belong in the Git-ignored `oracle/fixtures/held-out/` directory and must be disclosed only to the evaluator after the repair is frozen. Their neighboring relation is chosen during adjudication, not generated from raw similarity.
+The public corpus retains each opaque held-out ID, relationship, fixture schema version, and canonical SHA-256. Those commitments freeze four actual fixtures without exposing their inputs, corrected outputs, or labels. The plaintext fixtures are in the Git-ignored `oracle/fixtures/held-out/` private-custody directory; reference answers used only to verify the scorer are likewise ignored under `oracle/submissions/held-out/`.
 
-`score-sealed` accepts only fixtures marked `held_out`, requires their case IDs to exactly match the frozen corpus reservations, and emits aggregate counts—never case IDs, expected locations, corrected outputs, or dimension-level failures:
+The committed hashes make any later fixture change detectable, but they cannot reproduce confidential contents from a fresh clone. Custody therefore has two parts: Git preserves the immutable commitments, while the experiment custodian must preserve and transfer the exact private files out of band. There is intentionally no public materialization command because a deterministic generator would disclose or make derivable the held-out answers. Loss of private custody invalidates held-out evaluation; it does not authorize creating replacement cases under the old commitments.
+
+`score-sealed` verifies every private fixture byte-for-byte against its public commitment, rejects missing or extra cases, accepts only fixtures marked `held_out`, and emits aggregate counts—never case IDs, expected locations, corrected outputs, or dimension-level failures:
 
 ```sh
 python3 scripts/oracle.py score-sealed \
   --fixture-dir oracle/fixtures/held-out \
-  --submission-dir /path/to/frozen/submissions
+  --submission-dir oracle/submissions/held-out
 ```
 
 This separation protects the held-outs from visible scoring. A research-sponsor adoption decision must not treat the public example scores as held-out evidence.
@@ -69,6 +71,6 @@ Agreement requires the same named authority, failure class, earliest location, a
 2. Check the named rule or approved decision; raw values, schemas, generated SQL, and DuckDB results may falsify an implementation but may not supply missing policy.
 3. Prefer the earliest boundary whose contract can be shown wrong while its inputs remain valid. A later symptom is never selected merely because it is easiest to patch.
 4. If the evidence resolves the dispute, record the alternatives, evidence, decision hat, and justification in a repository-native decision record, then update the fixture version before any arm sees it.
-5. If two or more locations remain defensible, set `disposition` and `failure_class` to `ambiguous`, retain every candidate location, authorize no repair artifact, and exclude the case from location-effect estimates. Ambiguity is a result, not a forced stage label.
+5. If two or more locations remain defensible, set `disposition` to `ambiguous`, retain every candidate location, authorize no repair artifact, and exclude the case from location-effect estimates. Use `failure_class: ambiguous` when even the class is unresolved; retain `candidate_edge_composition` only when the authority-backed output qualifies it for issue #4 edge-versus-local adjudication. Ambiguity is a result, not a forced stage label.
 
-The issue review trigger fires if independent labels change after this process or if the edge case reduces to an ordinary local defect. In that event, freeze experiment execution, preserve both label sets, and reframe the corpus rather than tuning the scorer post hoc.
+Issue #4 is the planned adjudication point for the candidate boundary. The review trigger remains pending while those local contracts are absent. It fires if contract-backed reviewers cannot stabilize the boundary or if the candidate reduces to an ordinary local defect; that evidence must be preserved and the corpus reframed rather than tuned post hoc.

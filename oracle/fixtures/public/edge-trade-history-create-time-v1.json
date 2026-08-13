@@ -4,9 +4,7 @@
     "duckdb.dim_trade",
     "metric.trade_lifecycle_seconds"
   ],
-  "allowed_artifacts": [
-    "sketch.edge.trade_history_to_dim_trade"
-  ],
+  "allowed_artifacts": [],
   "authority": [
     {
       "id": "tpc-di-1.1.0-2.2.2.16",
@@ -33,11 +31,12 @@
     "created_at": "2012-07-07T00:01:13",
     "trade_id": 0
   },
-  "disposition": "adjudicated",
-  "failure_class": "edge_composition",
+  "disposition": "ambiguous",
+  "failure_class": "candidate_edge_composition",
   "forbidden_artifacts": [
     "sketch.stage.trade",
     "sketch.stage.trade_history",
+    "sketch.edge.trade_history_to_dim_trade",
     "generated_sql.dim_trade",
     "duckdb.dim_trade",
     "metric.trade_lifecycle_seconds"
@@ -83,9 +82,13 @@
     }
   },
   "location": {
-    "candidates": [],
-    "id": "edge.trade_history_to_dim_trade.create_close_time",
-    "kind": "edge"
+    "candidates": [
+      "stage.trade",
+      "stage.trade_history",
+      "edge.trade_history_to_dim_trade.create_close_time"
+    ],
+    "id": null,
+    "kind": "ambiguous"
   },
   "observed_output": {
     "closed_at": "2012-07-07T00:02:34",
@@ -96,8 +99,8 @@
   "tempting_wrong_repair": {
     "artifact": "metric.trade_lifecycle_seconds",
     "change": "Special-case zero-second lifecycles in the downstream metric.",
-    "why_wrong": "Both source stages retained their authorized values; the first incorrect semantic choice is the edge's selection of T_DTS rather than the status-qualified history timestamp."
+    "why_wrong": "The corrected output is authority-backed, but issue #3 evidence does not yet distinguish a bad local semantic contract from a bad handoff. Patching the metric would bypass that pending adjudication."
   },
-  "title": "Locally valid trade and history stages compose to the wrong creation time",
+  "title": "Candidate Trade and TradeHistory composition failure pending local-contract adjudication",
   "visibility": "public"
 }

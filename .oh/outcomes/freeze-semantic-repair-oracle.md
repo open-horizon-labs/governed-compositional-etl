@@ -38,4 +38,4 @@ The fixture schema is complete, reviewers agree on the pilot cases, and the expe
 
 ## Current evidence
 
-Issue #3 freezes two adjudicated pilot cases and one unresolved ambiguous case in `oracle/corpus-v1.json`. `scripts/oracle.py verify` validates the authority boundary and scores the example structural submissions without an explanation field. The objective remains active until human review confirms the provisional pilot labels; the adjudication protocol preserves ambiguity if reviewer agreement is unstable.
+Issue #3 freezes one adjudicated local case, one authority-backed candidate composition case with an ambiguous earliest boundary, and one unresolved ambiguous case in `oracle/corpus-v1.json`. `scripts/oracle.py verify` validates the authority boundary and scores the example structural submissions without an explanation field. Four private held-outs are frozen by public SHA-256 commitments. The edge-versus-local risk remains pending until issue #4 defines the local contracts; no repair surface is authorized for the candidate before that adjudication.
