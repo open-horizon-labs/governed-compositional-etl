@@ -1,0 +1,75 @@
+{
+  "affected_descendants": [
+    "edge.trade_type_to_dim_trade",
+    "logical.dim_trade",
+    "duckdb.dim_trade"
+  ],
+  "allowed_artifacts": [
+    "sketch.stage.trade_type_reference"
+  ],
+  "authority": [
+    {
+      "id": "tpc-di-1.1.0-2.2.2.18",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.18, Table 2.2.17, TradeType TT_ID and TT_NAME",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-4.5.8.2-type",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 4.5.8.2, DimTrade Type lookup from TradeType",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    }
+  ],
+  "case_id": "local-trade-type-name-v1",
+  "corrected_output": {
+    "is_market": true,
+    "is_sell": true,
+    "trade_type_id": "TMS",
+    "type_name": "Market Sell"
+  },
+  "disposition": "adjudicated",
+  "failure_class": "local_semantic",
+  "forbidden_artifacts": [
+    "generated_sql.dim_trade",
+    "duckdb.dim_trade",
+    "sketch.edge.trade_type_to_dim_trade"
+  ],
+  "held_outs": [
+    {
+      "id": "ho-001",
+      "relationship": "same_boundary_neighbor"
+    }
+  ],
+  "input": {
+    "tables": {
+      "trade_type": [
+        {
+          "tt_id": "TMS",
+          "tt_is_mrkt": true,
+          "tt_is_sell": true,
+          "tt_name": "Market Sell"
+        }
+      ]
+    }
+  },
+  "location": {
+    "candidates": [],
+    "id": "stage.trade_type_reference.type_name",
+    "kind": "stage"
+  },
+  "observed_output": {
+    "is_market": true,
+    "is_sell": true,
+    "trade_type_id": "TMS",
+    "type_name": "TMS"
+  },
+  "schema_version": "failure-fixture/v1",
+  "tempting_wrong_repair": {
+    "artifact": "duckdb.dim_trade",
+    "change": "Patch the materialized Type value for trade 223.",
+    "why_wrong": "The value would recur and the final table is a replaceable projection, not the authorized interpretation point."
+  },
+  "title": "Trade type identifier escapes the reference interpretation stage",
+  "visibility": "public"
+}

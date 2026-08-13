@@ -1,0 +1,85 @@
+{
+  "authority": {
+    "document": "TPC Benchmark DI Standard Specification 1.1.0",
+    "rules": [
+      {
+        "locator": "2.2.2.13, Table 2.2.13",
+        "use": "StatusType identifier and description fields"
+      },
+      {
+        "locator": "2.2.2.16, Table 2.2.15",
+        "use": "TradeHistory identity, update timestamp, and status fields"
+      },
+      {
+        "locator": "2.2.2.18, Table 2.2.17",
+        "use": "TradeType identifier and description fields"
+      },
+      {
+        "locator": "4.5.8.1",
+        "use": "Historical Trade and TradeHistory composition by trade identifier"
+      },
+      {
+        "locator": "4.5.8.2",
+        "use": "DimTrade type/status reference lookups and status-qualified creation/close timestamps"
+      }
+    ],
+    "url": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+  },
+  "generated_source": {
+    "extraction": {
+      "database": "build/tpcdi.duckdb",
+      "method": "Read-only DuckDB queries against the hash-verified persistent issue #2 substrate; selected values were serialized as JSON (timestamps in ISO 8601 form) without business transformation.",
+      "verified_on": "2026-08-13"
+    },
+    "manifest": "evidence/issue-2/sf3-manifest.json",
+    "manifest_slice_sha256": {
+      "status_type": "f4ca8eefa64abebcdb3cd47c226d04268a9dbad0f8faf6476cda1bea001481f6",
+      "trade": "334c705384bac635f944d58a49337890f122ce5867e8512aac0091bfc25cf99f",
+      "trade_history": "02f9baae0c38650b72593fb18a20c262795b9f427dcdd7346fa881f131487639",
+      "trade_type": "8cd4388b9be9bb1ccd30f96715f80143fc78794aac641f898aa6ec90c9f2dfe6"
+    },
+    "selected_rows": {
+      "status_type": [
+        {
+          "st_id": "CMPT",
+          "st_name": "Completed"
+        }
+      ],
+      "trade": [
+        {
+          "t_dts": "2012-07-07T00:02:34",
+          "t_id": 0,
+          "t_st_id": "CMPT",
+          "t_tt_id": "TMB"
+        },
+        {
+          "t_dts": "2012-07-08T00:58:59",
+          "t_id": 223,
+          "t_st_id": "CMPT",
+          "t_tt_id": "TMS"
+        }
+      ],
+      "trade_history": [
+        {
+          "th_dts": "2012-07-07T00:01:13",
+          "th_st_id": "SBMT",
+          "th_t_id": 0
+        },
+        {
+          "th_dts": "2012-07-07T00:02:34",
+          "th_st_id": "CMPT",
+          "th_t_id": 0
+        }
+      ],
+      "trade_type": [
+        {
+          "tt_id": "TMS",
+          "tt_is_mrkt": true,
+          "tt_is_sell": true,
+          "tt_name": "Market Sell"
+        }
+      ]
+    }
+  },
+  "schema_version": "oracle-source-anchors/v1"
+}

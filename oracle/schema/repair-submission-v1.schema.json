@@ -1,0 +1,92 @@
+{
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:repair-submission:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]+$",
+      "type": "string"
+    },
+    "changed_artifacts": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "corrected_output": {
+      "type": "object"
+    },
+    "disposition": {
+      "enum": [
+        "resolved",
+        "ambiguous"
+      ]
+    },
+    "failure_class": {
+      "enum": [
+        "local_semantic",
+        "edge_composition",
+        "candidate_edge_composition",
+        "ambiguous"
+      ]
+    },
+    "location": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "stage",
+            "edge",
+            "path_invariant",
+            "ambiguous"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidates"
+      ],
+      "type": "object"
+    },
+    "revalidated_descendants": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "const": "repair-submission/v1"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "disposition",
+    "failure_class",
+    "location",
+    "changed_artifacts",
+    "corrected_output",
+    "revalidated_descendants"
+  ],
+  "title": "Narrative-free semantic repair submission v1",
+  "type": "object"
+}

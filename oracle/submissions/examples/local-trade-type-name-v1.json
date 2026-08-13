@@ -1,0 +1,25 @@
+{
+  "case_id": "local-trade-type-name-v1",
+  "changed_artifacts": [
+    "sketch.stage.trade_type_reference"
+  ],
+  "corrected_output": {
+    "is_market": true,
+    "is_sell": true,
+    "trade_type_id": "TMS",
+    "type_name": "Market Sell"
+  },
+  "disposition": "resolved",
+  "failure_class": "local_semantic",
+  "location": {
+    "candidates": [],
+    "id": "stage.trade_type_reference.type_name",
+    "kind": "stage"
+  },
+  "revalidated_descendants": [
+    "edge.trade_type_to_dim_trade",
+    "logical.dim_trade",
+    "duckdb.dim_trade"
+  ],
+  "schema_version": "repair-submission/v1"
+}
