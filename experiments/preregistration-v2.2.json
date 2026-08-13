@@ -23,10 +23,10 @@
     "corpus_sha256": "be2e20325de846369889e4756ec5d3f5d536baad1fd287bd03bcbe415a8468f8",
     "harness_files": {
       "scripts/experiment_scorer_v2.py": "8b7295fd8010af1586c83ce4e46fda6893e1ace671f5ab058b355739dbf03680",
-      "scripts/experiment_v2.py": "ff0de8aa285b8b916210e91683c9c593edc4587c59d356b25fb0010b12a551a9",
-      "scripts/sealed_custodian_v2.py": "e961a1d6fadee9b0ef30c6d55690834362e1ef49abb1e0daa417c7fd05ed4234",
+      "scripts/experiment_v2.py": "2fdbc31cc7efe4eae3808ae852257a8e5b9bbe2413f6ffdfbe2c7e62aa9d5be8",
+      "scripts/sealed_custodian_v2.py": "aa1af4348d094a19d1b8ae1121f9f4197bd9c139bcdc2b03953635e61867fc5e",
       "scripts/sketch_review_v2.py": "cd7773575605be49f917080974cf48cc0809fe7413f91be2ea2cef956b0727c4",
-      "scripts/verify_experiment_v2.py": "f0e8c9ab2abb8a13836bce55beda88c8494275e3193f62bbb4669396f63e4d22"
+      "scripts/verify_experiment_v2.py": "86f6afa9b6382bd5e1c75636c8d3d7d13688e7c300abd0bc59a610d86d1afef5"
     },
     "projection_manifest_sha256": "fc3baf16fdcff8fbd47ba4af9b132fc70d420ba6b7a2106b4a475c2cfa5cc9f3",
     "raw_database_sha256": "c0279c4c05cc5868fe593b4b112b81cd8c647a9c1ded9012af41637438595ae0",
@@ -35,7 +35,7 @@
   "heldout_custody": {
     "answer_submission_files_tracked": 0,
     "case_count": 2,
-    "commitment_sha256": "aca9f5857914af3fc0b19da7fe2f6265a5e433710d62e7cb23a9eef204928be6",
+    "commitment_sha256": "90bd9f2c04fa7ef61f9832d52896755a451ea52ae7f1ff4104455eacdde4e1d2",
     "custodian_output": "aggregate_counts_only",
     "rotated_after_v2_1_invalidation": true,
     "runner_access": "forbidden"
@@ -59,7 +59,7 @@
   },
   "publication_gates": ["human_review_required", "no_compliant_tpc_di_benchmark_claim", "no_comparative_tpc_performance_claim", "claims_bounded_to_scripted_agents_and_selected_slice"],
   "reveal_order": ["v2-projection-null-trade-id", "v2-missing-pricing-policy", "v2-verification-audit-gap", "v2-edge-creation-time", "v2-path-lifecycle-duration"],
-  "run": {"nonce": "issue7-v22-run-20260813-c", "seed": 20260815, "immutable_start_database": "build/issue7-v23-start.duckdb"},
+  "run": {"nonce": "issue7-v24-run-20260813-d", "seed": 20260816, "immutable_start_database": "build/issue7-v23-start.duckdb"},
   "schema_version": "experiment-preregistration/v2.2",
   "status": "frozen_before_v2_scored_run",
   "treatment": {
