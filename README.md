@@ -10,6 +10,8 @@ The central question is:
 
 Start with [.oh/tpcdi-governed-etl.md](.oh/tpcdi-governed-etl.md). It records the aim, problem weave, selected solution, risks, and issue plan.
 
+The reproducible issue #2 substrate is documented in [docs/tpcdi-raw-substrate.md](docs/tpcdi-raw-substrate.md). After personally acquiring TPC-DI 1.1.0 tools, its smoke command generates the scale-factor-3 source, verifies retained checksums and counts, and structurally loads the selected trade slice into persistent DuckDB.
+
 ## Intended architecture
 
 ```text
