@@ -1,0 +1,103 @@
+{
+  "affected_descendants": [
+    "logical.dim_trade",
+    "duckdb.dim_trade",
+    "metric.trade_lifecycle_seconds"
+  ],
+  "allowed_artifacts": [
+    "sketch.edge.trade_history_to_dim_trade"
+  ],
+  "authority": [
+    {
+      "id": "tpc-di-1.1.0-2.2.2.16",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.16, Table 2.2.15, TradeHistory identity, timestamp, and status",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-4.5.8.1",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 4.5.8.1, historical Trade and TradeHistory composition on T_ID",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-4.5.8.2-create-close",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 4.5.8.2, creation and close timestamps selected from status-qualified TH_DTS",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    }
+  ],
+  "case_id": "edge-trade-history-create-time-v1",
+  "corrected_output": {
+    "closed_at": "2012-07-07T00:02:34",
+    "created_at": "2012-07-07T00:01:13",
+    "trade_id": 0
+  },
+  "disposition": "adjudicated",
+  "failure_class": "edge_composition",
+  "forbidden_artifacts": [
+    "sketch.stage.trade",
+    "sketch.stage.trade_history",
+    "generated_sql.dim_trade",
+    "duckdb.dim_trade",
+    "metric.trade_lifecycle_seconds"
+  ],
+  "held_outs": [
+    {
+      "id": "ho-002",
+      "relationship": "same_boundary_neighbor"
+    },
+    {
+      "id": "ho-003",
+      "relationship": "downstream_neighbor"
+    }
+  ],
+  "input": {
+    "tables": {
+      "trade": [
+        {
+          "t_dts": "2012-07-07T00:02:34",
+          "t_id": 0,
+          "t_st_id": "CMPT",
+          "t_tt_id": "TMB"
+        }
+      ],
+      "trade_history": [
+        {
+          "th_dts": "2012-07-07T00:01:13",
+          "th_st_id": "SBMT",
+          "th_t_id": 0
+        },
+        {
+          "th_dts": "2012-07-07T00:02:34",
+          "th_st_id": "CMPT",
+          "th_t_id": 0
+        }
+      ],
+      "trade_type": [
+        {
+          "tt_id": "TMB",
+          "tt_name": "Market Buy"
+        }
+      ]
+    }
+  },
+  "location": {
+    "candidates": [],
+    "id": "edge.trade_history_to_dim_trade.create_close_time",
+    "kind": "edge"
+  },
+  "observed_output": {
+    "closed_at": "2012-07-07T00:02:34",
+    "created_at": "2012-07-07T00:02:34",
+    "trade_id": 0
+  },
+  "schema_version": "failure-fixture/v1",
+  "tempting_wrong_repair": {
+    "artifact": "metric.trade_lifecycle_seconds",
+    "change": "Special-case zero-second lifecycles in the downstream metric.",
+    "why_wrong": "Both source stages retained their authorized values; the first incorrect semantic choice is the edge's selection of T_DTS rather than the status-qualified history timestamp."
+  },
+  "title": "Locally valid trade and history stages compose to the wrong creation time",
+  "visibility": "public"
+}

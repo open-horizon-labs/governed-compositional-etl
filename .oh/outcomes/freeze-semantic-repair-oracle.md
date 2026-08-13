@@ -8,7 +8,14 @@ parent_step: E1
 sufficiency_group: SG-DIAGNOSE
 owner: domain-reviewer
 review_trigger: "Reviewers repeatedly disagree about the earliest responsible boundary or permitted repair after seeing the complete business rule."
-files: []
+files:
+  - oracle/schema/failure-fixture-v1.schema.json
+  - oracle/schema/repair-submission-v1.schema.json
+  - oracle/corpus-v1.json
+  - scripts/oracle.py
+  - tests/test_oracle.py
+  - docs/semantic-repair-oracle.md
+  - evidence/issue-3/source-anchors-v1.json
 ---
 
 # Freeze the semantic repair oracle before execution
@@ -28,3 +35,7 @@ Objective scoring of localization, authority, revalidation coverage, and regress
 ## Acceptance signal
 
 The fixture schema is complete, reviewers agree on the pilot cases, and the experiment runner can score a repair without narrative reinterpretation.
+
+## Current evidence
+
+Issue #3 freezes two adjudicated pilot cases and one unresolved ambiguous case in `oracle/corpus-v1.json`. `scripts/oracle.py verify` validates the authority boundary and scores the example structural submissions without an explanation field. The objective remains active until human review confirms the provisional pilot labels; the adjudication protocol preserves ambiguity if reviewer agreement is unstable.

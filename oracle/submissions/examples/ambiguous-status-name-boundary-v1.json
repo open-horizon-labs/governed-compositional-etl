@@ -1,0 +1,23 @@
+{
+  "case_id": "ambiguous-status-name-boundary-v1",
+  "changed_artifacts": [],
+  "corrected_output": {
+    "status": "Completed",
+    "trade_id": 0
+  },
+  "disposition": "ambiguous",
+  "failure_class": "ambiguous",
+  "location": {
+    "candidates": [
+      "stage.status_type_reference.status_name",
+      "edge.status_type_to_dim_trade.status_name"
+    ],
+    "id": null,
+    "kind": "ambiguous"
+  },
+  "revalidated_descendants": [
+    "logical.dim_trade",
+    "duckdb.dim_trade"
+  ],
+  "schema_version": "repair-submission/v1"
+}

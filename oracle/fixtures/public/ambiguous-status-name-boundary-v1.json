@@ -1,0 +1,76 @@
+{
+  "affected_descendants": [
+    "logical.dim_trade",
+    "duckdb.dim_trade"
+  ],
+  "allowed_artifacts": [],
+  "authority": [
+    {
+      "id": "tpc-di-1.1.0-2.2.2.13",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 2.2.2.13, Table 2.2.13, StatusType ST_ID and ST_NAME",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    },
+    {
+      "id": "tpc-di-1.1.0-4.5.8.2-status",
+      "kind": "tpc_di_rule",
+      "locator": "Clause 4.5.8.2, DimTrade Status lookup from StatusType",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+    }
+  ],
+  "case_id": "ambiguous-status-name-boundary-v1",
+  "corrected_output": {
+    "status": "Completed",
+    "trade_id": 0
+  },
+  "disposition": "ambiguous",
+  "failure_class": "ambiguous",
+  "forbidden_artifacts": [
+    "sketch.stage.status_type_reference",
+    "sketch.edge.status_type_to_dim_trade",
+    "generated_sql.dim_trade",
+    "duckdb.dim_trade"
+  ],
+  "held_outs": [
+    {
+      "id": "ho-004",
+      "relationship": "same_boundary_neighbor"
+    }
+  ],
+  "input": {
+    "tables": {
+      "status_type": [
+        {
+          "st_id": "CMPT",
+          "st_name": "Completed"
+        }
+      ],
+      "trade": [
+        {
+          "t_id": 0,
+          "t_st_id": "CMPT"
+        }
+      ]
+    }
+  },
+  "location": {
+    "candidates": [
+      "stage.status_type_reference.status_name",
+      "edge.status_type_to_dim_trade.status_name"
+    ],
+    "id": null,
+    "kind": "ambiguous"
+  },
+  "observed_output": {
+    "status": "CMPT",
+    "trade_id": 0
+  },
+  "schema_version": "failure-fixture/v1",
+  "tempting_wrong_repair": {
+    "artifact": "duckdb.dim_trade",
+    "change": "Replace CMPT with Completed in the materialized row.",
+    "why_wrong": "The available observation does not distinguish a faulty reference-stage output from an edge that selected the identifier; neither policy location is authorized until intermediate evidence resolves it."
+  },
+  "title": "Status identifier leakage cannot yet be assigned to one boundary",
+  "visibility": "public"
+}

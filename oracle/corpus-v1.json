@@ -1,0 +1,35 @@
+{
+  "held_out_reservations": [
+    {
+      "id": "ho-001",
+      "state": "reserved_sealed"
+    },
+    {
+      "id": "ho-002",
+      "state": "reserved_sealed"
+    },
+    {
+      "id": "ho-003",
+      "state": "reserved_sealed"
+    },
+    {
+      "id": "ho-004",
+      "state": "reserved_sealed"
+    }
+  ],
+  "public_cases": [
+    {
+      "example_submission": "oracle/submissions/examples/local-trade-type-name-v1.json",
+      "fixture": "oracle/fixtures/public/local-trade-type-name-v1.json"
+    },
+    {
+      "example_submission": "oracle/submissions/examples/edge-trade-history-create-time-v1.json",
+      "fixture": "oracle/fixtures/public/edge-trade-history-create-time-v1.json"
+    },
+    {
+      "example_submission": "oracle/submissions/examples/ambiguous-status-name-boundary-v1.json",
+      "fixture": "oracle/fixtures/public/ambiguous-status-name-boundary-v1.json"
+    }
+  ],
+  "schema_version": "oracle-corpus/v1"
+}

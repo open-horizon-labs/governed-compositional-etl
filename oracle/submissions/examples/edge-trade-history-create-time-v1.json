@@ -1,0 +1,24 @@
+{
+  "case_id": "edge-trade-history-create-time-v1",
+  "changed_artifacts": [
+    "sketch.edge.trade_history_to_dim_trade"
+  ],
+  "corrected_output": {
+    "closed_at": "2012-07-07T00:02:34",
+    "created_at": "2012-07-07T00:01:13",
+    "trade_id": 0
+  },
+  "disposition": "resolved",
+  "failure_class": "edge_composition",
+  "location": {
+    "candidates": [],
+    "id": "edge.trade_history_to_dim_trade.create_close_time",
+    "kind": "edge"
+  },
+  "revalidated_descendants": [
+    "logical.dim_trade",
+    "duckdb.dim_trade",
+    "metric.trade_lifecycle_seconds"
+  ],
+  "schema_version": "repair-submission/v1"
+}

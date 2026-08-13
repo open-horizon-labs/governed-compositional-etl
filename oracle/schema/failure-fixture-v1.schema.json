@@ -1,0 +1,380 @@
+{
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:failure-fixture:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "const": "adjudicated"
+          }
+        },
+        "required": [
+          "disposition"
+        ]
+      },
+      "then": {
+        "properties": {
+          "allowed_artifacts": {
+            "minItems": 1
+          },
+          "failure_class": {
+            "enum": [
+              "local_semantic",
+              "edge_composition"
+            ]
+          },
+          "location": {
+            "properties": {
+              "candidates": {
+                "maxItems": 0
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "const": "ambiguous"
+          }
+        },
+        "required": [
+          "disposition"
+        ]
+      },
+      "then": {
+        "properties": {
+          "allowed_artifacts": {
+            "maxItems": 0
+          },
+          "failure_class": {
+            "const": "ambiguous"
+          },
+          "location": {
+            "properties": {
+              "candidates": {
+                "minItems": 2
+              },
+              "id": {
+                "type": "null"
+              },
+              "kind": {
+                "const": "ambiguous"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "failure_class": {
+            "const": "local_semantic"
+          }
+        },
+        "required": [
+          "failure_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "location": {
+            "properties": {
+              "kind": {
+                "const": "stage"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "failure_class": {
+            "const": "edge_composition"
+          }
+        },
+        "required": [
+          "failure_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "location": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "edge",
+                  "path_invariant"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "affected_descendants": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "allowed_artifacts": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "authority": {
+      "items": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "tpc_di_rule"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "properties": {
+                "id": {
+                  "pattern": "^tpc-di-1\\.1\\.0-[a-z0-9.-]+$"
+                },
+                "source": {
+                  "const": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "approved_decision"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "properties": {
+                "source": {
+                  "pattern": "^\\.oh/"
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "tpc_di_rule",
+              "approved_decision"
+            ]
+          },
+          "locator": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "source": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "source",
+          "locator"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "case_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]+$",
+      "type": "string"
+    },
+    "corrected_output": {
+      "type": "object"
+    },
+    "disposition": {
+      "enum": [
+        "adjudicated",
+        "ambiguous"
+      ]
+    },
+    "failure_class": {
+      "enum": [
+        "local_semantic",
+        "edge_composition",
+        "ambiguous"
+      ]
+    },
+    "forbidden_artifacts": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "held_outs": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "pattern": "^ho-[0-9]{3}$",
+            "type": "string"
+          },
+          "relationship": {
+            "enum": [
+              "same_boundary_neighbor",
+              "downstream_neighbor"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "relationship"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "input": {
+      "additionalProperties": false,
+      "properties": {
+        "tables": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "tables"
+      ],
+      "type": "object"
+    },
+    "location": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "stage",
+            "edge",
+            "path_invariant",
+            "ambiguous"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidates"
+      ],
+      "type": "object"
+    },
+    "observed_output": {
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "failure-fixture/v1"
+    },
+    "tempting_wrong_repair": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "change": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "why_wrong": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact",
+        "change",
+        "why_wrong"
+      ],
+      "type": "object"
+    },
+    "title": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "visibility": {
+      "enum": [
+        "public",
+        "held_out"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "title",
+    "visibility",
+    "disposition",
+    "authority",
+    "input",
+    "observed_output",
+    "corrected_output",
+    "failure_class",
+    "location",
+    "allowed_artifacts",
+    "forbidden_artifacts",
+    "tempting_wrong_repair",
+    "affected_descendants",
+    "held_outs"
+  ],
+  "title": "Governed semantic failure fixture v1",
+  "type": "object"
+}
