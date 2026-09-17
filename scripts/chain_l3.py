@@ -322,6 +322,17 @@ def check(target: str, job: str) -> dict:
                     problems.append(f"audit {a['file']} reads {illegal}, outside its entity's sources and governed entities")
             if sqlmesh_target and not (base / a["file"]).read_text().lstrip().startswith("AUDIT"):
                 problems.append(f"audit {a['file']} must be a SQLMesh AUDIT file on target {target}")
+            # Mechanized from a capable reviewer's check: it had to enumerate `blocking false` across every audit header
+            # to be sure it appeared only where the L2 grants it. That is a cross-reference, so the gate should do it.
+            # Both directions matter, and the dangerous one is a must-hold audit quietly declared non-blocking: it
+            # refuses nothing while passing every other check.
+            if sqlmesh_target:
+                declared_non_blocking = re.search(r"blocking\s+false", (base / a["file"]).read_text(), re.I) is not None
+                may_report = a["invariant"] in reporting_invariants_for(job)
+                if declared_non_blocking and not may_report:
+                    problems.append(f"audit {a['file']} is declared non-blocking, but the L2 does not mark {a['invariant']} reports: true; a must-hold audit that cannot refuse enforces nothing")
+                elif may_report and not declared_non_blocking:
+                    problems.append(f"audit {a['file']} checks {a['invariant']}, which the L2 marks reports: true, but is not declared non-blocking; on this target its rows would refuse the plan instead of reaching the business")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"], "provenance": provenance_note,
             "acceptance": acceptance(target, job),

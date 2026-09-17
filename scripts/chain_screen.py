@@ -155,6 +155,15 @@ def screen_assertions(job: str, target: str = "duckdb-native") -> dict:
 
     Native only. The assertions claim the two engines agree, and `compare` is what actually checks that."""
     L3 = _mod("chain_l3", "scripts/chain_l3.py")
+    mine, all_invariants = set(), set()
+    for j in L3.JOB_ORDER:
+        sel = ROOT / "chain/l2" / j / "selected-model.json"
+        if not sel.exists():
+            continue
+        ids = {i["id"] for i in json.loads(sel.read_text())["invariants"]}
+        all_invariants |= ids
+        if j == job:
+            mine = ids
     findings = []
     for ce_path in sorted((ROOT / "counterexamples/proposed").glob("*.json")) + sorted((ROOT / "counterexamples/archive").glob("ce-*.json")):
         ce = json.loads(ce_path.read_text())
@@ -167,6 +176,12 @@ def screen_assertions(job: str, target: str = "duckdb-native") -> dict:
         others = [j for j in L3.JOB_ORDER if j != job and j in assertion]
         if others and job not in assertion:
             findings.append({"counterexample": ce_path.name, "not_screened": f"assertion is about {', '.join(others)}"})
+            continue
+        # An assertion need not name its job at all, and then the job name says nothing. The invariants it names do:
+        # an assertion about inv.trade_on_closed_account_reported is about whichever job selected that invariant.
+        named = [i for i in all_invariants if i in assertion]
+        if named and not any(i in mine for i in named):
+            findings.append({"counterexample": ce_path.name, "not_screened": f"assertion names only other jobs' invariants: {', '.join(sorted(named))}"})
             continue
         try:
             r = L3.simulate(target, job, ce_path.relative_to(ROOT))
@@ -182,7 +197,10 @@ def screen_assertions(job: str, target: str = "duckdb-native") -> dict:
         findings.append(entry)
     findings.sort(key=lambda f: -f.get("p_contradicts", -1))
     return {"job": job, "target": target, "counterexamples": len(findings),
-            "stale": [f["counterexample"] for f in findings if f.get("stale")], "findings": findings}
+            "stale": [f["counterexample"] for f in findings if f.get("stale") and f.get("confidence") != "low"],
+            # a flag Jev is not confident about is not evidence either way; it is a reread, not a verdict
+            "worth_rereading": [f["counterexample"] for f in findings if f.get("stale") and f.get("confidence") == "low"],
+            "findings": findings}
 
 
 def main() -> int:

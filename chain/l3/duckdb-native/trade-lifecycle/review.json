@@ -1,10 +1,10 @@
 {
   "job": "trade-lifecycle",
   "manifest_sha256": "a9d0b13d91a88d9e9c7321763c0fc75e2889f593481d86a50cbc4449e8613519",
-  "notes": "see review-1..10",
-  "projection_sha256": "2a3d59675aaf9876359fc21b59d5fb5a824b7159fe07f212ba0ba2f4f626231b",
+  "notes": "see review-1..11",
+  "projection_sha256": "6f12f19043d25d77437ff7e2428886ad00c87acd581358781cb6489e9c6390b7",
   "rejected_artifacts": [],
-  "reviewer": "coordinator, bookkeeping review 10 (business answered the pending-market-order hole)",
+  "reviewer": "capable-model projection review 11 (closed-account reporting invariant; sg.placement-moment move judged against the stamped commit)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-native",
   "verdict": "pass"

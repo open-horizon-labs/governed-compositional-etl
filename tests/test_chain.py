@@ -1,6 +1,7 @@
 """Compile-chain machinery: L1 parsing, L2 gate, fingerprints and cache plan, weave, L3 gate."""
 import importlib.util
 import json
+import re
 from pathlib import Path
 import sys
 import unittest
@@ -481,6 +482,61 @@ class CounterexampleSimulationTests(unittest.TestCase):
 
     def test_two_phase_on_duckdb_native(self):
         self.check_target("duckdb-native")
+
+
+class NonBlockingMatchesTheL2Tests(unittest.TestCase):
+    """Mechanized from a capable reviewer's own check. Asked whether `blocking false` appeared only where the L2 grants
+    it, the reviewer enumerated the flag across all fourteen audit headers by hand. That is a cross-reference between
+    two files, so it belongs in the gate: a must-hold audit quietly declared non-blocking refuses nothing while passing
+    every other check, and a reporting audit left blocking sends a finding to abort the plan instead of to the business."""
+
+    TARGET, JOB = "duckdb-sqlmesh", "trade-lifecycle"
+
+    def _check_with(self, edit):
+        import shutil, tempfile
+        base_src = ROOT / "chain/l3" / self.TARGET / self.JOB
+        if not (base_src / "manifest.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3_dir = Path(tmp) / "l3"
+            shutil.copytree(base_src, l3_dir / self.TARGET / self.JOB)
+            edit(l3_dir / self.TARGET / self.JOB)
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3_dir
+            try:
+                return L3.check(self.TARGET, self.JOB)["problems"]
+            finally:
+                L3.L3_DIR = saved
+
+    def test_baseline_agrees_with_the_l2(self):
+        self.assertFalse([p for p in self._check_with(lambda base: None) if "blocking" in p])
+
+    def test_a_must_hold_audit_declared_non_blocking_is_rejected(self):
+        reporting = L3.reporting_invariants_for(self.JOB)
+        manifest = json.loads((ROOT / "chain/l3" / self.TARGET / self.JOB / "manifest.json").read_text())
+        victim = next(a["file"] for a in manifest["audits"] if a["invariant"] not in reporting)
+
+        def edit(base):
+            f = base / victim
+            f.write_text(f.read_text().replace(");", ", blocking false);", 1))
+
+        problems = self._check_with(edit)
+        self.assertTrue([p for p in problems if "non-blocking" in p and "does not mark" in p], problems)
+
+    def test_a_reporting_audit_left_blocking_is_rejected(self):
+        reporting = L3.reporting_invariants_for(self.JOB)
+        if not reporting:
+            self.skipTest("no reporting invariant selected")
+        manifest = json.loads((ROOT / "chain/l3" / self.TARGET / self.JOB / "manifest.json").read_text())
+        victim = next(a["file"] for a in manifest["audits"] if a["invariant"] in reporting)
+
+        def edit(base):
+            f = base / victim
+            text = re.sub(r",?\s*blocking\s+false", "", f.read_text(), flags=re.I)
+            f.write_text(text)
+
+        problems = self._check_with(edit)
+        self.assertTrue([p for p in problems if "not declared non-blocking" in p], problems)
 
 
 class ReportedInvariantAggregationTests(unittest.TestCase):
