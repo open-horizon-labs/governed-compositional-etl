@@ -1,0 +1,3 @@
+# Review 16 (coordinator, bookkeeping): job trade-lifecycle (verdict: pass)
+
+Scope: cycle 16 under `change-contract-16.md` and its addendum, the corrections two L3 reviews prescribed and the Sketch now carries: three frozen invariants quantify over anchored reports only; placement-fixing attributes and handoffs leave a trade unclaimed while the widened hole is open; the report_order-reading handoffs state that a held report keeps its place and can be the earliest; new `inv.trade_held_first_report_unclaimed`; `inv.trade_order_type_frozen` stated like the owning-account freeze with the reason given; the all-history-held case stated. Gate ok; diff confined. Reviewer: coordinator for prescribed corrections. Rejected element ids: none.
