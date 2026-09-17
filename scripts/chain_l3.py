@@ -193,13 +193,28 @@ def check(target: str, job: str) -> dict:
     audited = {a["invariant"] for a in manifest.get("audits", [])}
     for inv in sorted(set(invariants) - audited):
         problems.append(f"deterministic invariant {inv} has no audit")
+    upstream_tables = {"governed." + e["id"].split(".")[-1] for j in JOB_ORDER[: JOB_ORDER.index(job)] if (L2_DIR / j / "semantic-model.json").exists() for e in json.loads((L2_DIR / j / "semantic-model.json").read_text())["entities"]}
+    own_tables = {"governed." + e["id"].split(".")[-1] for e in model["entities"]}
     for a in manifest.get("audits", []):
         if a["invariant"] not in invariants:
             problems.append(f"audit {a['file']} names {a['invariant']}, not a selected deterministic invariant")
         if not (base / a["file"]).exists():
             problems.append(f"audit {a['file']} missing")
-        elif sqlmesh_target and not (base / a["file"]).read_text().lstrip().startswith("AUDIT"):
-            problems.append(f"audit {a['file']} must be a SQLMesh AUDIT file on target {target}")
+        else:
+            # audits read only the entity itself (@this_model), the job's other entities, upstream entities, and the entity's declared sources
+            try:
+                audit_statements = [s for s in parse(body_of((base / a["file"]).read_text(), sqlmesh_target), dialect="duckdb") if s is not None]
+            except Exception as error:  # noqa: BLE001
+                problems.append(f"audit {a['file']} does not parse: {error}"); audit_statements = []
+            allowed_audit = own_tables | upstream_tables | allowed_reads.get(a["entity"], set()) | {"this_model_placeholder"}
+            for s in audit_statements:
+                ctes = {c.alias_or_name.lower() for c in s.find_all(exp.CTE)}
+                reads = {(f"{t.db}.{t.name}" if t.db else t.name).lower() for t in s.find_all(exp.Table) if t.name.lower() not in ctes}
+                illegal = sorted(r for r in reads if r not in {x.lower() for x in allowed_audit})
+                if illegal:
+                    problems.append(f"audit {a['file']} reads {illegal}, outside its entity's sources and governed entities")
+            if sqlmesh_target and not (base / a["file"]).read_text().lstrip().startswith("AUDIT"):
+                problems.append(f"audit {a['file']} must be a SQLMesh AUDIT file on target {target}")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"], "provenance": provenance_note,
             "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", []))}
