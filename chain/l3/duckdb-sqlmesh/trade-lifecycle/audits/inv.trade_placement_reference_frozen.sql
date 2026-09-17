@@ -1,19 +1,35 @@
 AUDIT (name "inv.trade_placement_reference_frozen");
 
--- For any trade_number, placed_at, owning_account_effective_from, and owning_customer_number
--- are each set once -- from the trade's first-encountered report and the account statement
--- resolved as of that report's own time -- and are never replaced by a later report of the
--- same trade. Recompute both halves fresh (placed_at from the first-encountered report;
--- the account statement as of the currently stored owning_account_number and placed_at) and
--- diff against what governed.trade actually holds.
-WITH first_report AS (
+-- For any trade_number, placed_at, owning_account_effective_from, owning_customer_number,
+-- and owning_customer_effective_from are each set once -- from the trade's first-encountered
+-- report and the account and customer statements resolved as of that report's own time -- and
+-- are never replaced by a later report of the same trade. Recompute all four fresh (placed_at
+-- from the first-encountered report across both anchored sources; the account statement as of
+-- the currently stored owning_account_number and placed_at; the customer statement as of the
+-- currently stored owning_customer_number and placed_at) and diff against what governed.trade
+-- actually holds.
+WITH first_cdc_report AS (
   SELECT
     t_id AS trade_number,
     t_dts AS placed_at
   FROM raw.trade_cdc
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date ASC, cdc_dsn ASC) = 1
 ),
-resolved AS (
+first_history_report AS (
+  SELECT
+    th_t_id AS trade_number,
+    th_dts AS placed_at
+  FROM raw.trade_history
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts ASC) = 1
+),
+first_report AS (
+  SELECT
+    c.trade_number,
+    COALESCE(h.placed_at, c.placed_at) AS placed_at
+  FROM first_cdc_report AS c
+  LEFT JOIN first_history_report AS h ON h.trade_number = c.trade_number
+),
+resolved_account AS (
   SELECT
     m.trade_number,
     a.effective_from AS owning_account_effective_from,
@@ -23,12 +39,24 @@ resolved AS (
     ON a.account_number = m.owning_account_number
    AND a.effective_from <= m.placed_at
   QUALIFY ROW_NUMBER() OVER (PARTITION BY m.trade_number ORDER BY a.effective_from DESC) = 1
+),
+resolved_customer AS (
+  SELECT
+    m.trade_number,
+    c.effective_from AS owning_customer_effective_from
+  FROM @this_model AS m
+  JOIN governed.customer AS c
+    ON c.customer_number = m.owning_customer_number
+   AND c.effective_from <= m.placed_at
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY m.trade_number ORDER BY c.effective_from DESC) = 1
 )
 SELECT
   m.trade_number
 FROM @this_model AS m
 JOIN first_report AS f ON f.trade_number = m.trade_number
-LEFT JOIN resolved AS r ON r.trade_number = m.trade_number
+LEFT JOIN resolved_account AS ra ON ra.trade_number = m.trade_number
+LEFT JOIN resolved_customer AS rc ON rc.trade_number = m.trade_number
 WHERE m.placed_at IS DISTINCT FROM f.placed_at
-   OR m.owning_account_effective_from IS DISTINCT FROM r.owning_account_effective_from
-   OR m.owning_customer_number IS DISTINCT FROM r.owning_customer_number;
+   OR m.owning_account_effective_from IS DISTINCT FROM ra.owning_account_effective_from
+   OR m.owning_customer_number IS DISTINCT FROM ra.owning_customer_number
+   OR m.owning_customer_effective_from IS DISTINCT FROM rc.owning_customer_effective_from;
