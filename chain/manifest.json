@@ -1,5 +1,7 @@
 {
-  "changed_clauses": [],
+  "changed_clauses": [
+    "L1.unknown-codes"
+  ],
   "jobs": {
     "ownership-history": {
       "elements": {
@@ -288,7 +290,7 @@
             },
             "handoff.raw.account_cdc.ca_st_id->logical.account.status": {
               "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this incremental file's ca_st_id is the brokerage's own recorded status value, supplying that fact even while the statement's own effective moment is unresolved.",
-              "parallel_assumption": "Credible while ca_st_id on an account change record names the open/closed status the brokerage considers the account to hold as of that change."
+              "parallel_assumption": "Credible while ca_st_id on an account change record names the open/closed status the brokerage considers the account to hold as of that change. A ca_st_id value outside the anchored status_codes {ACTV, INAC} is held under L1.unknown-codes and yields no derived fact; per inv.unknown_codes_held, once this handoff is undeferred, such a row must be reported naming the record and the code instead."
             },
             "handoff.raw.account_cdc.ca_tax_st->logical.account.tax_treatment": {
               "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this incremental file's ca_tax_st supplies that value even while the statement's own effective moment is unresolved.",
@@ -296,7 +298,7 @@
             },
             "handoff.raw.customer_cdc.c_st_id->logical.customer.status": {
               "necessity": "L1.statement-content requires a customer's dated statement to carry whether the customer is active or inactive; this incremental file's c_st_id is the brokerage's own recorded status value, supplying that fact even while the statement's own effective moment is unresolved.",
-              "parallel_assumption": "Credible while c_st_id on a customer change record names the active/inactive status the brokerage considers the customer to hold as of that change."
+              "parallel_assumption": "Credible while c_st_id on a customer change record names the active/inactive status the brokerage considers the customer to hold as of that change. A c_st_id value outside the anchored status_codes {ACTV, INAC} is held under L1.unknown-codes and yields no derived fact; per inv.unknown_codes_held, once this handoff is undeferred, such a row must be reported naming the record and the code instead."
             },
             "handoff.raw.customer_cdc.c_tier->logical.customer.tier": {
               "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this incremental file's c_tier supplies that value even while the statement's own effective moment is unresolved.",
@@ -304,11 +306,11 @@
             },
             "handoff.raw.customer_mgmt_action.action_type->logical.account.status": {
               "necessity": "L1.history requires every change to an account be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, ADDACCT, UPDACCT, CLOSEACCT); L1.statement-content requires that statement carry whether the account is open or closed. chain/anchors/sources-v1.json states what each code means (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
-              "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. Whether a CLOSEACCT statement's closed status remains accurate if the account is later found active again (activity recorded after closure with no reopening action) is bounded by L1.hole.closed-account-activity, not resolved by this handoff."
+              "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. Whether a CLOSEACCT statement's closed status remains accurate if the account is later found active again (activity recorded after closure with no reopening action) is bounded by L1.hole.closed-account-activity, not resolved by this handoff. An action_type value outside the anchored set {NEW, ADDACCT, UPDACCT, CLOSEACCT} is held under L1.unknown-codes and yields no derived fact for this statement; per inv.unknown_codes_held, the row is reported naming the record and the code instead."
             },
             "handoff.raw.customer_mgmt_action.action_type->logical.customer.status": {
               "necessity": "L1.history requires every change to a customer be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, UPDCUST, INACT); L1.statement-content requires that statement carry whether the customer is active or inactive. chain/anchors/sources-v1.json states what each code means (NEW, UPDCUST: active; INACT: inactive) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
-              "parallel_assumption": "Credible while the anchored action_type_meanings (assumed authority, locator unverified; see sources-v1.json) correctly and exhaustively state NEW and UPDCUST as active and INACT as inactive for a customer statement; if the business states a different meaning for any of these codes, or a code outside this enumeration is observed, this handoff must be revisited."
+              "parallel_assumption": "Credible while the anchored action_type_meanings (assumed authority, locator unverified; see sources-v1.json) correctly and exhaustively state NEW and UPDCUST as active and INACT as inactive for a customer statement; if the business states a different meaning for any of these codes, or a code outside this enumeration is observed, this handoff must be revisited. An action_type value outside the anchored set {NEW, UPDCUST, INACT} is held under L1.unknown-codes and yields no derived fact for this statement; per inv.unknown_codes_held, the row is reported naming the record and the code instead."
             },
             "handoff.raw.customer_mgmt_action.c_tier->logical.customer.tier": {
               "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this file is where a customer is first recorded or later actioned, and c_tier is the brokerage's own recorded tier value on each such record.",
@@ -401,11 +403,35 @@
             "type.customer_standing_status",
             "type.customer_tier"
           ]
+        },
+        "sg.unknown-codes": {
+          "cache": "stale-new",
+          "coverage_claim": "inv.unknown_codes_held is the direct and complete check, for this job, of L1.unknown-codes' requirement that an unnamed code be held for review and reported rather than interpreted, defaulted, or dropped: it covers the one coded field this job reads from a currently-projectable candidate source with an anchored vocabulary (raw.customer_mgmt_action.action_type).",
+          "derived_from": [
+            "L1.unknown-codes"
+          ],
+          "fingerprint": "31743c97cc64bf5adabfc92428c7e70c132c2ce96f01a879e34cf8afa41b6a62",
+          "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred. Listed under hole.change_effective_time.blocks even though it has no deferred member, because that hole's resolution (whether an incremental change file's own status value takes effect at all) bears on whether the deferred c_st_id/ca_st_id handoffs this gap names ever become this group's members.",
+          "jev": null,
+          "justifications": {
+            "inv.unknown_codes_held": {
+              "necessity": "L1.unknown-codes requires that a report carrying a code the brokerage's fixed vocabulary does not name is held for review and never interpreted, defaulted, or dropped, and that every job report such a record as a violation naming the record and the code. This job consumes raw.customer_mgmt_action rows, whose action_type it reads to populate customer and account status, and ce.account_changes rows, whose status_id it reads directly with no anchored vocabulary at all; this invariant is the direct, deterministic check that both are reported rather than silently interpreted, defaulted, or dropped.",
+              "parallel_assumption": "Holds while chain/anchors/sources-v1.json's action_type_meanings remains the exhaustive, correct naming of raw.customer_mgmt_action's action_type codes."
+            }
+          },
+          "members": [
+            "inv.unknown_codes_held"
+          ],
+          "touched_clauses": [
+            "L1.unknown-codes"
+          ]
         }
       },
-      "l3_reprojection_required": false,
-      "selected_model_sha256": "12961d03caa20257bd2a2980d08f688fc8985a80d435c776c803d42467a8dddf",
-      "stale": [],
+      "l3_reprojection_required": true,
+      "selected_model_sha256": "93ad098e0c9231e37c24efae1404c695b7e5d3713bd5e72d1c82c3f91bbf7572",
+      "stale": [
+        "sg.unknown-codes"
+      ],
       "status": "ok"
     },
     "positions": {
@@ -457,7 +483,7 @@
             },
             "inv.holding_change_current_trade_known": {
               "necessity": "L1.holdings-follow-trade identifies a holding change by its current trade and requires the change to belong to whoever owned that trade, which presupposes the trade the report names actually resolves; L1.identity requires hh_t_id to persistently identify one real trade. The current_trade_number attribute's own review_trigger and the trade ownership handoffs' own review_triggers already name an hh_t_id that does not resolve to any logical.trade row as a case requiring review; this invariant mechanizes that review trigger as a deterministic, audit-checkable fact, so such a report fires a violation instead of silently vanishing from every position sum.",
-              "parallel_assumption": "Credible while hh_t_id in this file names a real trade and is not reused for a different one. 'Resolves to a logical.trade row' and 'resolves to a fully pinned row' (all four ownership values non-null) coincide whenever trade-lifecycle's own inv.every_received_trade_persisted and inv.trade_ownership_pin_present hold, since every persisted trade then already carries a resolved pin; an engine whose projection drops an unpinnable trade upstream, rather than persisting it with null pins, makes this invariant fire for the unresolved-pin case too, alongside the missing-row case. Two projections that differ in this way differ only in a state trade-lifecycle's own invariants already report, not in what this invariant means."
+              "parallel_assumption": "Credible while hh_t_id in this file names a real trade and is not reused for a different one. 'Resolves to a logical.trade row' and 'resolves to a fully pinned row' (all four ownership values non-null) coincide whenever trade-lifecycle's own inv.every_received_trade_persisted and inv.trade_ownership_pin_present hold, since every persisted trade then already carries a resolved pin; an engine whose projection drops an unpinnable trade upstream, rather than persisting it with null pins, makes this invariant fire for the unresolved-pin case too, alongside the missing-row case. Two projections that differ in this way differ only in a state trade-lifecycle's own invariants already report, not in what this invariant means. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact -- that row is not read as \"not D\" for this invariant's purposes."
             },
             "inv.holding_change_ownership_frozen": {
               "necessity": "L1.holdings-follow-trade states directly that holdings are never re-attributed by looking the account up again later; L1.attribution-at-placement is the clause that fixed this ownership on the current trade in the first place and forbids it moving afterward. This invariant is the restatement of that requirement over the copied reference this entity carries.",
@@ -539,7 +565,7 @@
             },
             "inv.eligible_holding_report_persisted": {
               "necessity": "L1.holdings-follow-trade and L1.identity together entail this entity's own grain, already stated in sg.holding-shape's coverage_claim: one row per (original_trade_number, current_trade_number) pair. sg.holding-attribution's coverage_claim already states the converse exclusion -- a holding change whose current trade's ownership pin does not resolve has no ownership reference to copy and so is excluded -- which inv.holding_change_ownership_present and inv.holding_change_current_trade_known make checkable from the excluded side. This invariant is the converse of the persisted-pair-without-report case that invariant's audit covers (a persisted pair with no surviving I/U report never surfaces): a pair that is reported, carries no D report, and whose current trade's pin fully resolves is not merely permitted to persist, it must -- exactly one row, neither zero nor more than one. A pair with any D report is excluded from this claim; what a D report means for row existence is L1.hole.deletions, not decided here.",
-              "parallel_assumption": "Credible while every raw.holding_history report for the pair is either I, U, or a historical row, the same candidate set inv.holding_quantity_updates_in_place and the latest_change selector already use, and while a pair's current trade resolving to a fully pinned logical.trade row is itself stable across the reports considered."
+              "parallel_assumption": "Credible while every raw.holding_history report for the pair is either I, U, or a historical row, the same candidate set inv.holding_quantity_updates_in_place and the latest_change selector already use, and while a pair's current trade resolving to a fully pinned logical.trade row is itself stable across the reports considered. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact -- that report is neither I, U, nor D for this invariant's purposes."
             },
             "logical.holding_change": {
               "necessity": "L1.holdings-follow-trade defines a holding change as identified by its original trade and its current trade, and requires it to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, never re-attributed by looking the account up again. L1.identity requires those trade numbers to persistently identify the same trades across every report. L1.attribution-at-placement is what fixed that ownership on the current trade in the first place, and requires it not to move afterward. Together these entail one row per (original_trade_number, current_trade_number) pair, updated in place by a later report of the same pair (per raw.holding_history's cdc_flag, anchored the same way as account_cdc, customer_cdc, and trade_cdc's I/U conventions), holding a portion frozen at first encounter (the copied ownership) beside a portion that mutates (the quantities) -- incremental_by_identity, not versioned (which would treat every report as a new dated statement of the pair) and not append_by_identity (which would treat a later report of the same pair as an unrelated new event rather than an update to what is already known).",
@@ -570,7 +596,7 @@
         },
         "sg.no-phantom-positions": {
           "cache": "hit",
-          "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. inv.holding_quantity_change_is_difference makes the after-minus-before computation itself checkable on every row, and inv.holding_quantities_present makes non-null presence of before_qty, after_qty, and quantity_change checkable directly, so a report with no determinable quantity fires rather than silently dropping out of a sum. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total. inv.holding_change_ownership_present (in sg.holding-attribution) restates that drop-out itself as a checkable invariant on the persisted rows this group sums over; inv.holding_change_current_trade_known distinguishes the separate case of an hh_t_id that does not resolve to any logical.trade row at all, which does not drop out silently but fires as a violation instead.",
+          "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. inv.unknown_codes_held (sg.unknown-codes) now states this selector's candidate set precisely: the anchored codes (I, U, D) or null for a historical row; a cdc_flag value outside that set is reported, and still outside the candidate set: the exclusion is no longer silent, retiring the cdc_flag-vocabulary question the L3 manifests had filed. inv.holding_quantity_change_is_difference makes the after-minus-before computation itself checkable on every row, and inv.holding_quantities_present makes non-null presence of before_qty, after_qty, and quantity_change checkable directly, so a report with no determinable quantity fires rather than silently dropping out of a sum. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total. inv.holding_change_ownership_present (in sg.holding-attribution) restates that drop-out itself as a checkable invariant on the persisted rows this group sums over; inv.holding_change_current_trade_known distinguishes the separate case of an hh_t_id that does not resolve to any logical.trade row at all, which does not drop out silently but fires as a violation instead.",
           "derived_from": [
             "L1.attribution-at-placement",
             "L1.holdings-follow-trade",
@@ -590,11 +616,11 @@
             },
             "handoff.raw.holding_history.hh_after_qty->logical.holding_change.after_qty": {
               "necessity": "L1.holdings-follow-trade's 'change in what an account holds' names an after state; raw.holding_history's hh_after_qty is the brokerage's own recorded quantity held after this change. L1.no-phantom-positions requires this value to be summable per statement.",
-              "parallel_assumption": "Credible while hh_after_qty names the quantity held immediately after this change, as of the latest report of the same holding change. sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for reports of one holding change (raw.holding_history rows carry the same batch_date/cdc_dsn envelope as trade reports; historical rows have no cdc columns and precede all incremental rows), anchoring this selector's ordering for holding-change reports directly rather than by extension from trade reports."
+              "parallel_assumption": "Credible while hh_after_qty names the quantity held immediately after this change, as of the latest report of the same holding change. sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for reports of one holding change (raw.holding_history rows carry the same batch_date/cdc_dsn envelope as trade reports; historical rows have no cdc columns and precede all incremental rows), anchoring this selector's ordering for holding-change reports directly rather than by extension from trade reports. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact for this attribute."
             },
             "handoff.raw.holding_history.hh_before_qty->logical.holding_change.before_qty": {
               "necessity": "L1.holdings-follow-trade's 'change in what an account holds' names a before state; raw.holding_history's hh_before_qty is the brokerage's own recorded quantity held before this change. L1.no-phantom-positions requires this value to be summable per statement.",
-              "parallel_assumption": "Credible while hh_before_qty names the quantity held immediately before this change, as of the latest report of the same holding change. sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for reports of one holding change (raw.holding_history rows carry the same batch_date/cdc_dsn envelope as trade reports; historical rows have no cdc columns and precede all incremental rows), anchoring this selector's ordering for holding-change reports directly rather than by extension from trade reports."
+              "parallel_assumption": "Credible while hh_before_qty names the quantity held immediately before this change, as of the latest report of the same holding change. sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for reports of one holding change (raw.holding_history rows carry the same batch_date/cdc_dsn envelope as trade reports; historical rows have no cdc columns and precede all incremental rows), anchoring this selector's ordering for holding-change reports directly rather than by extension from trade reports. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact for this attribute."
             },
             "inv.account_position_is_sum_of_changes": {
               "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of an account; the handoff from logical.holding_change.quantity_change to net_quantity, selector sum_of_deltas, is exactly that sum, and L1.identity requires the account number and statement grouped on to be the same persistent values every holding change already carries, per L1.holdings-follow-trade's own account-statement attribution. This invariant restates the sum_of_deltas handoff as a checkable fact -- the sum is exact, and every key present among holding changes is represented by exactly one row, neither omitted nor duplicated.",
@@ -630,7 +656,7 @@
             },
             "inv.holding_quantity_updates_in_place": {
               "necessity": "L1.holdings-follow-trade names 'a change in what an account holds,' stated as before_qty and after_qty; L1.no-phantom-positions requires summing that change, which requires the quantities to be checkably update-in-place the same way trade-lifecycle's inv.trade_outcome_updates_in_place makes its outcome facts checkable. trade_code_meanings.cdc_flag anchors I as newly inserted and U as updating an existing record; this invariant restates the update-in-place requirement over before_qty and after_qty for I- and U-flagged reports specifically, and makes the provisional D exclusion this job's latest_change selector already applies checkable rather than implicit.",
-              "parallel_assumption": "Holds while every I- or U-flagged raw.holding_history row for a given (original_trade_number, current_trade_number) pair is a later report about that same holding change rather than an unrelated new change reusing the pair. When several I- or U-flagged reports of the same pair tie under report_order, 'a later report' is not well defined among them; that tie is L1.hole.batch-identity's case, not decided by this invariant."
+              "parallel_assumption": "Holds while every I- or U-flagged raw.holding_history row for a given (original_trade_number, current_trade_number) pair is a later report about that same holding change rather than an unrelated new change reusing the pair. When several I- or U-flagged reports of the same pair tie under report_order, 'a later report' is not well defined among them; that tie is L1.hole.batch-identity's case, not decided by this invariant. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact -- that row is neither I, U, nor D for this invariant's purposes."
             },
             "logical.account_position": {
               "necessity": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account can never go below zero, which requires an entity that performs exactly that sum, per statement. L1.holdings-follow-trade is what attributes each holding change to a specific account statement (via the copied owning_account_number and owning_account_effective_from) rather than to the account as a whole, so the sum must be taken per statement, not per account, to honor the clause's own account-statement granularity. L1.identity underlies the persistence of the account number being grouped on.",
@@ -733,11 +759,35 @@
             "type.holding_quantity",
             "type.holding_quantity_change"
           ]
+        },
+        "sg.unknown-codes": {
+          "cache": "stale-new",
+          "coverage_claim": "L1.unknown-codes requires every job to report, held for review and never interpreted, defaulted, or dropped, a record carrying a code its vocabulary does not name. This job reads exactly one anchored coded field: raw.holding_history's cdc_flag (sources-v1.json's trade_code_meanings.cdc_flag names I, U, and D; historical rows carry no cdc_flag at all, per the same anchor). inv.unknown_codes_held is that report, over every raw.holding_history row this job consumes. No other coded field is read here: this job's own handoffs and derivations draw only from raw.holding_history and from trade-lifecycle's already-resolved logical.trade attributes, never from raw.account_cdc, raw.customer_cdc, raw.customer_mgmt_action, or raw.trade_cdc/raw.trade_history directly.",
+          "derived_from": [
+            "L1.unknown-codes"
+          ],
+          "fingerprint": "6c517a5f3d7e630554229b9fbdeffae8f9d4e6ac88f1f7d6e2bd10d19d89f445",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "inv.unknown_codes_held": {
+              "necessity": "L1.unknown-codes requires a report carrying a code the vocabulary does not name to be held for review, never interpreted, defaulted, or dropped, and requires every job to report it as a violation naming the record and the code. raw.holding_history's cdc_flag is the only anchored coded field this job reads (sources-v1.json's trade_code_meanings.cdc_flag names I, U, and D; the same anchor's entity description and report_order.applies_to state that historical rows carry no cdc columns at all). This invariant is exactly the report the clause requires: every consumed row's cdc_flag is one of the anchored values, or null on a historical row, or the row and its code are reported.",
+              "parallel_assumption": "Credible while the anchored vocabulary (I, U, D, or null for a historical row) remains the complete set of cdc_flag values raw.holding_history rows in fact carry; a value outside it is exactly the case this invariant reports, not a case any derivation or handoff in this job may interpret, default, or silently drop."
+            }
+          },
+          "members": [
+            "inv.unknown_codes_held"
+          ],
+          "touched_clauses": [
+            "L1.unknown-codes"
+          ]
         }
       },
-      "l3_reprojection_required": false,
-      "selected_model_sha256": "ab348e496ada950f959fbed79ef1e9963b5799d893408cc03bd66e08da9cdaf1",
-      "stale": [],
+      "l3_reprojection_required": true,
+      "selected_model_sha256": "e3d5796935ac35f2030ec53f8037ce54b2ba04458db0108f57ee58227bf27df4",
+      "stale": [
+        "sg.unknown-codes"
+      ],
       "status": "ok"
     },
     "trade-lifecycle": {
@@ -777,27 +827,27 @@
           "justifications": {
             "handoff.raw.trade_cdc.t_chrg->logical.trade.fees": {
               "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's fees; raw.trade_cdc's t_chrg is the brokerage's own recorded charge value on each report, the fees fact the clause names.",
-              "parallel_assumption": "Credible while t_chrg on a trade_cdc row names the fees the brokerage charges on the trade, as of that report."
+              "parallel_assumption": "Credible while t_chrg on a trade_cdc row names the fees the brokerage charges on the trade, as of that report. A report held under L1.unknown-codes (an unanchored cdc_flag) is not a later report for this handoff's latest_change selection; fees stands as it last stood, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "handoff.raw.trade_cdc.t_comm->logical.trade.commission": {
               "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's commission; raw.trade_cdc's t_comm is the brokerage's own recorded commission value on each report.",
-              "parallel_assumption": "Credible while t_comm on a trade_cdc row names the commission charged on the trade, as of that report."
+              "parallel_assumption": "Credible while t_comm on a trade_cdc row names the commission charged on the trade, as of that report. A report held under L1.unknown-codes (an unanchored cdc_flag) is not a later report for this handoff's latest_change selection; commission stands as it last stood, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "handoff.raw.trade_cdc.t_qty->logical.trade.quantity": {
               "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's quantity; raw.trade_cdc's t_qty is the brokerage's own recorded quantity value on each report.",
-              "parallel_assumption": "Credible while t_qty on a trade_cdc row names the trade's quantity, as of that report."
+              "parallel_assumption": "Credible while t_qty on a trade_cdc row names the trade's quantity, as of that report. A report held under L1.unknown-codes (an unanchored cdc_flag) is not a later report for this handoff's latest_change selection; quantity stands as it last stood, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "handoff.raw.trade_cdc.t_st_id->logical.trade.status": {
               "necessity": "L1.lifecycle-mutates-outcome requires a later report of a trade to update its status; raw.trade_cdc's t_st_id is the brokerage's own recorded lifecycle-status value on each report of the trade.",
-              "parallel_assumption": "Credible while t_st_id on a trade_cdc row names the trade's lifecycle status as of that report."
+              "parallel_assumption": "Credible while t_st_id on a trade_cdc row names the trade's lifecycle status as of that report, and is one of the anchored status_codes. A report held under L1.unknown-codes (an unanchored cdc_flag, or, for this field, an unanchored t_st_id) is not a later report for this handoff's latest_change selection; status stands as it last stood, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "handoff.raw.trade_cdc.t_tax->logical.trade.tax": {
               "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's tax; raw.trade_cdc's t_tax is the brokerage's own recorded tax value on each report.",
-              "parallel_assumption": "Credible while t_tax on a trade_cdc row names the tax owed on the trade, as of that report."
+              "parallel_assumption": "Credible while t_tax on a trade_cdc row names the tax owed on the trade, as of that report. A report held under L1.unknown-codes (an unanchored cdc_flag) is not a later report for this handoff's latest_change selection; tax stands as it last stood, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price": {
               "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's executed price; raw.trade_cdc's t_trade_price is the brokerage's own recorded executed-price value on each report, distinct from t_bid_price, which records the price at which the trade was requested rather than executed and this job does not hand off.",
-              "parallel_assumption": "Credible while t_trade_price on a trade_cdc row names the price at which the trade actually executed, as of that report."
+              "parallel_assumption": "Credible while t_trade_price on a trade_cdc row names the price at which the trade actually executed, as of that report. A report held under L1.unknown-codes (an unanchored cdc_flag) is not a later report for this handoff's latest_change selection; executed_price stands as it last stood, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "inv.trade_outcome_updates_in_place": {
               "necessity": "L1.lifecycle-mutates-outcome states directly that a later report of the same trade updates the outcome, describing that update entirely in terms of the trade's four named lifecycle statuses (pending, submitted, completed, cancelled); trade_code_meanings.cdc_flag anchors I as newly inserted and U as updating an existing record, both of which carry one of those statuses, so this invariant is the restatement of the update-in-place requirement over the six named outcome facts for I- and U-flagged reports specifically.",
@@ -882,10 +932,11 @@
             "L1.attribution-at-placement",
             "L1.identity",
             "L1.lifecycle-mutates-outcome",
-            "L1.placement-moment"
+            "L1.placement-moment",
+            "L1.unknown-codes"
           ],
-          "fingerprint": "49b7f7f05b55331c044db4c87035d4329e9d7739892b4c0ec939b5ea05896ee3",
-          "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, and L1.hole.owner-change-reversions-account each bound part of this group's coverage; see coverage_claim.",
+          "fingerprint": "3c5e77aaec5bb8df299f968662dcafdf487bf6512d4d6b03129ac168ce662ef1",
+          "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.market-order-seen-pending each bound part of this group's coverage; see coverage_claim.",
           "jev": null,
           "justifications": {
             "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from": {
@@ -902,19 +953,31 @@
             },
             "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at": {
               "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. raw.trade_cdc's t_dts is that report's own recorded time; for a trade whose only held reports are Trade change records (every incrementally loaded trade, and any historical-load trade with no anchored TradeHistory rows), t_dts on the first-encountered such row is the earliest report the brokerage holds. For a historical-load trade with anchored raw.trade_history rows, the earliest held report is one of those instead (see the sibling handoff from raw.trade_history.th_dts), so this handoff and that one together, both under selector first_encounter_only, supply placed_at across the two anchored report sources; this handoff never takes a later report's t_dts.",
-              "parallel_assumption": "Credible while t_dts on a trade's first-encountered raw.trade_cdc report is the report's own stated time of that event, not a receipt or batch-load time, and while, for a historical-load trade, any earlier-held raw.trade_history rows are correctly preferred by the sibling handoff instead."
+              "parallel_assumption": "Credible while t_dts on a trade's first-encountered raw.trade_cdc report is the report's own stated time of that event, not a receipt or batch-load time, and while, for a historical-load trade, any earlier-held raw.trade_history rows are correctly preferred by the sibling handoff instead. A row held under L1.unknown-codes (an unanchored cdc_flag) is not this trade's first-encountered report for this handoff's purposes; a trade whose reports are all held is not yet known to this job, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type": {
               "necessity": "L1.placement-moment (amended) requires the order's type to determine its first lifecycle event; raw.trade_cdc's t_tt_id is the brokerage's own recorded order-type code on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_tt_id, mirroring owning_account_number's first_encounter_only handoff since raw.trade_history carries no order-type field either.",
-              "parallel_assumption": "Credible while t_tt_id on a trade's first-encountered raw.trade_cdc report names the order's own type and is anchored by trade_code_meanings.trade_type_codes."
+              "parallel_assumption": "Credible while t_tt_id on a trade's first-encountered raw.trade_cdc report names the order's own type and is anchored by trade_code_meanings.trade_type_codes. An unanchored t_tt_id value is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived order_type fact for that report."
             },
             "handoff.raw.trade_history.th_dts->logical.trade.placed_at": {
               "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. For a historical-load trade, the brokerage's held reports include its raw.trade_history rows (per-status reports, one per lifecycle stage) as well as its raw.trade_cdc snapshot row; the anchored trade_code_meanings.report_order states that such a trade's earliest held report is its earliest raw.trade_history row, not the snapshot. th_dts is that row's own recorded time, and this handoff takes it only from the trade's first-encountered raw.trade_history row (the one with the smallest th_dts), never a later one, and only when such rows exist for the trade.",
               "parallel_assumption": "Credible while th_dts on a trade's first raw.trade_history row is that report's own stated time of that lifecycle event, and while every historical-load trade's per-status reports the brokerage holds are exactly its anchored raw.trade_history rows (none held but unanchored). raw.trade_history's own anchored identifiers are (th_t_id, th_dts, th_st_id), not (th_t_id, th_dts) alone, so the anchors permit two rows of the same trade to share a th_dts with different th_st_id; this handoff assumes that does not happen among a trade's rows, since two rows tied for smallest th_dts would make which one is 'the earliest' -- and hence first_seen_late's status comparison -- ambiguous."
             },
+            "inv.trade_first_seen_late_defined_or_held": {
+              "necessity": "L1.unknown-codes and L1.hole.market-order-seen-pending together carve out the two cases L1.placement-moment's amended rule does not decide; this invariant is the direct, checkable restatement that first_seen_late's nullability tracks exactly those two held sets and no others -- a trade is not left null for any other reason, and is not decided (true or false) for either of these two.",
+              "parallel_assumption": "Holds while inv.unknown_codes_held and inv.trade_market_order_seen_pending_held together enumerate every case this job holds rather than decides; a third undecided case would need its own hole and its own held-invariant before this one could still hold."
+            },
             "inv.trade_first_seen_late_matches_status_order": {
-              "necessity": "L1.placement-moment (amended) defines first seen late by reference to whether the earliest held report is later than the trade's true first lifecycle stage, now order-type-dependent since an order sent straight to market has no pending stage; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule, including the two cases -- an unanchored order type, and a market order first reported PNDG -- that rule leaves undefined and this invariant likewise does not claim.",
+              "necessity": "L1.placement-moment (amended) defines first seen late by reference to whether the earliest held report is later than the trade's true first lifecycle stage, now order-type-dependent since an order sent straight to market has no pending stage; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule over the trades it decides, leaving the two cases where the first-encountered report itself is held -- reported by inv.unknown_codes_held (its status or order type) and inv.trade_market_order_seen_pending_held -- to inv.trade_first_seen_late_defined_or_held instead; a held report elsewhere in the trade's history does not narrow this invariant's claim.",
               "parallel_assumption": "Holds while trade_code_meanings.status_order, trade_type_codes, and report_order remain as anchored, and while order_type correctly reflects the trade's first-encountered raw.trade_cdc report's t_tt_id."
+            },
+            "inv.trade_market_order_seen_pending_held": {
+              "necessity": "L1.hole.market-order-seen-pending leaves undecided whether a market order's earliest held report at PNDG is a late first encounter, a mis-typed order, or a record error, since L1.placement-moment's amended sentence says a market order has no pending stage at all; this invariant is the checkable restatement of the hole's own instruction to hold such a trade for review rather than decide it either way.",
+              "parallel_assumption": "Holds while trade_code_meanings.trade_type_codes and status_codes remain as anchored and order_type and the first-encountered report's status are each correctly determined; this invariant reports a trade held, it does not resolve the hole."
+            },
+            "inv.trade_order_type_frozen": {
+              "necessity": "order_type's own type element cites L1.lifecycle-mutates-outcome's enumeration of the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and its statement that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it. This invariant is the direct, checkable restatement of that freeze -- order_type equals the trade's first-encountered raw.trade_cdc report's t_tt_id and is never replaced -- as its own audit, exactly as inv.trade_owning_account_frozen restates the analogous freeze for owning_account_number, so an L3 audit need not embed the check inside another invariant's own audit.",
+              "parallel_assumption": "Holds while t_tt_id on a trade's first-encountered raw.trade_cdc report is the order's own type and is never legitimately corrected by a later report."
             },
             "inv.trade_ownership_pin_present": {
               "necessity": "owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each declared nullable: false because L1.attribution-at-placement requires a trade's ownership to be the account, and through it the customer, as they stood at placement -- a reference, not merely a value that may be present when convenient -- and L1.as-of together with L1.placement-moment defines that reference as the account's and customer's statements in effect at placed_at. The two as_of_event_time handoffs that complete this reference (logical.account.effective_from -> owning_account_effective_from and logical.customer.effective_from -> owning_customer_effective_from) are each credible only while a qualifying statement exists at or before placed_at. This invariant is the direct, checkable restatement of those four nullable: false declarations and that shared assumption: it decides nothing about what happens when a trade's pin does not resolve, only that a persisted trade carrying any of the four references as null is a violation an audit can name, rather than a silent gap invisible to compare.",
@@ -929,8 +992,8 @@
               "parallel_assumption": "Holds while a later report of a known trade, from either anchored source (raw.trade_cdc or raw.trade_history), never carries an earlier event time than the one already recorded as placed_at."
             },
             "logical.trade.first_seen_late": {
-              "necessity": "L1.placement-moment (amended) requires a trade whose first-encountered report is later than its true first lifecycle event to be marked first seen late, so the ownership placement fixes can be reviewed, and states directly that an order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted -- fixing a market order's first lifecycle event at SBMT. trade_code_meanings.status_order's first entry, PNDG, fixes a limit order's first lifecycle event; trade_code_meanings.trade_type_codes supplies only which codes exist and which are market or limit (TLB, TLS limit; TMB, TMS market), not either meaning. A first-encountered report whose status is later than that first lifecycle event is exactly such a trade (SBMT or later for a limit order never seen pending; CMPT or CNCL for either order type never seen at its own first stage); a market order first reported PNDG, and an order type outside the anchored four, are not decided by the clause and are left undefined by this attribute, each a review trigger. L1.attribution-at-placement requires this marking, once made, to be fixed at first encounter and not reconsidered by a later report.",
-              "parallel_assumption": "Credible while every trade's lifecycle begins at its order type's first lifecycle event -- PNDG for a limit order, per status_order's first entry, SBMT for a market order sent straight to market, per L1.placement-moment's amended sentence -- and while trade_code_meanings.status_order, terminal_status_codes, and trade_type_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) and order types (TLB, TLS, TMB, TMS) with every trade report carrying one of each, and while report_order correctly identifies the first-encountered report across both anchored sources (the earliest raw.trade_history row when any exist for the trade, otherwise raw.trade_cdc's (batch_date, cdc_dsn) ordering). raw.trade_history's anchored identifiers (th_t_id, th_dts, th_st_id) permit two of a trade's rows to share a th_dts with different th_st_id, which would make the earliest row's status -- and so first_seen_late -- ambiguous; this derivation assumes that does not happen."
+              "necessity": "L1.placement-moment (amended) requires a trade whose first-encountered report is later than its true first lifecycle event to be marked first seen late, so the ownership placement fixes can be reviewed, and states directly that an order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted -- fixing a market order's first lifecycle event at SBMT. trade_code_meanings.status_order's first entry, PNDG, fixes a limit order's first lifecycle event; trade_code_meanings.trade_type_codes supplies only which codes exist and which are market or limit (TLB, TLS limit; TMB, TMS market), not either meaning. A first-encountered report whose status is later than that first lifecycle event is exactly such a trade (SBMT or later for a limit order never seen pending; CMPT or CNCL for either order type never seen at its own first stage). Two cases this clause does not decide are held rather than defaulted: L1.unknown-codes forbids interpreting a first-encountered report whose status or order type falls outside the anchored vocabularies, so first_seen_late is null for it (inv.unknown_codes_held reports the record); and L1.hole.market-order-seen-pending leaves undecided whether a market order first reported PNDG is a late first encounter, a mis-typed order, or a record error, so first_seen_late is null for it too (inv.trade_market_order_seen_pending_held reports the record). L1.attribution-at-placement requires this marking, once made (true, false, or held), to be fixed at first encounter and not reconsidered by a later report.",
+              "parallel_assumption": "Credible while every trade's lifecycle begins at its order type's first lifecycle event -- PNDG for a limit order, per status_order's first entry, SBMT for a market order sent straight to market, per L1.placement-moment's amended sentence -- and while trade_code_meanings.status_order, terminal_status_codes, and trade_type_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) and order types (TLB, TLS, TMB, TMS) with every trade report carrying one of each, except that a first-encountered report may carry a status or order type outside those vocabularies, in which case L1.unknown-codes holds the record for review (inv.unknown_codes_held) and this attribute is null rather than true or false; and while report_order correctly identifies the first-encountered report across both anchored sources (the earliest raw.trade_history row when any exist for the trade, otherwise raw.trade_cdc's (batch_date, cdc_dsn) ordering). raw.trade_history's anchored identifiers (th_t_id, th_dts, th_st_id) permit two of a trade's rows to share a th_dts with different th_st_id, which would make the earliest row's status -- and so first_seen_late -- ambiguous; this derivation assumes that does not happen. A market order first reported PNDG is likewise held, under L1.hole.market-order-seen-pending (inv.trade_market_order_seen_pending_held), rather than resolved by this derivation."
             },
             "logical.trade.order_type": {
               "necessity": "L1.placement-moment (amended) requires knowing whether a trade is a market or limit order to determine its first lifecycle event -- SBMT for a market order sent straight to market, PNDG for a limit order -- which first_seen_late's derivation needs; this attribute carries that order type directly from the trade's first-encountered raw.trade_cdc report's t_tt_id, so the derivation, and an L3 audit recomputing it, need not re-read the raw feed for the type.",
@@ -984,7 +1047,10 @@
             "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at",
             "handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type",
             "handoff.raw.trade_history.th_dts->logical.trade.placed_at",
+            "inv.trade_first_seen_late_defined_or_held",
             "inv.trade_first_seen_late_matches_status_order",
+            "inv.trade_market_order_seen_pending_held",
+            "inv.trade_order_type_frozen",
             "inv.trade_ownership_pin_present",
             "inv.trade_placed_at_matches_earliest_report",
             "inv.trade_placement_reference_frozen",
@@ -1001,7 +1067,9 @@
             "type.trade_owning_customer_reference",
             "type.trade_placed_at"
           ],
-          "touched_clauses": []
+          "touched_clauses": [
+            "L1.unknown-codes"
+          ]
         },
         "sg.trade-identity": {
           "cache": "hit",
@@ -1014,11 +1082,11 @@
           "justifications": {
             "handoff.raw.trade_cdc.t_id->logical.trade.trade_number": {
               "necessity": "L1.identity requires the trade's own number as its identity; raw.trade_cdc carries t_id as the brokerage's trade number on every row reporting that trade, including its first-encountered row and every later report.",
-              "parallel_assumption": "Credible while t_id values in this file are the brokerage's real trade numbers and not reused for different trades."
+              "parallel_assumption": "Credible while t_id values in this file are the brokerage's real trade numbers and not reused for different trades. A row held under L1.unknown-codes (an unanchored cdc_flag) is not a report this handoff draws trade_number from; a trade known only through held rows is not yet known to this job (inv.every_received_trade_persisted does not claim it), and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "inv.every_received_trade_persisted": {
-              "necessity": "L1.identity requires a trade_number the brokerage already identifies to be the same persistent thing across every report of it, not a thing this job may simply fail to track. This invariant restates that persistence requirement as completeness rather than only as consistency (which inv.trade_owning_account_frozen and sg.trade-identity's own coverage already check): every trade_number carried by an anchored received report -- raw.trade_cdc and raw.trade_history -- none of whose reports carries cdc_flag D must appear as exactly one logical.trade row; a trade_number with any cdc_flag D report is L1.hole.deletions' case and is not claimed here. A trade this job cannot pin (sg.placement-moment) is therefore a violation this invariant names, not a row the job is silently permitted to omit; together with inv.trade_ownership_pin_present, a trade whose pin does not resolve fires the same violation on every engine projection instead of being decided differently by whichever join shape a projection happens to use.",
-              "parallel_assumption": "Holds while every raw.trade_cdc row with cdc_flag I or U, and every raw.trade_history row, reports a trade_number the business considers a real, receivable trade. L1.hole.deletions bounds what a cdc_flag D report means for a trade's persistence -- whether its trade_number must still appear as a row, must be removed, or something else -- so this invariant is quantified only over trade_numbers none of whose received reports carries cdc_flag D at all, leaving a trade_number with any D report entirely to that hole, not merely excluding the D-flagged report itself from an otherwise-qualifying trade. The anchored trade_code_meanings.report_order.note states that a historical-load trade's held reports are its TradeHistory rows together with the snapshot Trade row, so every th_t_id also appears as a Batch1 t_id (cdc_flag I, cdc_dsn 0); this invariant's raw.trade_history clause therefore rests on the entity's only identity handoff, raw.trade_cdc.t_id -> trade_number, which reaches every history-reported trade through that same snapshot row, not on a handoff this model does not define."
+              "necessity": "L1.identity requires a trade_number the brokerage already identifies to be the same persistent thing across every report of it, not a thing this job may simply fail to track. This invariant restates that persistence requirement as completeness rather than only as consistency (which inv.trade_owning_account_frozen and sg.trade-identity's own coverage already check): every trade_number that has at least one received report with fully anchored codes and none of whose received reports carries cdc_flag D must appear as exactly one logical.trade row; a trade_number with any cdc_flag D report is L1.hole.deletions' case and is not claimed here. A trade this job cannot pin (sg.placement-moment) is therefore a violation this invariant names, not a row the job is silently permitted to omit; together with inv.trade_ownership_pin_present, a trade whose pin does not resolve fires the same violation on every engine projection instead of being decided differently by whichever join shape a projection happens to use. L1.unknown-codes' clarification that a held report changes nothing and creates nothing, and that a trade known only through held reports is not yet known to the job, is why this invariant does not claim such a trade; inv.unknown_codes_held reports the held report(s) instead, not this invariant.",
+              "parallel_assumption": "Holds while every raw.trade_cdc row with cdc_flag I or U, and every raw.trade_history row, reports a trade_number the business considers a real, receivable trade, and while a trade with at least one report whose coded fields are all anchored is correctly distinguished from one whose received reports are all held. L1.hole.deletions bounds what a cdc_flag D report means for a trade's persistence -- whether its trade_number must still appear as a row, must be removed, or something else -- so this invariant is quantified only over trade_numbers none of whose received reports carries cdc_flag D at all, leaving a trade_number with any D report entirely to that hole, not merely excluding the D-flagged report itself from an otherwise-qualifying trade. The anchored trade_code_meanings.report_order.note states that a historical-load trade's held reports are its TradeHistory rows together with the snapshot Trade row, so every th_t_id also appears as a Batch1 t_id (cdc_flag I, cdc_dsn 0); this invariant's raw.trade_history clause therefore rests on the entity's only identity handoff, raw.trade_cdc.t_id -> trade_number, which reaches every history-reported trade through that same snapshot row, not on a handoff this model does not define."
             },
             "logical.trade.trade_number": {
               "necessity": "L1.identity requires a value that identifies which trade a report is about and stays the same across every later report of that trade; this attribute carries the identity type for exactly that purpose.",
@@ -1049,7 +1117,7 @@
           "justifications": {
             "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number": {
               "necessity": "L1.attribution-at-placement requires the trade's own account be named and fixed at first encounter; raw.trade_cdc's t_ca_id is the brokerage's own recorded account number on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_ca_id, per the clause's 'do not move a trade that was already placed.' raw.trade_history carries no account field, so this remains the only handoff for owning_account_number even for a historical-load trade whose placed_at is instead pinned from a raw.trade_history row.",
-              "parallel_assumption": "Credible while t_ca_id on a trade's first-encountered report names the account the trade was placed under."
+              "parallel_assumption": "Credible while t_ca_id on a trade's first-encountered report names the account the trade was placed under. A row held under L1.unknown-codes (an unanchored cdc_flag) is not this trade's first-encountered report for this handoff's purposes; a trade whose reports are all held is not yet known to this job, and the hold is reported by inv.unknown_codes_held, not this handoff."
             },
             "inv.trade_owning_account_frozen": {
               "necessity": "L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the account a trade is recorded against.",
@@ -1075,12 +1143,35 @@
             "logical.trade.owning_account_number",
             "type.trade_owning_account_reference"
           ]
+        },
+        "sg.unknown-codes": {
+          "cache": "stale-new",
+          "coverage_claim": "L1.unknown-codes requires every job to report a consumed row whose coded field carries a value its anchored vocabulary does not name, naming the record and the code, and forbids interpreting, defaulting, or dropping it; a held report changes nothing and creates nothing, so a trade known only through held reports is not yet known to this job. This job reads three anchored code vocabularies across its two consumed sources -- cdc_flag and t_tt_id on raw.trade_cdc, and the shared status_codes vocabulary on both t_st_id (raw.trade_cdc) and th_st_id (raw.trade_history) -- and inv.unknown_codes_held is the single checkable restatement of that reporting duty across all of them. Ten handoffs in this job read a coded field, each stating in its own parallel_assumption that a held row or report is not read as a fact by this handoff (a held later report is not a later report for latest_change and the value stands as last derived; a held row is not a first-encountered report for first_encounter_only and a trade known only through held rows is not yet known; an unanchored code on a value-carrying field yields no derived fact) and listing this invariant in its feedback: raw.trade_cdc.t_id->trade_number, raw.trade_cdc.t_ca_id->owning_account_number, and raw.trade_cdc.t_dts->placed_at (selection, reading cdc_flag); raw.trade_cdc.t_tt_id->order_type (its own field) and raw.trade_cdc.t_st_id->status (its own field, and cdc_flag for latest_change); and raw.trade_cdc.t_trade_price->executed_price, t_chrg->fees, t_comm->commission, t_tax->tax, and t_qty->quantity (cdc_flag, for latest_change). Adjacent to this group's own claim, first_seen_late (sg.placement-moment) carries the held case further: a first-encountered report held under this clause makes first_seen_late null, reported by inv.unknown_codes_held together with inv.trade_first_seen_late_defined_or_held; L1.hole.market-order-seen-pending bounds a distinct case -- PNDG is itself an anchored status, so a market order first reported PNDG is not an unknown code, and inv.unknown_codes_held does not report it, inv.trade_market_order_seen_pending_held (sg.placement-moment) does. Neither is a gap of this group's own claim, which is complete over the three vocabularies and their ten readers. This invariant decides nothing about what an unnamed record subsequently means.",
+          "derived_from": [
+            "L1.unknown-codes"
+          ],
+          "fingerprint": "0ff165b55d3b9f70c45df5437d624c87f1fce21559e7758464ff0849de33a85d",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "inv.unknown_codes_held": {
+              "necessity": "L1.unknown-codes requires every job to report, as a violation naming the record and the code, any consumed row whose coded field carries a value its anchored vocabulary does not name, and forbids interpreting, defaulting, or dropping it. This job reads three anchored code vocabularies across its two consumed sources -- cdc_flag and t_tt_id on raw.trade_cdc, and the shared status_codes vocabulary on both t_st_id (raw.trade_cdc) and th_st_id (raw.trade_history) -- and this invariant is the direct, checkable restatement of that reporting duty over all three; it says nothing about what happens to a held record afterward, which is each derivation's or handoff's own parallel_assumption to state, and, for first_seen_late specifically, L1.hole.market-order-seen-pending's neighbor.",
+              "parallel_assumption": "Holds while trade_code_meanings.status_codes, trade_type_codes, and cdc_flag remain as anchored and exhaustively enumerate the codes each field may carry; a row whose coded field falls outside its vocabulary is not decided by this job to be an error, a future code, or something else -- only reported."
+            }
+          },
+          "members": [
+            "inv.unknown_codes_held"
+          ],
+          "touched_clauses": [
+            "L1.unknown-codes"
+          ]
         }
       },
       "l3_reprojection_required": true,
-      "selected_model_sha256": "9330f3d22bdfc1120c4627deff8c0ed5e275fdb88be2c7202d108c7b34c631b7",
+      "selected_model_sha256": "153309314e831c40440b6f9edb597c00eb86dba46d4db8e9daaa724d306f99f7",
       "stale": [
-        "sg.placement-moment"
+        "sg.placement-moment",
+        "sg.unknown-codes"
       ],
       "status": "ok"
     }
@@ -1099,7 +1190,8 @@
       "L1.omitted-facts-stand": "d0c779cd0c2b06a984529246554f0cdc68cad87d5d4a05142ce5eced7d071615",
       "L1.owner-standing": "359f28444e3ad773ac1595cbb99e37a79da83272b710d25a8accceff7a3150f0",
       "L1.placement-moment": "0f02f7055c82aca3994cc3c61f370c2881670287717cf376858c06d33a8377b3",
-      "L1.statement-content": "b203489f09eb80ac13b30834cc1e81510ff0a3adb52fbcae68ad78e8594d6c6a"
+      "L1.statement-content": "b203489f09eb80ac13b30834cc1e81510ff0a3adb52fbcae68ad78e8594d6c6a",
+      "L1.unknown-codes": "2507fc73fc37580d149acd88755bd5c651a292989139fc12408019462b799ea5"
     },
     "clauses": {
       "L1.as-of": "Any question about a customer or account can be asked as of a moment in time, and the answer is the statement in effect at that moment: the latest one that took effect at or before it.",
@@ -1114,13 +1206,15 @@
       "L1.omitted-facts-stand": "A change that does not mention a standing fact leaves that fact as it last stood. A statement produced by such a change carries the fact at its last stated value. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends.)",
       "L1.owner-standing": "An account's standing includes its owner's standing. When the brokerage says how an account stood at a moment, that includes how its customer stood at that same moment.",
       "L1.placement-moment": "A trade is placed at the moment of the earliest report of it held by the brokerage, as that report states its own time. A trade whose earliest held report is not the trade's first lifecycle event is treated as placed at that report and marked as first seen late, so the ownership it fixes can be reviewed. An order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted. (Placement assumed under `issue-8-statement-content-assumed`; the market-order sentence accepted from `ce.l1.first-seen-late-market-orders` on 2026-09-17.)",
-      "L1.statement-content": "A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)"
+      "L1.statement-content": "A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)",
+      "L1.unknown-codes": "The brokerage's records speak in a fixed vocabulary of codes (statuses, order types, change flags). A report carrying a code that vocabulary does not name is held for review and is not interpreted: no rule below may read a meaning into it, default it, or silently drop the report. Every job reports such a record as a violation, naming the record and the code. A held report changes nothing and creates nothing: every fact stands as it last stood, and a customer, account or trade known only through held reports is not yet known to the job; the hold itself is what is reported. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)"
     },
     "holes": {
       "L1.hole.batch-identity": "Does a report need to know which incremental file first delivered a fact?",
       "L1.hole.change-effective-time": "Incremental change files carry no time of their own. Does a change in such a file take effect at the file's batch date, or at some other moment?",
       "L1.hole.closed-account-activity": "Trades appear on accounts the brokerage recorded as closed years earlier (account 428 closed in 2012, trades in 2017). Is that a data error, a reopening the records omit, or does a closed account still own trades?",
       "L1.hole.deletions": "Incremental files can mark a record deleted. What does deleting a trade or account mean for history, ownership, and holdings?",
+      "L1.hole.market-order-seen-pending": "`L1.placement-moment` says an order sent straight to market has no pending stage. What does it mean when a market order's earliest held report is pending: a late first encounter, a mis-typed order, or a record error? Until answered, no job may decide whether such a trade is first seen late; it is held for review and reported like an unknown code.",
       "L1.hole.owner-change-reversions-account": "When a customer's standing changes, does the brokerage consider every account of that customer to have a new statement at that moment, or only the customer? The source data shows customer changes without matching account changes.",
       "L1.hole.securities-and-brokers": "Securities, companies, and brokers are named in the records but not yet part of any job. When they are, the attribution rule must be restated for them.",
       "L1.hole.trade-timestamps": "Which moment counts as \"when it completed\" when a later report of a trade arrives without its full history? (Placement is settled, provisionally, by `L1.placement-moment`.)"
@@ -1135,6 +1229,7 @@
           "L1.owner-standing",
           "L1.statement-content",
           "L1.omitted-facts-stand",
+          "L1.unknown-codes",
           "L1.constructed-scenarios"
         ],
         "description": "Know how any customer or account stood at any moment, and who owned what.",
@@ -1146,6 +1241,7 @@
           "L1.attribution-at-placement",
           "L1.holdings-follow-trade",
           "L1.no-phantom-positions",
+          "L1.unknown-codes",
           "L1.constructed-scenarios"
         ],
         "description": "Know what each account and customer holds, and how it got there.",
@@ -1158,6 +1254,7 @@
           "L1.attribution-at-placement",
           "L1.placement-moment",
           "L1.lifecycle-mutates-outcome",
+          "L1.unknown-codes",
           "L1.constructed-scenarios"
         ],
         "description": "Know each trade's outcome and who owned it when it happened.",

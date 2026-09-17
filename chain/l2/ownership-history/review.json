@@ -2,13 +2,14 @@
   "groups_selected": [
     "sg.constructed-scenarios",
     "sg.current-version",
-    "sg.history-asof"
+    "sg.history-asof",
+    "sg.unknown-codes"
   ],
   "job": "ownership-history",
-  "model_sha256": "12961d03caa20257bd2a2980d08f688fc8985a80d435c776c803d42467a8dddf",
-  "notes": "see review-10.md",
+  "model_sha256": "93ad098e0c9231e37c24efae1404c695b7e5d3713bd5e72d1c82c3f91bbf7572",
+  "notes": "see review-11.md and review-12.md",
   "rejected_element_ids": [],
-  "reviewer": "Opus sketch reviewer, scoped review 10",
+  "reviewer": "coordinator, bookkeeping review 12 after prescribed corrections",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.ce.account_changes.account_id->logical.account.account_number",
@@ -41,6 +42,7 @@
     "inv.customer_statements_no_overlap",
     "inv.customer_status_matches_producing_source",
     "inv.customer_tier_matches_producing_source",
+    "inv.unknown_codes_held",
     "logical.account",
     "logical.account.account_number",
     "logical.account.effective_from",

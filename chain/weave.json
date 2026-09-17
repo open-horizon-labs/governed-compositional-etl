@@ -169,7 +169,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred.",
+      "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred. Listed under hole.change_effective_time.blocks even though it has no deferred member, because that hole's resolution (whether an incremental change file's own status value takes effect at all) bears on whether the deferred c_st_id/ca_st_id handoffs this gap names ever become this group's members.",
       "group": "sg.unknown-codes",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -199,12 +199,6 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.market-order-seen-pending bounds a case adjacent to but distinct from this group's claim: PNDG is itself an anchored status, so a market order first reported PNDG is not an unknown code, and inv.unknown_codes_held does not report it; inv.trade_market_order_seen_pending_held (sg.placement-moment) reports it instead.",
-      "group": "sg.unknown-codes",
-      "job": "trade-lifecycle",
-      "relation": "named-gap"
-    },
-    {
       "gap": "L1.hole.deletions bounds this group's own row-per-pair claim: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided.",
       "group": "sg.holding-shape",
       "job": "positions",
@@ -228,7 +222,7 @@
     "contradiction": 0,
     "dependency": 7,
     "gap": 0,
-    "named-gap": 14,
+    "named-gap": 13,
     "overlap": 3
   }
 }

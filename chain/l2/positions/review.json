@@ -3,13 +3,14 @@
     "sg.constructed-scenarios",
     "sg.holding-attribution",
     "sg.holding-shape",
-    "sg.no-phantom-positions"
+    "sg.no-phantom-positions",
+    "sg.unknown-codes"
   ],
   "job": "positions",
-  "model_sha256": "ab348e496ada950f959fbed79ef1e9963b5799d893408cc03bd66e08da9cdaf1",
-  "notes": "see review-7.md",
+  "model_sha256": "e3d5796935ac35f2030ec53f8037ce54b2ba04458db0108f57ee58227bf27df4",
+  "notes": "see review-8.md and review-9.md",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 7 (four texts)",
+  "reviewer": "coordinator, bookkeeping review 9 after prescribed corrections",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity",
@@ -36,6 +37,7 @@
     "inv.holding_quantities_present",
     "inv.holding_quantity_change_is_difference",
     "inv.holding_quantity_updates_in_place",
+    "inv.unknown_codes_held",
     "logical.account_position",
     "logical.account_position.account_effective_from",
     "logical.account_position.account_number",
