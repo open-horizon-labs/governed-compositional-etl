@@ -128,6 +128,26 @@ def projection_digest(base: Path) -> str:
     return hashlib.sha256(material.encode()).hexdigest()
 
 
+def acceptance(target: str, job: str) -> dict:
+    """Whether this projection is the one a review accepted: a passed review whose recorded content digest is the content
+    on disk now. Well-formed and accepted are different questions, and the gate answers both, because a projection
+    mid-cycle is not wrong, it is simply not yet the accepted one."""
+    base = L3_DIR / target / job
+    path = base / "review.json"
+    if not path.exists():
+        return {"reviewed": False, "accepted": False, "reason": "no projection review"}
+    record = json.loads(path.read_text())
+    verdict = record.get("verdict")
+    if verdict != "pass":
+        return {"reviewed": True, "accepted": False, "verdict": verdict, "reason": f"review verdict is {verdict}"}
+    stamped = record.get("projection_sha256")
+    if not stamped:
+        return {"reviewed": True, "accepted": False, "verdict": verdict, "reason": "the review records no accepted content"}
+    if stamped != projection_digest(base):
+        return {"reviewed": True, "accepted": False, "verdict": verdict, "reason": "the projection changed after the review that accepted it"}
+    return {"reviewed": True, "accepted": True, "verdict": verdict}
+
+
 def stamp(target: str, job: str) -> dict:
     """After a passed projection review: record the fingerprints of the L2 groups this projection derives from.
     Stamping is the acceptance step, so it is the reviewer's, not the Developer's: it refuses when the projection has
@@ -295,6 +315,7 @@ def check(target: str, job: str) -> dict:
                 problems.append(f"audit {a['file']} must be a SQLMesh AUDIT file on target {target}")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"], "provenance": provenance_note,
+            "acceptance": acceptance(target, job),
             "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", []))}
 
 
@@ -446,7 +467,12 @@ def ce_rows(ce: dict) -> tuple[list[dict], dict[str, list[dict]]]:
 
 
 def run(target: str, job: str, phase: str = "rollover", database: Path | None = None, ce: dict | None = None) -> dict:
-    """Load the fixture (and labeled CE rows for the rollover phase), run upstream jobs' projections, then this job, then audits."""
+    """Load the fixture (and labeled CE rows for the rollover phase), run upstream jobs' projections, then this job, then audits.
+    A job may be mid-cycle, but what it compiles on top of may not: an unaccepted upstream is refused before anything runs."""
+    for up in JOB_ORDER[: JOB_ORDER.index(job)]:
+        state = acceptance(target, up)
+        if not state["accepted"]:
+            raise L3Error(f"upstream job {up} on {target} is not accepted ({state['reason']}); a projection is not compiled on top of one no review has accepted")
     fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
     ce = ce if ce is not None else json.loads((ROOT / DEFAULT_CE).read_text())
     changes, additions = ce_rows(ce)

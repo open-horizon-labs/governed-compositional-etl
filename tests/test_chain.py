@@ -279,6 +279,57 @@ class StampIsAcceptanceTests(unittest.TestCase):
                 L3.L3_DIR = saved
 
 
+class AcceptanceTests(unittest.TestCase):
+    """Well-formed and accepted are different questions. A projection mid-cycle is not wrong; it is not yet the one a
+    review accepted. The gate answers both, and nothing compiles on top of an upstream that is not accepted."""
+
+    def scratch(self, tmp, *jobs):
+        import shutil
+        l3 = Path(tmp) / "l3"
+        for job in jobs:
+            shutil.copytree(ROOT / "chain/l3/duckdb-native" / job, l3 / "duckdb-native" / job)
+        return l3
+
+    def test_an_edit_after_acceptance_is_well_formed_but_not_accepted(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            l3 = self.scratch(tmp, "ownership-history")
+            base = l3 / "duckdb-native/ownership-history"
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3
+            try:
+                self.assertTrue(L3.check("duckdb-native", "ownership-history")["acceptance"]["accepted"])
+                sql = sorted(base.glob("*.sql"))[0]
+                sql.write_text(sql.read_text() + "\n-- an edit the reviewer never saw\n")
+                report = L3.check("duckdb-native", "ownership-history")
+            finally:
+                L3.L3_DIR = saved
+        self.assertEqual(report["status"], "ok", report["problems"])  # still well-formed: the Developer loop is unaffected
+        self.assertFalse(report["acceptance"]["accepted"])
+        self.assertIn("changed after the review", report["acceptance"]["reason"])
+
+    def test_nothing_compiles_on_an_unaccepted_upstream(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            l3 = self.scratch(tmp, "ownership-history", "trade-lifecycle")
+            upstream_review = l3 / "duckdb-native/ownership-history/review.json"
+            record = json.loads(upstream_review.read_text())
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3
+            try:
+                for reason, mutate in (("verdict is fail", lambda r: r.update(verdict="fail")),
+                                       ("content changed", lambda r: r.update(projection_sha256="f" * 64))):
+                    fresh = json.loads(json.dumps(record))
+                    mutate(fresh)
+                    upstream_review.write_text(json.dumps(fresh))
+                    with self.assertRaises(L3.L3Error, msg=reason) as caught:
+                        L3.run("duckdb-native", "trade-lifecycle", database=Path(tmp) / "x.duckdb")
+                    self.assertIn("ownership-history", str(caught.exception))
+                    self.assertIn("not accepted", str(caught.exception))
+            finally:
+                L3.L3_DIR = saved
+
+
 class WeaveTests(unittest.TestCase):
     def test_weave_reports_uncovered_clauses_as_gaps(self):
         out = L2.weave()

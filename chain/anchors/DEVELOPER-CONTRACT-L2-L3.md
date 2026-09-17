@@ -12,6 +12,12 @@
 
 **Guardrails:** the L2 model and the engine profile are the only authority; no policy from data shape; no reading L1, other jobs' models except upstream ones the model names, or anything under `oracle/`, `counterexamples/`, `.oh/`, `contracts/`, `docs/`, `sketches/`.
 
+## Acceptance is not yours
+
+`chain_l3.py stamp` records that a reviewed projection is accepted. It is the reviewer's step, never the Developer's, and the mechanism enforces part of that: stamping refuses a projection whose content changed after the review that accepted it, and refuses a review whose verdict is not pass. Do not run it, and do not write or edit `review.json` or any `review-*.md`; they are the reviewer's record of what was judged, and the reviewer's name is on them.
+
+Two consequences you will see. `check` reports `acceptance` separately from `status`: a projection you are still working on is well-formed and not yet accepted, which is the normal mid-cycle state and not a problem. And `run` refuses to build on an upstream job whose projection is not accepted, so if an upstream is mid-cycle, wait for its acceptance rather than compiling on top of it.
+
 ## Change contract (CESS working form)
 
 - **Prior policy authority:** `chain/l2/<job>/semantic-model.json`, restricted to `selected_element_ids` in `chain/l2/<job>/review.json`. Deferred elements are not projected; rejected elements never.
