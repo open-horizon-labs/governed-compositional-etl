@@ -55,10 +55,10 @@ class L2GateTests(unittest.TestCase):
 
     def test_selected_model_passes_the_gate(self):
         report = L2.check(JOB)
-        if report["status"] != "ok":
+        if report["problems"]:
             # the gate may have grown a rule since the model was selected; that state is legitimate mid-cycle
             self.skipTest("model awaiting repair under a newer gate rule: " + report["problems"][0])
-        self.assertEqual(report["status"], "ok", report["problems"])
+        self.assertIn(report["status"], ("ok", "question"), report["problems"])  # a filed question never blocks
 
     def test_hole_blocks_and_group_gaps_must_agree(self):
         def fn(d):
@@ -100,7 +100,10 @@ class L2GateTests(unittest.TestCase):
         self.assertTrue(any("no sufficiency group" in p for p in report["problems"]), report["problems"])
 
     def test_dangling_question_reference_is_rejected(self):
-        report = self.mutate(lambda d: d["entities"][0].__setitem__("note", "see questions_for_authority"))
+        def fn(d):
+            d["questions_for_authority"] = []  # the reference must dangle regardless of what the live model has filed
+            d["entities"][0]["note"] = "see questions_for_authority"
+        report = self.mutate(fn)
         self.assertTrue(any("no question is filed" in p for p in report["problems"]), report["problems"])
 
     def test_filed_question_does_not_block_validation(self):

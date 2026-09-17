@@ -19,7 +19,7 @@
           "batch_date": "2017-06-30",
           "cdc_dsn": 0,
           "cdc_flag": "I",
-          "note": "Constructed. A historical-load report of a trade placed for account 428 half a year before the account's first statement (NEW 2007-12-29 14:22:12). Not TPC-DI data; labeled by this document.",
+          "note": "Constructed. A historical-load report of a trade placed for account 428 half a year before the account's first statement (NEW 2007-12-29 14:22:12). Not TPC-DI data; labeled by this document. Order type set to TLB (limit) on 2026-09-17 so the case stays about the unresolved pin; as TMB with a pending first report it also fell under L1.hole.market-order-seen-pending once that hole existed.",
           "t_bid_price": 6.5,
           "t_ca_id": 428,
           "t_chrg": null,
@@ -33,7 +33,7 @@
           "t_st_id": "PNDG",
           "t_tax": null,
           "t_trade_price": null,
-          "t_tt_id": "TMB"
+          "t_tt_id": "TLB"
         }
       ],
       "trade_history": [
@@ -56,6 +56,7 @@
     "cross-engine"
   ],
   "observed": {
+    "2026-09-17 after L1.unknown-codes and the market-order hole": "with 900001 as TMB/PNDG both engines also fired inv.trade_market_order_seen_pending_held; fixture corrected to a limit order so exactly the pin audit fires per engine.",
     "2026-09-17 after trade-lifecycle L3 cycle 4": "exactly one audit per engine: duckdb-native inv.trade_ownership_pin_present (1 row, trade 900001); duckdb-sqlmesh inv.every_received_trade_persisted (1 row; the blocking audit refused the plan). Deterministic assertion holds.",
     "2026-09-17 before trade-lifecycle L3 cycle 4": "silent on both engines; native governed.trade held 900001 with owning_account_effective_from, owning_customer_number, owning_customer_effective_from null (3 trades); SQLMesh had no row (2 trades)",
     "command": ".venv/bin/python scripts/chain_l3.py simulate <target> trade-lifecycle --ce counterexamples/proposed/ce-trade-before-account-statement-v1.json"
