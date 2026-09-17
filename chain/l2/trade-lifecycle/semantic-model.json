@@ -32,7 +32,8 @@
       "derived_from": [
         "L1.attribution-at-placement",
         "L1.identity",
-        "L1.lifecycle-mutates-outcome"
+        "L1.lifecycle-mutates-outcome",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
@@ -40,7 +41,7 @@
       ],
       "history_role": "none",
       "mutation_role": "frozen_from_first_encounter",
-      "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under, and requires that a later change does not move a trade that was already placed; a value naming that account, set once and never replaced by a later report, is required to express that. L1.identity supplies the account's own persistent number as the value this reference carries. L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is the clause that, alongside L1.attribution-at-placement, makes this value's role frozen_from_first_encounter rather than mutable.",
+      "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under, and requires that a later change does not move a trade that was already placed; a value naming that account, set once and never replaced by a later report, is required to express that. L1.identity supplies the account's own persistent number as the value this reference carries. L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is the clause that, alongside L1.attribution-at-placement, makes this value's role frozen_from_first_encounter rather than mutable. L1.deletion-withdraws requires that a cdc_flag D report 'creates nothing' and that 'a thing whose only reports are withdrawals was never held at all'; a D-flagged report therefore supplies no owning_account_number value and is never the report this frozen reference is taken from, whatever its position in report order.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while a trade's account assignment is settled at the trade's first-encountered report and never legitimately contradicted by a later report of the same trade.",
       "physical_type": "integer",
@@ -54,7 +55,8 @@
       "id": "trade_placed_at",
       "derived_from": [
         "L1.placement-moment",
-        "L1.attribution-at-placement"
+        "L1.attribution-at-placement",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
@@ -62,7 +64,7 @@
       ],
       "history_role": "none",
       "mutation_role": "frozen_from_first_encounter",
-      "necessity": "L1.placement-moment requires the trade's placement to be the moment stated by the earliest report of it the brokerage holds, in that report's own recorded time -- across every anchored source of held reports, not only raw.trade_cdc; for a historical-load trade that is its earliest raw.trade_history row. L1.attribution-at-placement requires that a later change does not move a trade that was already placed; since this moment is what selects the account statement the trade references, it must be set once and never replaced, or a later report could shift which statement is selected and move the trade's ownership.",
+      "necessity": "L1.placement-moment requires the trade's placement to be the moment stated by the earliest report of it the brokerage holds, in that report's own recorded time -- across every anchored source of held reports, not only raw.trade_cdc; for a historical-load trade that is its earliest raw.trade_history row. L1.attribution-at-placement requires that a later change does not move a trade that was already placed; since this moment is what selects the account statement the trade references, it must be set once and never replaced, or a later report could shift which statement is selected and move the trade's ownership. L1.deletion-withdraws requires that a D-flagged report 'creates nothing'; the earliest report of the trade the brokerage holds, for placement purposes, is therefore the earliest anchored report that is not cdc_flag D -- a D-flagged report, wherever it falls in report order, is never the report placed_at is taken from.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while the earliest report of a trade the brokerage holds, across both anchored sources, states its own time, and that time is treated as the placement moment even when it is not the trade's true first lifecycle event (the first-seen-late case L1.placement-moment names).",
       "physical_type": "timestamp",
@@ -147,14 +149,15 @@
       "id": "trade_first_seen_late",
       "derived_from": [
         "L1.placement-moment",
-        "L1.attribution-at-placement"
+        "L1.attribution-at-placement",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
       "mutation_role": "frozen_from_first_encounter",
-      "necessity": "L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; a dedicated value carrying that marking is required to express it. L1.attribution-at-placement's 'do not move a trade that was already placed' requires this marking, once made at first encounter, never to be reconsidered by a later report -- frozen_from_first_encounter, not mutable.",
+      "necessity": "L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; a dedicated value carrying that marking is required to express it. L1.attribution-at-placement's 'do not move a trade that was already placed' requires this marking, once made at first encounter, never to be reconsidered by a later report -- frozen_from_first_encounter, not mutable. L1.deletion-withdraws requires that a D-flagged report 'creates nothing', so it is excluded from being the trade's first-encountered report for this derivation's own comparison, exactly as for placed_at, owning_account_number, and order_type.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while the anchored trade_code_meanings.status_order and report_order let this job determine, at first encounter, whether the trade's lifecycle appears to have started before that report.",
       "physical_type": "boolean",
@@ -169,14 +172,15 @@
       "id": "trade_order_type",
       "derived_from": [
         "L1.placement-moment",
-        "L1.lifecycle-mutates-outcome"
+        "L1.lifecycle-mutates-outcome",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
       "mutation_role": "frozen_from_first_encounter",
-      "necessity": "L1.placement-moment (amended) distinguishes a market order's first lifecycle event (SBMT) from a limit order's (PNDG); a dedicated value carrying which of the anchored trade_type_codes a trade is is required to determine that event, so the L3 audit can recompute first_seen_late without re-reading the raw feed for the type. L1.lifecycle-mutates-outcome enumerates exactly the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and states that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it -- frozen_from_first_encounter, not mutable, on the strength of that enumeration rather than of L1.attribution-at-placement, which is about the ownership reference, not this value.",
+      "necessity": "L1.placement-moment (amended) distinguishes a market order's first lifecycle event (SBMT) from a limit order's (PNDG); a dedicated value carrying which of the anchored trade_type_codes a trade is is required to determine that event, so the L3 audit can recompute first_seen_late without re-reading the raw feed for the type. L1.lifecycle-mutates-outcome enumerates exactly the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and states that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it -- frozen_from_first_encounter, not mutable, on the strength of that enumeration rather than of L1.attribution-at-placement, which is about the ownership reference, not this value. L1.deletion-withdraws requires that a D-flagged report 'creates nothing'; this value is therefore taken from the trade's first-encountered non-D report, mirroring owning_account_number and placed_at.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while trade_code_meanings.trade_type_codes exhaustively enumerates the order types (TLB, TLS, TMB, TMS) and a trade's order type is fixed at first encounter and never changed by a later report.",
       "physical_type": "string",
@@ -310,6 +314,27 @@
       "review_trigger": "a trade report carries no determinable quantity value",
       "semantic_kind": "trade_quantity_amount",
       "sufficiency_group": "sg.outcome",
+      "time_role": "none",
+      "unit": "none"
+    },
+    {
+      "id": "trade_withdrawn",
+      "derived_from": [
+        "L1.deletion-withdraws"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "none",
+      "mutation_role": "mutable",
+      "necessity": "L1.deletion-withdraws requires that 'a withdrawn trade keeps its record and is marked withdrawn, it is not among the trades the brokerage asserts, and everything that already followed from it stands as history.' A dedicated value is indispensable to carry that marking: without it the row could not be kept (as the clause's 'erases nothing' and 'stands as history' require) while still being excluded from what the brokerage currently asserts.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while a cdc_flag D report of a trade is understood to withdraw that trade's assertion rather than anything else, and while, once true (any anchored cdc_flag D report exists for the trade_number), this value is never reset to false by a later anchored report; L1.hole.deletion-reversal leaves open whether a report received after a withdrawal can resume the record, and until answered no job may treat such a report as resuming it, so this value only ever moves false to true.",
+      "physical_type": "boolean",
+      "review_trigger": "a trade_number with no anchored cdc_flag D report is found withdrawn, one with an anchored cdc_flag D report is found not withdrawn, or a trade previously marked withdrawn is found reset to not-withdrawn by a later report",
+      "semantic_kind": "trade_withdrawal_flag",
+      "sufficiency_group": "sg.trade-identity",
       "time_role": "none",
       "unit": "none"
     }
@@ -614,6 +639,29 @@
           "parallel_assumption": "Credible while every trade report carries a determinable quantity, from the moment it is placed onward.",
           "review_trigger": "a trade report carries no determinable quantity",
           "sufficiency_group": "sg.outcome"
+        },
+        {
+          "name": "withdrawn",
+          "semantic_type": "trade_withdrawn",
+          "derived_from": [
+            "L1.deletion-withdraws"
+          ],
+          "derivation": {
+            "kind": "computed_within_entity",
+            "rule": "true when at least one anchored, fully-coded raw.trade_cdc report of this trade_number carries cdc_flag D; false when none does. Not received from any source. Once true, never reset to false by a later anchored report: L1.hole.deletion-reversal leaves open whether a report received after a withdrawal resumes the record, and until answered no job may treat it as resuming, so this value is monotonic."
+          },
+          "disposition": "candidate",
+          "feedback": [
+            "inv.trade_withdrawn_matches_deletion_report",
+            "inv.trade_withdrawn_only_unclaimed",
+            "sketch-review"
+          ],
+          "necessity": "L1.deletion-withdraws states directly, for trades, that 'a withdrawn trade keeps its record and is marked withdrawn, it is not among the trades the brokerage asserts, and everything that already followed from it stands as history'; this attribute is the dedicated marking that clause requires, distinct from and additional to the outcome facts sg.outcome already carries, since the clause's assertion question ('is it among the trades asserted') is not the same question as sg.outcome's own status/executed-price/etc. content.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible while every anchored raw.trade_cdc report of a known trade_number is correctly classified I, U, or D, and while a D-flagged report is understood to withdraw the trade's assertion rather than to mean something else the anchored trade_code_meanings do not state. A trade_number whose only anchored reports are D-flagged is not persisted at all (inv.trade_withdrawn_only_unclaimed) -- this attribute never appears with value true and no other content, because such a trade has no row in the first place, per L1.deletion-withdraws' 'a thing whose only reports are withdrawals was never held at all.'",
+          "review_trigger": "a persisted trade with no anchored cdc_flag D report has withdrawn true, or a persisted trade with an anchored cdc_flag D report has withdrawn false",
+          "sufficiency_group": "sg.trade-identity"
         }
       ]
     }
@@ -642,7 +690,8 @@
       "to": "logical.trade.owning_account_number",
       "derived_from": [
         "L1.attribution-at-placement",
-        "L1.identity"
+        "L1.identity",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
@@ -650,10 +699,10 @@
         "inv.unknown_codes_held",
         "sketch-review"
       ],
-      "necessity": "L1.attribution-at-placement requires the trade's own account be named and fixed at first encounter; raw.trade_cdc's t_ca_id is the brokerage's own recorded account number on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_ca_id, per the clause's 'do not move a trade that was already placed.' raw.trade_history carries no account field, so this remains the only handoff for owning_account_number even for a historical-load trade whose placed_at is instead pinned from a raw.trade_history row.",
+      "necessity": "L1.attribution-at-placement requires the trade's own account be named and fixed at first encounter; raw.trade_cdc's t_ca_id is the brokerage's own recorded account number on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_ca_id, per the clause's 'do not move a trade that was already placed.' raw.trade_history carries no account field, so this remains the only handoff for owning_account_number even for a historical-load trade whose placed_at is instead pinned from a raw.trade_history row. L1.deletion-withdraws requires that a cdc_flag D report 'creates nothing' and that a trade whose only reports are withdrawals 'was never held at all'; this handoff's first_encounter_only selector therefore scans only anchored reports with cdc_flag I or U -- a D-flagged report is never the source of owning_account_number, whatever its position in report order.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_ca_id on a trade's first-encountered report names the account the trade was placed under. A raw.trade_cdc row carrying any unknown code -- cdc_flag, t_st_id, or t_tt_id -- is held as a whole under L1.unknown-codes and supplies no fact to any handoff, not only this one; a held row keeps its place in the order of reports and can still be this trade's first-encountered report, holding the trade under L1.hole.held-first-report-placement without any of its content being read for this handoff's purposes, and a trade whose every received report is held is not yet known to this job. A trade any of whose placement-fixing facts -- placement, owning account, or order type -- would come from a held report is held under L1.hole.held-first-report-placement until answered: the earliest raw.trade_cdc report is held, whatever another source's earliest report says. Until answered, this handoff supplies no owning_account_number value for such a trade, which is held and reported by inv.unknown_codes_held instead, together with inv.trade_held_first_report_unclaimed.",
-      "review_trigger": "t_ca_id is found to record something other than the trade's owning account, or to change across reports of the same trade",
+      "parallel_assumption": "Credible while t_ca_id on a trade's first-encountered report names the account the trade was placed under. A raw.trade_cdc row carrying any unknown code -- cdc_flag, t_st_id, or t_tt_id -- is held as a whole under L1.unknown-codes and supplies no fact to any handoff, not only this one; a held row keeps its place in the order of reports and can still be this trade's first-encountered report, holding the trade under L1.hole.held-first-report-placement without any of its content being read for this handoff's purposes, and a trade whose every received report is held is not yet known to this job. A trade any of whose placement-fixing facts -- placement, owning account, or order type -- would come from a held report is held under L1.hole.held-first-report-placement until answered: the earliest raw.trade_cdc report is held, whatever another source's earliest report says. Until answered, this handoff supplies no owning_account_number value for such a trade, which is held and reported by inv.unknown_codes_held instead, together with inv.trade_held_first_report_unclaimed. A cdc_flag D report is excluded from this handoff's first-encountered scan entirely, per L1.deletion-withdraws: it supplies no t_ca_id value and is never treated as the trade's first-encountered report for this purpose, even when it precedes every I/U report in report order.",
+      "review_trigger": "t_ca_id is found to record something other than the trade's owning account, or to change across reports of the same trade, or a cdc_flag D report is used to supply this attribute's value",
       "selector": "first_encounter_only",
       "sufficiency_group": "sg.trade-shape"
     },
@@ -661,7 +710,8 @@
       "from": "raw.trade_cdc.t_dts",
       "to": "logical.trade.placed_at",
       "derived_from": [
-        "L1.placement-moment"
+        "L1.placement-moment",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
@@ -670,10 +720,10 @@
         "inv.unknown_codes_held",
         "sketch-review"
       ],
-      "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. raw.trade_cdc's t_dts is that report's own recorded time; for a trade whose only held reports are Trade change records (every incrementally loaded trade, and any historical-load trade with no anchored TradeHistory rows), t_dts on the first-encountered such row is the earliest report the brokerage holds. For a historical-load trade with anchored raw.trade_history rows, the earliest held report is one of those instead (see the sibling handoff from raw.trade_history.th_dts), so this handoff and that one together, both under selector first_encounter_only, supply placed_at across the two anchored report sources; this handoff never takes a later report's t_dts.",
+      "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. raw.trade_cdc's t_dts is that report's own recorded time; for a trade whose only held reports are Trade change records (every incrementally loaded trade, and any historical-load trade with no anchored TradeHistory rows), t_dts on the first-encountered such row is the earliest report the brokerage holds. For a historical-load trade with anchored raw.trade_history rows, the earliest held report is one of those instead (see the sibling handoff from raw.trade_history.th_dts), so this handoff and that one together, both under selector first_encounter_only, supply placed_at across the two anchored report sources; this handoff never takes a later report's t_dts. L1.deletion-withdraws requires that a cdc_flag D report 'creates nothing'; this handoff's first_encounter_only scan therefore considers only anchored cdc_flag I or U reports -- a D-flagged report is never the source of placed_at, whatever its position in report order.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_dts on a trade's first-encountered raw.trade_cdc report is the report's own stated time of that event, not a receipt or batch-load time, and while, for a historical-load trade, any earlier-held raw.trade_history rows are correctly preferred by the sibling handoff instead. A raw.trade_cdc row carrying any unknown code -- cdc_flag, t_st_id, or t_tt_id -- is held as a whole under L1.unknown-codes and supplies no fact to any handoff, not only this one; a held row keeps its place in the order of reports and can still be this trade's first-encountered report, holding the trade under L1.hole.held-first-report-placement without any of its content being read for this handoff's purposes. A trade any of whose placement-fixing facts -- placement, owning account, or order type -- would come from a held report is held under L1.hole.held-first-report-placement until answered: the earliest report of the source that supplies that fact is held, whatever another source's earliest report says. Until answered, this handoff supplies no placed_at value for such a trade, which is held and reported by inv.unknown_codes_held instead, together with inv.trade_held_first_report_unclaimed. A trade whose every received report is held is not yet known to this job.",
-      "review_trigger": "t_dts is found to record something other than the report's own event time, or a historical-load trade's raw.trade_cdc row is used for placed_at despite anchored raw.trade_history rows existing for that trade with an earlier th_dts",
+      "parallel_assumption": "Credible while t_dts on a trade's first-encountered raw.trade_cdc report is the report's own stated time of that event, not a receipt or batch-load time, and while, for a historical-load trade, any earlier-held raw.trade_history rows are correctly preferred by the sibling handoff instead. A raw.trade_cdc row carrying any unknown code -- cdc_flag, t_st_id, or t_tt_id -- is held as a whole under L1.unknown-codes and supplies no fact to any handoff, not only this one; a held row keeps its place in the order of reports and can still be this trade's first-encountered report, holding the trade under L1.hole.held-first-report-placement without any of its content being read for this handoff's purposes. A trade any of whose placement-fixing facts -- placement, owning account, or order type -- would come from a held report is held under L1.hole.held-first-report-placement until answered: the earliest report of the source that supplies that fact is held, whatever another source's earliest report says. Until answered, this handoff supplies no placed_at value for such a trade, which is held and reported by inv.unknown_codes_held instead, together with inv.trade_held_first_report_unclaimed. A trade whose every received report is held is not yet known to this job. A cdc_flag D report is excluded from this handoff's first-encountered scan entirely, per L1.deletion-withdraws, even when it precedes every I/U report in report order.",
+      "review_trigger": "t_dts is found to record something other than the report's own event time, or a historical-load trade's raw.trade_cdc row is used for placed_at despite anchored raw.trade_history rows existing for that trade with an earlier th_dts, or a cdc_flag D report is used to supply this attribute's value",
       "selector": "first_encounter_only",
       "sufficiency_group": "sg.placement-moment"
     },
@@ -701,7 +751,8 @@
       "from": "raw.trade_cdc.t_tt_id",
       "to": "logical.trade.order_type",
       "derived_from": [
-        "L1.placement-moment"
+        "L1.placement-moment",
+        "L1.deletion-withdraws"
       ],
       "disposition": "candidate",
       "feedback": [
@@ -710,10 +761,10 @@
         "inv.unknown_codes_held",
         "sketch-review"
       ],
-      "necessity": "L1.placement-moment (amended) requires the order's type to determine its first lifecycle event; raw.trade_cdc's t_tt_id is the brokerage's own recorded order-type code on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_tt_id, mirroring owning_account_number's first_encounter_only handoff since raw.trade_history carries no order-type field either.",
+      "necessity": "L1.placement-moment (amended) requires the order's type to determine its first lifecycle event; raw.trade_cdc's t_tt_id is the brokerage's own recorded order-type code on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_tt_id, mirroring owning_account_number's first_encounter_only handoff since raw.trade_history carries no order-type field either. L1.deletion-withdraws requires that a cdc_flag D report 'creates nothing'; this handoff's first_encounter_only scan therefore considers only anchored cdc_flag I or U reports, mirroring owning_account_number and placed_at.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_tt_id on a trade's first-encountered raw.trade_cdc report names the order's own type and is anchored by trade_code_meanings.trade_type_codes. A raw.trade_cdc row carrying any unknown code -- cdc_flag, t_st_id, or t_tt_id -- is held as a whole under L1.unknown-codes and supplies no fact to any handoff, not only this one; a held row keeps its place in the order of reports and can still be this trade's first-encountered report, holding the trade under L1.hole.held-first-report-placement without any of its content being read for this handoff's purposes, and a trade whose every received report is held is not yet known to this job. A trade any of whose placement-fixing facts -- placement, owning account, or order type -- would come from a held report is held under L1.hole.held-first-report-placement until answered: the earliest raw.trade_cdc report is held, whatever another source's earliest report says. Until answered, this handoff supplies no order_type value for such a trade, which is held and reported by inv.unknown_codes_held instead, together with inv.trade_held_first_report_unclaimed.",
-      "review_trigger": "t_tt_id is found to record a value outside {TLB, TLS, TMB, TMS}, or to change across reports of the same trade",
+      "parallel_assumption": "Credible while t_tt_id on a trade's first-encountered raw.trade_cdc report names the order's own type and is anchored by trade_code_meanings.trade_type_codes. A raw.trade_cdc row carrying any unknown code -- cdc_flag, t_st_id, or t_tt_id -- is held as a whole under L1.unknown-codes and supplies no fact to any handoff, not only this one; a held row keeps its place in the order of reports and can still be this trade's first-encountered report, holding the trade under L1.hole.held-first-report-placement without any of its content being read for this handoff's purposes, and a trade whose every received report is held is not yet known to this job. A trade any of whose placement-fixing facts -- placement, owning account, or order type -- would come from a held report is held under L1.hole.held-first-report-placement until answered: the earliest raw.trade_cdc report is held, whatever another source's earliest report says. Until answered, this handoff supplies no order_type value for such a trade, which is held and reported by inv.unknown_codes_held instead, together with inv.trade_held_first_report_unclaimed. A cdc_flag D report is excluded from this handoff's first-encountered scan entirely, per L1.deletion-withdraws, even when it precedes every I/U report in report order.",
+      "review_trigger": "t_tt_id is found to record a value outside {TLB, TLS, TMB, TMS}, or to change across reports of the same trade, or a cdc_flag D report is used to supply this attribute's value",
       "selector": "first_encounter_only",
       "sufficiency_group": "sg.placement-moment"
     },
@@ -894,22 +945,42 @@
       "review_trigger": "t_qty is found to record something other than quantity",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
+    },
+    {
+      "from": "raw.trade_cdc.cdc_flag",
+      "to": "logical.trade.withdrawn",
+      "derived_from": [
+        "L1.deletion-withdraws"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "inv.trade_withdrawn_matches_deletion_report",
+        "inv.unknown_codes_held",
+        "sketch-review"
+      ],
+      "necessity": "L1.deletion-withdraws requires a withdrawn trade to be 'marked withdrawn'; raw.trade_cdc's cdc_flag is the brokerage's own report of whether a row is a withdrawal (D), so this handoff is the direct source of that marking -- true if any anchored report of the trade_number carries D, false otherwise.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while cdc_flag D anchors 'withdrawal' per trade_code_meanings and L1.deletion-withdraws, and while an unanchored cdc_flag (held under L1.unknown-codes) supplies no evidence either way -- a held row is excluded from this handoff's scan entirely, exactly as for the other coded-field handoffs on this entity.",
+      "review_trigger": "a trade_number's withdrawn value disagrees with whether any of its anchored raw.trade_cdc reports carries cdc_flag D",
+      "selector": "any_anchored_d_flagged_report",
+      "sufficiency_group": "sg.trade-identity"
     }
   ],
   "invariants": [
     {
       "id": "inv.trade_owning_account_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, every anchored (not held under L1.unknown-codes) raw.trade_cdc report of that trade carries the same t_ca_id as the trade's first-encountered anchored report; owning_account_number is set once at that first anchored encounter and is never replaced by a later anchored report. A held report is not evidence either way: it neither confirms nor contradicts owning_account_number, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business.",
+      "statement": "For any trade_number, every anchored (not held under L1.unknown-codes), non-D-flagged (cdc_flag I or U) raw.trade_cdc report of that trade carries the same t_ca_id as the trade's first-encountered such report; owning_account_number is set once at that first anchored encounter and is never replaced by a later anchored report. A held report is not evidence either way: it neither confirms nor contradicts owning_account_number, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business. A cdc_flag D report is excluded from this comparison entirely, per L1.deletion-withdraws: it supplies no t_ca_id value and is never treated as the trade's first-encountered report, whatever its position in report order.",
       "derived_from": [
-        "L1.attribution-at-placement"
+        "L1.attribution-at-placement",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the account a trade is recorded against. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm the frozen t_ca_id (its content is not read) nor contradict it (it is not treated as a later report carrying a different value); this invariant quantifies over anchored reports only.",
+      "necessity": "L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the account a trade is recorded against. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm the frozen t_ca_id (its content is not read) nor contradict it (it is not treated as a later report carrying a different value); this invariant quantifies over anchored reports only. L1.deletion-withdraws requires that a D-flagged report create nothing, so it cannot be the first-encountered report this invariant's comparison is anchored to, nor a later report that could (wrongly) appear to contradict owning_account_number.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while raw.trade_cdc never legitimately reassigns a trade to a different account after its first anchored report; a contradiction among anchored reports would indicate a data error or an unaddressed business rule, not a value this attribute should adopt. A held report supplies no t_ca_id value and is excluded from this comparison entirely, per L1.unknown-codes.",
       "review_trigger": "a later anchored raw.trade_cdc report of a known trade_number carries a t_ca_id different from the one recorded at first anchored encounter",
@@ -918,18 +989,19 @@
     {
       "id": "inv.trade_placement_reference_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, placed_at, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each set once -- from the trade's first-encountered anchored report and the account and customer statements resolved as of that report's own time -- and are never replaced by a later anchored report of the same trade. A held report is not evidence either way: it neither confirms nor contradicts these values, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business.",
+      "statement": "For any trade_number, placed_at, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each set once -- from the trade's first-encountered anchored, non-D-flagged (cdc_flag I or U, where the report is a raw.trade_cdc row) report and the account and customer statements resolved as of that report's own time -- and are never replaced by a later anchored report of the same trade. A held report is not evidence either way: it neither confirms nor contradicts these values, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business. A cdc_flag D report is excluded from this invariant's comparison entirely, per L1.deletion-withdraws: it supplies none of these values and is never the trade's first-encountered report for this purpose.",
       "derived_from": [
         "L1.placement-moment",
         "L1.attribution-at-placement",
-        "L1.closed-account-activity"
+        "L1.closed-account-activity",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.placement-moment fixes placement to the earliest held report's own time, and L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the placement-moment reference attributes. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm these frozen values (its content is not read) nor contradict them (it is not treated as a later report carrying a different value); this invariant quantifies over anchored reports only. L1.closed-account-activity's 'closing unwinds nothing already attributed' is this invariant's own claim seen from the account's side: owning_account_effective_from is frozen at the trade's first anchored encounter and is never re-resolved against a later account statement, so an account's own later closing statement -- itself just a later statement of the account, not of the trade -- can never move or unwind a reference this invariant already fixed.",
+      "necessity": "L1.placement-moment fixes placement to the earliest held report's own time, and L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the placement-moment reference attributes. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm these frozen values (its content is not read) nor contradict them (it is not treated as a later report carrying a different value); this invariant quantifies over anchored reports only. L1.closed-account-activity's 'closing unwinds nothing already attributed' is this invariant's own claim seen from the account's side: owning_account_effective_from is frozen at the trade's first anchored encounter and is never re-resolved against a later account statement, so an account's own later closing statement -- itself just a later statement of the account, not of the trade -- can never move or unwind a reference this invariant already fixed. L1.deletion-withdraws requires that a D-flagged report create nothing, so it is never the first-encountered report these reference attributes are pinned from.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while a later anchored report of a known trade, from either anchored source (raw.trade_cdc or raw.trade_history), never carries an earlier event time than the one already recorded as placed_at. A held report supplies no event time and is excluded from this comparison entirely, per L1.unknown-codes.",
       "review_trigger": "a later anchored report of a known trade_number, from either anchored source, carries an event time earlier than its recorded placed_at, or any of placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from is found replaced after first encounter by an anchored report",
@@ -938,34 +1010,36 @@
     {
       "id": "inv.trade_placed_at_matches_earliest_report",
       "entity": "logical.trade",
-      "statement": "For any trade_number whose earliest report (across both anchored sources) is not held under L1.unknown-codes, placed_at equals th_dts of the trade's earliest raw.trade_history row when any raw.trade_history rows exist for that trade, and otherwise equals t_dts of the trade's earliest raw.trade_cdc row (smallest (batch_date, cdc_dsn)). A trade whose earliest report is itself held, with a later report that is not, is unclaimed by this invariant until L1.hole.held-first-report-placement is answered: it is held and reported by inv.unknown_codes_held, given no placed_at value and no logical.trade row by this job.",
+      "statement": "For any trade_number whose earliest report (across both anchored sources) is not held under L1.unknown-codes, placed_at equals th_dts of the trade's earliest raw.trade_history row when any raw.trade_history rows exist for that trade, and otherwise equals t_dts of the trade's earliest non-D-flagged (cdc_flag I or U) raw.trade_cdc row (smallest (batch_date, cdc_dsn) among I/U rows only). A trade whose earliest report is itself held, with a later report that is not, is unclaimed by this invariant until L1.hole.held-first-report-placement is answered: it is held and reported by inv.unknown_codes_held, given no placed_at value and no logical.trade row by this job.",
       "derived_from": [
-        "L1.placement-moment"
+        "L1.placement-moment",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.placement-moment defines placement as the moment stated by the earliest report the brokerage holds, and the anchored trade_code_meanings.report_order states which row that is across the two anchored sources; inv.trade_placement_reference_frozen checks only that placed_at is set once and never replaced, not that the value it was set to is the correct earliest-report time. This invariant is the direct, checkable restatement of that correctness: without it, a placed_at wrongly fixed at a later report's time (for example, a historical-load trade's snapshot row instead of its earliest TradeHistory row) would still pass the 'set once' check.",
+      "necessity": "L1.placement-moment defines placement as the moment stated by the earliest report the brokerage holds, and the anchored trade_code_meanings.report_order states which row that is across the two anchored sources; inv.trade_placement_reference_frozen checks only that placed_at is set once and never replaced, not that the value it was set to is the correct earliest-report time. This invariant is the direct, checkable restatement of that correctness: without it, a placed_at wrongly fixed at a later report's time (for example, a historical-load trade's snapshot row instead of its earliest TradeHistory row) would still pass the 'set once' check. L1.deletion-withdraws requires that a cdc_flag D report create nothing, so an earlier D-flagged raw.trade_cdc row than the earliest I/U row must not be read as an earlier placement; this invariant's restriction to I/U rows for the raw.trade_cdc branch is the checkable form of that requirement.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while trade_code_meanings.report_order remains as anchored and every raw.trade_history row's th_dts and every raw.trade_cdc row's t_dts are each that row's own stated event time. L1.hole.held-first-report-placement bounds the case where a trade's earliest report is itself held and a later report is not: until answered, this invariant does not claim such a trade has any placed_at value at all, correct or otherwise.",
-      "review_trigger": "a trade with anchored raw.trade_history rows has placed_at set to anything other than the smallest th_dts among them, or a trade with none has placed_at set to anything other than t_dts of its smallest-(batch_date, cdc_dsn) raw.trade_cdc row",
+      "review_trigger": "a trade with anchored raw.trade_history rows has placed_at set to anything other than the smallest th_dts among them, or a trade with none has placed_at set to anything other than t_dts of its smallest-(batch_date, cdc_dsn) raw.trade_cdc row, or a trade's placed_at is found taken from an anchored cdc_flag D row",
       "sufficiency_group": "sg.placement-moment"
     },
     {
       "id": "inv.trade_first_seen_late_matches_status_order",
       "entity": "logical.trade",
-      "statement": "For any trade_number whose first-encountered report's status and order type are not held under L1.unknown-codes (per inv.unknown_codes_held), first_seen_late is true if and only if the trade's first-encountered report -- across both anchored sources, its earliest raw.trade_history row if any exist, otherwise its earliest raw.trade_cdc row -- carries a status (th_st_id or t_st_id, respectively) later than order_type's own first lifecycle event: PNDG for a limit order (TLB, TLS), per status_order's first entry; PNDG or SBMT, whichever the first-encountered report states, for a market order (TMB, TMS), per L1.placement-moment's amended sentence that the brokerage's own systems record a market order as pending on receipt, before routing it, so PNDG or SBMT is the order's own first lifecycle event and only CMPT or CNCL, later than SBMT, is late; using trade_code_meanings.status_order, trade_type_codes, and report_order to identify that first-encountered report and the order's type. A market order first reported PNDG is claimed by this invariant, as first_seen_late false, not excluded from it; an unknown code on a later report does not hold the first-encountered report and does not remove a trade from this invariant's claim.",
+      "statement": "For any trade_number whose first-encountered report's status and order type are not held under L1.unknown-codes (per inv.unknown_codes_held), first_seen_late is true if and only if the trade's first-encountered report -- across both anchored sources, its earliest raw.trade_history row if any exist, otherwise its earliest non-D-flagged (cdc_flag I or U) raw.trade_cdc row -- carries a status (th_st_id or t_st_id, respectively) later than order_type's own first lifecycle event: PNDG for a limit order (TLB, TLS), per status_order's first entry; PNDG or SBMT, whichever the first-encountered report states, for a market order (TMB, TMS), per L1.placement-moment's amended sentence that the brokerage's own systems record a market order as pending on receipt, before routing it, so PNDG or SBMT is the order's own first lifecycle event and only CMPT or CNCL, later than SBMT, is late; using trade_code_meanings.status_order, trade_type_codes, and report_order to identify that first-encountered report and the order's type. A market order first reported PNDG is claimed by this invariant, as first_seen_late false, not excluded from it; an unknown code on a later report does not hold the first-encountered report and does not remove a trade from this invariant's claim.",
       "derived_from": [
-        "L1.placement-moment"
+        "L1.placement-moment",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.placement-moment (amended) defines first seen late by reference to whether the earliest held report is later than the trade's true first lifecycle stage, now order-type-dependent since an order sent straight to market has no pending stage of its own and, where the brokerage's own systems record such an order as pending before routing it, that pending record is likewise the order's own first lifecycle event and not late; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule over the trades it decides, leaving only the case where the first-encountered report itself is held -- reported by inv.unknown_codes_held (its status or order type) -- to inv.trade_first_seen_late_defined_or_held instead. The pending-market-order case L1.hole.market-order-seen-pending once bounded is now decided by the clause's own amendment and is claimed here like any other trade, not deferred to a held-invariant; a held report elsewhere in the trade's history does not narrow this invariant's claim.",
+      "necessity": "L1.placement-moment (amended) defines first seen late by reference to whether the earliest held report is later than the trade's true first lifecycle stage, now order-type-dependent since an order sent straight to market has no pending stage of its own and, where the brokerage's own systems record such an order as pending before routing it, that pending record is likewise the order's own first lifecycle event and not late; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule over the trades it decides, leaving only the case where the first-encountered report itself is held -- reported by inv.unknown_codes_held (its status or order type) -- to inv.trade_first_seen_late_defined_or_held instead. The pending-market-order case L1.hole.market-order-seen-pending once bounded is now decided by the clause's own amendment and is claimed here like any other trade, not deferred to a held-invariant; a held report elsewhere in the trade's history does not narrow this invariant's claim. L1.deletion-withdraws requires that a cdc_flag D report create nothing, so it is excluded from being the first-encountered report this invariant's own comparison is anchored to.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while trade_code_meanings.status_order, trade_type_codes, and report_order remain as anchored, and while order_type correctly reflects the trade's first-encountered raw.trade_cdc report's t_tt_id.",
       "review_trigger": "for a trade whose first-encountered report's status and order type are not held under L1.unknown-codes, first_seen_late is found true for one whose first-encountered report has status at or before its order_type's own first lifecycle event, or false for one whose status is later than it",
@@ -1049,19 +1123,20 @@
     {
       "id": "inv.every_received_trade_persisted",
       "entity": "logical.trade",
-      "statement": "For any trade_number that has at least one received raw.trade_cdc report whose coded fields (cdc_flag, t_st_id, t_tt_id) are all anchored and that does not carry cdc_flag D, and none of whose placement-fixing facts (placement, owning account, or order type) would come from a held report, exactly one logical.trade row exists for that trade_number. A trade_number with any cdc_flag D report among its received raw.trade_cdc reports is L1.hole.deletions' case and is not claimed by this invariant. A trade_number known only through reports held under L1.unknown-codes, or known only through raw.trade_history rows (raw.trade_history alone carries no identity handoff and cannot by itself establish a logical.trade row), is not yet known to this job and is not claimed by this invariant either; inv.unknown_codes_held reports each held report instead. A trade_number any of whose placement-fixing facts would come from a held report -- the earliest report of the source that supplies that fact is held, whatever another source's earliest report says -- is likewise not yet claimed, pending L1.hole.held-first-report-placement; inv.trade_held_first_report_unclaimed makes this the audit's own checkable claim, and inv.trade_placed_at_matches_earliest_report and inv.trade_first_seen_late_defined_or_held agree.",
+      "statement": "For any trade_number that has at least one received raw.trade_cdc report with cdc_flag I or U whose coded fields (cdc_flag, t_st_id, t_tt_id) are all anchored, and none of whose placement-fixing facts (placement, owning account, or order type) would come from a held report, exactly one logical.trade row exists for that trade_number -- whether or not that trade_number also has one or more anchored cdc_flag D reports; when it does, that row's withdrawn attribute is true, and its ownership and placement facts are still pinned from its first-encountered I/U report, never from the D report, per the sibling handoffs and invariants. A trade_number whose anchored, fully-coded raw.trade_cdc reports exist but are all cdc_flag D (no I or U report among them at all) is not claimed by this invariant; it is claimed absent instead by inv.trade_withdrawn_only_unclaimed, per L1.deletion-withdraws' 'a thing whose only reports are withdrawals was never held at all.' A trade_number known only through reports held under L1.unknown-codes, or known only through raw.trade_history rows (raw.trade_history alone carries no identity handoff and cannot by itself establish a logical.trade row), is not yet known to this job and is not claimed by this invariant either; inv.unknown_codes_held reports each held report instead. A trade_number any of whose placement-fixing facts would come from a held report -- the earliest report of the source that supplies that fact is held, whatever another source's earliest report says -- is likewise not yet claimed, pending L1.hole.held-first-report-placement; inv.trade_held_first_report_unclaimed makes this the audit's own checkable claim, and inv.trade_placed_at_matches_earliest_report and inv.trade_first_seen_late_defined_or_held agree.",
       "derived_from": [
-        "L1.identity"
+        "L1.identity",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.identity requires a trade_number the brokerage already identifies to be the same persistent thing across every report of it, not a thing this job may simply fail to track. This invariant restates that persistence requirement as completeness rather than only as consistency (which inv.trade_owning_account_frozen and sg.trade-identity's own coverage already check): every trade_number that has at least one received raw.trade_cdc report with fully anchored codes and no cdc_flag D, and whose earliest report is not itself held, must appear as exactly one logical.trade row; a trade_number with any cdc_flag D report is L1.hole.deletions' case and is not claimed here. raw.trade_history alone cannot satisfy this invariant's existential: the entity's only identity handoff is raw.trade_cdc.t_id -> trade_number, so a trade_number known only through raw.trade_history rows, with no raw.trade_cdc report at all, has no handoff that could ever produce trade_number for it, and is not claimed here either. A trade this job cannot pin (sg.placement-moment) is therefore a violation this invariant names, not a row the job is silently permitted to omit; together with inv.trade_ownership_pin_present, a trade whose pin does not resolve fires the same violation on every engine projection instead of being decided differently by whichever join shape a projection happens to use. L1.unknown-codes' clarification that a held report changes nothing and creates nothing, and that a trade known only through held reports is not yet known to the job, is why this invariant does not claim such a trade; inv.unknown_codes_held reports the held report(s) instead, not this invariant. L1.hole.held-first-report-placement bounds a trade any of whose placement-fixing facts (placement, owning account, or order type) would come from a held report: until answered, this invariant does not claim it either, agreeing with inv.trade_placed_at_matches_earliest_report, inv.trade_first_seen_late_defined_or_held, and inv.trade_held_first_report_unclaimed, which makes the absence its own checkable audit.",
+      "necessity": "L1.identity requires a trade_number the brokerage already identifies to be the same persistent thing across every report of it, not a thing this job may simply fail to track. This invariant restates that persistence requirement as completeness rather than only as consistency (which inv.trade_owning_account_frozen and sg.trade-identity's own coverage already check): every trade_number that has at least one received raw.trade_cdc report with fully anchored codes and no cdc_flag D, and whose earliest report is not itself held, must appear as exactly one logical.trade row; a trade_number with any cdc_flag D report is L1.hole.deletions' case and is not claimed here. raw.trade_history alone cannot satisfy this invariant's existential: the entity's only identity handoff is raw.trade_cdc.t_id -> trade_number, so a trade_number known only through raw.trade_history rows, with no raw.trade_cdc report at all, has no handoff that could ever produce trade_number for it, and is not claimed here either. A trade this job cannot pin (sg.placement-moment) is therefore a violation this invariant names, not a row the job is silently permitted to omit; together with inv.trade_ownership_pin_present, a trade whose pin does not resolve fires the same violation on every engine projection instead of being decided differently by whichever join shape a projection happens to use. L1.unknown-codes' clarification that a held report changes nothing and creates nothing, and that a trade known only through held reports is not yet known to the job, is why this invariant does not claim such a trade; inv.unknown_codes_held reports the held report(s) instead, not this invariant. L1.hole.held-first-report-placement bounds a trade any of whose placement-fixing facts (placement, owning account, or order type) would come from a held report: until answered, this invariant does not claim it either, agreeing with inv.trade_placed_at_matches_earliest_report, inv.trade_first_seen_late_defined_or_held, and inv.trade_held_first_report_unclaimed, which makes the absence its own checkable audit. L1.deletion-withdraws settles what a cdc_flag D report means for this invariant's existential claim in both directions, replacing the prior provisional exclusion of every D-having trade_number: a trade withdrawn after an earlier I or U report is claimed present (and marked withdrawn, per sg.trade-identity's new withdrawn attribute), because 'it does not reach back through what already followed' and 'everything that already followed from it stands as history'; a trade_number whose only anchored reports are D is claimed absent, because 'a thing whose only reports are withdrawals was never held at all.' Before this clause, this invariant excluded any D-having trade_number wholesale, leaving both directions to L1.hole.deletions; that hole is now closed and this invariant states the decided rule directly.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while every raw.trade_cdc row with cdc_flag I or U, and every raw.trade_history row, reports a trade_number the business considers a real, receivable trade, and while a trade with at least one raw.trade_cdc report whose coded fields are all anchored is correctly distinguished from one whose received reports are all held. L1.hole.deletions bounds what a cdc_flag D report means for a trade's persistence -- whether its trade_number must still appear as a row, must be removed, or something else -- so this invariant is quantified only over trade_numbers none of whose received raw.trade_cdc reports carries cdc_flag D at all, leaving a trade_number with any D report entirely to that hole, not merely excluding the D-flagged report itself from an otherwise-qualifying trade. The anchored trade_code_meanings.report_order.note states that a historical-load trade's held reports are its TradeHistory rows together with the snapshot Trade row, so every th_t_id also appears as a Batch1 t_id (cdc_flag I, cdc_dsn 0); this invariant's coverage of a historical-load trade therefore rests on that same snapshot row's raw.trade_cdc report, not on a raw.trade_history handoff this model does not define. L1.hole.held-first-report-placement bounds a trade any of whose placement-fixing facts would come from a held report; until answered, this invariant does not claim a row for it.",
-      "review_trigger": "a trade_number that has at least one received raw.trade_cdc report with fully anchored codes, no cdc_flag D report, and no placement-fixing fact from a held report does not appear as exactly one logical.trade row, a th_t_id appears in raw.trade_history with no corresponding t_id row in any batch of raw.trade_cdc, a trade_number known only through reports held under L1.unknown-codes appears as a logical.trade row, or a trade_number any of whose placement-fixing facts would come from a held report appears as a logical.trade row before L1.hole.held-first-report-placement is answered",
+      "review_trigger": "a trade_number that has at least one received raw.trade_cdc report with fully anchored codes and cdc_flag I or U, and no placement-fixing fact from a held report, does not appear as exactly one logical.trade row (whether or not it also has a D report), a trade_number appears as a logical.trade row despite having no anchored I or U report at all, a th_t_id appears in raw.trade_history with no corresponding t_id row in any batch of raw.trade_cdc, a trade_number known only through reports held under L1.unknown-codes appears as a logical.trade row, or a trade_number any of whose placement-fixing facts would come from a held report appears as a logical.trade row before L1.hole.held-first-report-placement is answered",
       "sufficiency_group": "sg.trade-identity"
     },
     {
@@ -1070,14 +1145,15 @@
       "statement": "For any trade_number that inv.every_received_trade_persisted claims a logical.trade row for, first_seen_late is null if and only if inv.unknown_codes_held reports its first-encountered report's status or order type as outside the anchored vocabularies. first_seen_late is non-null (true or false) for every other such trade, including a market order first reported PNDG, which is now decided (false) rather than held. A trade_number any of whose placement-fixing facts (placement, owning account, or order type) would come from a held report is not claimed by inv.every_received_trade_persisted at all, pending L1.hole.held-first-report-placement, and so has no first_seen_late value for this invariant to claim either.",
       "derived_from": [
         "L1.placement-moment",
-        "L1.unknown-codes"
+        "L1.unknown-codes",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.unknown-codes carves out the one case L1.placement-moment's amended rule does not decide; this invariant is the direct, checkable restatement that first_seen_late's nullability tracks exactly that held set and no others -- a trade is not left null for any other reason, and is not decided (true or false) for it. The pending-market-order case this invariant once also carved out is decided by the business's answer to L1.hole.market-order-seen-pending, closing that hole; the held set shrinks to the unknown-code case alone. It agrees with inv.every_received_trade_persisted, inv.trade_placed_at_matches_earliest_report, and inv.trade_held_first_report_unclaimed that a trade any of whose placement-fixing facts would come from a held report is unclaimed under L1.hole.held-first-report-placement rather than given first_seen_late null: such a trade has no logical.trade row at all, not a row with a null flag.",
+      "necessity": "L1.unknown-codes carves out the one case L1.placement-moment's amended rule does not decide; this invariant is the direct, checkable restatement that first_seen_late's nullability tracks exactly that held set and no others -- a trade is not left null for any other reason, and is not decided (true or false) for it. The pending-market-order case this invariant once also carved out is decided by the business's answer to L1.hole.market-order-seen-pending, closing that hole; the held set shrinks to the unknown-code case alone. It agrees with inv.every_received_trade_persisted, inv.trade_placed_at_matches_earliest_report, and inv.trade_held_first_report_unclaimed that a trade any of whose placement-fixing facts would come from a held report is unclaimed under L1.hole.held-first-report-placement rather than given first_seen_late null: such a trade has no logical.trade row at all, not a row with a null flag. This invariant's claim is over trade_numbers inv.every_received_trade_persisted claims a row for; since that claim already excludes D-only trade_numbers and defines first-encountered as the earliest I/U report, no separate deletion-related carve-out is needed here.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while inv.unknown_codes_held enumerates every case this job holds rather than decides among trades inv.every_received_trade_persisted claims; a second undecided case would need its own hole and its own held-invariant before this one could still hold. L1.hole.held-first-report-placement bounds a trade this invariant does not reach at all, since inv.every_received_trade_persisted (and inv.trade_held_first_report_unclaimed) does not claim it a row in the first place.",
       "review_trigger": "first_seen_late is null for a claimed trade inv.unknown_codes_held does not report as held, non-null for a claimed trade inv.unknown_codes_held reports as held, or present at all for a trade inv.every_received_trade_persisted does not claim",
@@ -1096,7 +1172,7 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.hole.held-first-report-placement holds a trade any of whose placement-fixing facts would come from a held report, until the hole is answered; L1.unknown-codes' clarification that a held report changes nothing and creates nothing is why such a trade has no row at all, not a row with placeholder or carried-forward values. inv.every_received_trade_persisted, inv.trade_placed_at_matches_earliest_report, and inv.trade_first_seen_late_defined_or_held each already agree that such a trade is unclaimed; this invariant is the direct, checkable restatement of that absence as its own audit, distinct from those invariants' own claims about what a row looks like when one is claimed, so no engine projection can silently supply a row for a trade this hole holds by leaving the absence itself unaudited.",
+      "necessity": "L1.hole.held-first-report-placement holds a trade any of whose placement-fixing facts would come from a held report, until the hole is answered; L1.unknown-codes' clarification that a held report changes nothing and creates nothing is why such a trade has no row at all, not a row with placeholder or carried-forward values. inv.every_received_trade_persisted, inv.trade_placed_at_matches_earliest_report, and inv.trade_first_seen_late_defined_or_held each already agree that such a trade is unclaimed; this invariant is the direct, checkable restatement of that absence as its own audit, distinct from those invariants' own claims about what a row looks like when one is claimed, so no engine projection can silently supply a row for a trade this hole holds by leaving the absence itself unaudited. This invariant is unaffected by L1.deletion-withdraws: it concerns reports held under L1.unknown-codes for an unanchored code, a different reason for absence than a trade whose only reports are withdrawals, which inv.trade_withdrawn_only_unclaimed covers instead.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while L1.hole.held-first-report-placement remains open and inv.unknown_codes_held correctly identifies which of a trade's reports are held; once the hole is answered, this invariant's claim -- that no row exists -- may need to be revisited or retired depending on the answer.",
       "review_trigger": "a trade_number whose earliest report of either anchored source is held, or any of whose placement-fixing facts would come from a held report, appears as a logical.trade row",
@@ -1126,16 +1202,17 @@
     {
       "id": "inv.trade_order_type_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered anchored raw.trade_cdc report, and is never replaced by a later anchored report's t_tt_id. A held report is not evidence either way: it neither confirms nor contradicts order_type, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business.",
+      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered anchored, non-D-flagged (cdc_flag I or U) raw.trade_cdc report, and is never replaced by a later anchored report's t_tt_id. A held report is not evidence either way: it neither confirms nor contradicts order_type, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business. A cdc_flag D report is excluded from this invariant's comparison entirely, per L1.deletion-withdraws.",
       "derived_from": [
-        "L1.lifecycle-mutates-outcome"
+        "L1.lifecycle-mutates-outcome",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "order_type's own type element cites L1.lifecycle-mutates-outcome's enumeration of the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and its statement that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it. This invariant is stated like inv.trade_owning_account_frozen -- checking every anchored report for agreement with the first-encountered one, not only that the first-encountered value is never replaced -- because an order's type (limit or market, buy or sell) is fixed at placement by the same brokerage convention that fixes the owning account: neither trade_code_meanings nor the Sketch names a legitimate later correction to an order's type, unlike status, which L1.lifecycle-mutates-outcome names directly as mutable outcome. A disagreement among a trade's anchored reports about t_tt_id therefore indicates a data error, not a value this attribute should adopt, so both engines check the one stronger proposition rather than two engines each choosing a different, weaker one. This invariant is the direct, checkable restatement of that freeze -- order_type equals the trade's first-encountered anchored raw.trade_cdc report's t_tt_id and is never replaced -- as its own audit, exactly as inv.trade_owning_account_frozen restates the analogous freeze for owning_account_number, so an L3 audit need not embed the check inside another invariant's own audit. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm the frozen order_type (its content is not read) nor contradict it; this invariant quantifies over anchored reports only.",
+      "necessity": "order_type's own type element cites L1.lifecycle-mutates-outcome's enumeration of the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and its statement that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it. This invariant is stated like inv.trade_owning_account_frozen -- checking every anchored report for agreement with the first-encountered one, not only that the first-encountered value is never replaced -- because an order's type (limit or market, buy or sell) is fixed at placement by the same brokerage convention that fixes the owning account: neither trade_code_meanings nor the Sketch names a legitimate later correction to an order's type, unlike status, which L1.lifecycle-mutates-outcome names directly as mutable outcome. A disagreement among a trade's anchored reports about t_tt_id therefore indicates a data error, not a value this attribute should adopt, so both engines check the one stronger proposition rather than two engines each choosing a different, weaker one. This invariant is the direct, checkable restatement of that freeze -- order_type equals the trade's first-encountered anchored raw.trade_cdc report's t_tt_id and is never replaced -- as its own audit, exactly as inv.trade_owning_account_frozen restates the analogous freeze for owning_account_number, so an L3 audit need not embed the check inside another invariant's own audit. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm the frozen order_type (its content is not read) nor contradict it; this invariant quantifies over anchored reports only. L1.deletion-withdraws requires that a D-flagged report create nothing, so it cannot be the first-encountered report order_type is pinned from.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while t_tt_id on a trade's first-encountered anchored raw.trade_cdc report is the order's own type and is never legitimately corrected by a later anchored report. A held report supplies no t_tt_id value and is excluded from this comparison entirely, per L1.unknown-codes.",
       "review_trigger": "a later anchored raw.trade_cdc report of a known trade_number carries a t_tt_id different from the one recorded at first anchored encounter",
@@ -1158,6 +1235,42 @@
       "parallel_assumption": "Holds while trade_code_meanings.status_codes, trade_type_codes, and cdc_flag remain as anchored and exhaustively enumerate the codes each field may carry; a row whose coded field falls outside its vocabulary is not decided by this job to be an error, a future code, or something else -- only reported.",
       "review_trigger": "a raw.trade_cdc row carries a cdc_flag outside {I, U, D}, a t_st_id outside {PNDG, SBMT, CMPT, CNCL}, or a t_tt_id outside {TLB, TLS, TMB, TMS}; or a raw.trade_history row carries a th_st_id outside {PNDG, SBMT, CMPT, CNCL}",
       "sufficiency_group": "sg.unknown-codes"
+    },
+    {
+      "id": "inv.trade_withdrawn_only_unclaimed",
+      "entity": "logical.trade",
+      "statement": "For any trade_number whose anchored, fully-coded raw.trade_cdc reports exist and are all cdc_flag D (at least one such report, and no cdc_flag I or U report among them), no logical.trade row exists for that trade_number: no trade_number, no placement, no ownership, and no outcome is asserted for it.",
+      "derived_from": [
+        "L1.deletion-withdraws"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.deletion-withdraws states directly that 'a thing whose only reports are withdrawals was never held at all: there is no earlier statement for a withdrawal to end, so no statement, no trade, and no holding comes into being from it.' This invariant is the direct, checkable restatement of that absence for the trade entity, distinct from inv.trade_held_first_report_unclaimed (which withholds a row pending the still-open L1.hole.held-first-report-placement) and from inv.every_received_trade_persisted's own positive claim (which this invariant complements rather than duplicates): a D-only trade_number is not merely uncovered by that invariant, it is affirmatively claimed absent by this one.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while every anchored raw.trade_cdc report of a trade_number is correctly classified I, U, or D, and while the received records continue to carry no cdc_flag D row at all -- so this invariant's positive claim is untested by received data and is exercised only by a labeled constructed scenario under L1.constructed-scenarios' withdrawal exception; none such exists yet for this job (no ce.trade_* source is anchored in sources-v1.json).",
+      "review_trigger": "a trade_number whose anchored, fully-coded raw.trade_cdc reports are all cdc_flag D appears as a logical.trade row",
+      "sufficiency_group": "sg.trade-identity"
+    },
+    {
+      "id": "inv.trade_withdrawn_matches_deletion_report",
+      "entity": "logical.trade",
+      "statement": "For any trade_number for which this job claims a logical.trade row (per inv.every_received_trade_persisted), withdrawn is true if and only if at least one anchored raw.trade_cdc report of that trade_number carries cdc_flag D.",
+      "derived_from": [
+        "L1.deletion-withdraws"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.deletion-withdraws requires a withdrawn trade to be 'marked withdrawn'; this invariant is the direct, checkable restatement of the withdrawn attribute's own derivation rule, exactly as inv.trade_first_seen_late_matches_status_order restates first_seen_late's derivation and inv.trade_outcome_updates_in_place restates the outcome handoffs' -- so an L3 audit need not embed this check inside another invariant's own audit.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while cdc_flag D continues to anchor 'withdrawal' and while every anchored raw.trade_cdc report of a claimed trade_number is correctly classified I, U, or D.",
+      "review_trigger": "a claimed trade_number's withdrawn value disagrees with whether any of its anchored raw.trade_cdc reports carries cdc_flag D",
+      "sufficiency_group": "sg.trade-identity"
     }
   ],
   "sufficiency_groups": [
@@ -1166,7 +1279,8 @@
       "parent_clauses": [
         "L1.identity",
         "L1.attribution-at-placement",
-        "L1.lifecycle-mutates-outcome"
+        "L1.lifecycle-mutates-outcome",
+        "L1.deletion-withdraws"
       ],
       "members": [
         "logical.trade",
@@ -1176,8 +1290,8 @@
         "inv.trade_owning_account_frozen"
       ],
       "mode": "all_required",
-      "coverage_claim": "logical.trade's history kind, incremental_by_identity, is the direct consequence of L1.identity (a trade is a persistent identified thing; a later report about the same trade number is the same trade, not a new one), L1.lifecycle-mutates-outcome (a later report updates outcome facts on this same row), and L1.attribution-at-placement (the trade's ownership, once established at placement, is never moved by a later report about the account or customer) -- together these entail one row per trade_number, updated in place, holding a frozen portion beside a mutable portion. The frozen portion's account-identity component is owning_account_number: raw.trade_cdc's t_ca_id, taken only from the trade's first-encountered report and never replaced by a later one, which inv.trade_owning_account_frozen restates directly. This is the part of L1.attribution-at-placement that names which account a trade belongs to, fixed at first encounter; the remaining part -- which dated statement of that account, and through it which customer, stood as of the moment of placement -- is now resolved by L1.placement-moment and covered by sg.placement-moment instead, since that is the more specific claim. This group's own scope is limited to the entity's shape and the account-identity portion. That portion is nonetheless bounded: owning_account_number is taken from the trade's first-encountered raw.trade_cdc report, identified by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order -- not from a report carrying which file delivered it, which L1.hole.batch-identity leaves open. It is also bounded by L1.hole.deletions: what a cdc_flag D row means is undecided, including whether the trade's first-encountered raw.trade_cdc report could itself be D-flagged and what that would mean for owning_account_number.",
-      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it; L1.hole.deletions bounds what a D-flagged first-encountered report would mean for owning_account_number."
+      "coverage_claim": "logical.trade's history kind, incremental_by_identity, is the direct consequence of L1.identity (a trade is a persistent identified thing; a later report about the same trade number is the same trade, not a new one), L1.lifecycle-mutates-outcome (a later report updates outcome facts on this same row), and L1.attribution-at-placement (the trade's ownership, once established at placement, is never moved by a later report about the account or customer) -- together these entail one row per trade_number, updated in place, holding a frozen portion beside a mutable portion. The frozen portion's account-identity component is owning_account_number: raw.trade_cdc's t_ca_id, taken only from the trade's first-encountered report and never replaced by a later one, which inv.trade_owning_account_frozen restates directly. This is the part of L1.attribution-at-placement that names which account a trade belongs to, fixed at first encounter; the remaining part -- which dated statement of that account, and through it which customer, stood as of the moment of placement -- is now resolved by L1.placement-moment and covered by sg.placement-moment instead, since that is the more specific claim. This group's own scope is limited to the entity's shape and the account-identity portion. That portion is nonetheless bounded: owning_account_number is taken from the trade's first-encountered raw.trade_cdc report, identified by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order -- not from a report carrying which file delivered it, which L1.hole.batch-identity leaves open. L1.deletion-withdraws now decides this directly: a cdc_flag D report creates nothing and so is never a candidate for the trade's first-encountered report, whatever its position in report order; owning_account_number is taken only from the first-encountered anchored report with cdc_flag I or U, per the handoff's and inv.trade_owning_account_frozen's updated scope. A trade_number whose anchored reports are all cdc_flag D has no owning_account_number and no logical.trade row at all (sg.trade-identity), which this group's own scope does not itself claim but does not contradict either.",
+      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it"
     },
     {
       "id": "sg.placement-moment",
@@ -1188,7 +1302,8 @@
         "L1.identity",
         "L1.lifecycle-mutates-outcome",
         "L1.unknown-codes",
-        "L1.closed-account-activity"
+        "L1.closed-account-activity",
+        "L1.deletion-withdraws"
       ],
       "members": [
         "type.trade_placed_at",
@@ -1219,23 +1334,29 @@
         "inv.trade_on_closed_account_reported"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time. placed_at is handed off, under selector first_encounter_only, from whichever anchored source holds that earliest report: raw.trade_cdc's t_dts for a trade whose held reports are Trade change records ordered by trade_code_meanings.report_order's (batch_date, cdc_dsn), or, for a historical-load trade with anchored raw.trade_history rows, raw.trade_history's th_dts on its earliest such row instead, per report_order's statement that such a trade's earliest held report is its earliest TradeHistory row, not its Trade snapshot; inv.trade_placed_at_matches_earliest_report makes this rule itself checkable, not merely that placed_at is set once. Together the two handoffs carry exactly that moment, frozen, across both anchored report sources; owning_account_number still comes only from raw.trade_cdc's t_ca_id regardless of which source supplies placed_at, since raw.trade_history carries no account field (sg.trade-shape). L1.attribution-at-placement requires the trade's ownership reference to be the pair of statements, account and customer, as they stood at that moment -- 'the account, and through it the customer, as they stood at the moment the trade was placed' -- not either one's current statement. L1.as-of defines each such answer as the upstream statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from, owning_customer_number, and owning_customer_effective_from as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account and customer entities they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies the exact account statement. owning_customer_number is handed off directly from that same pinned account statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it; owning_customer_effective_from, handed off from logical.customer.effective_from with selector as_of_event_time (also at or before placed_at), completes the (customer_number, effective_from) pair identifying the exact customer statement, satisfying the 'and through it the customer, as they stood' half of the clause in full -- not just which customer, but which of that customer's dated statements. inv.trade_placement_reference_frozen restates that all four reference attributes are set once, at first encounter, and never replaced. inv.trade_ownership_pin_present restates, as a single checkable fact, that a persisted trade never carries a null in any of these four attributes -- that the pin resolved, not merely that whatever it resolved to is frozen. first_seen_late, using trade_code_meanings.status_order and report_order together with order_type (handed off from raw.trade_cdc.t_tt_id under selector first_encounter_only and anchored, as to which codes exist and which are market or limit, by trade_code_meanings.trade_type_codes), marks a trade whose first-encountered report -- across both anchored sources -- as first seen late when its status (th_st_id or t_st_id) is later than its order type's first lifecycle event: PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage; so a limit order first reported anything other than PNDG is first seen late, and a market order first reported CMPT or CNCL is; the business has since answered L1.hole.market-order-seen-pending (closed): the brokerage's own systems record a market order as pending on receipt, before routing it, so a market order first reported PNDG or SBMT is decided, not held -- it is not first seen late, and inv.trade_first_seen_late_matches_status_order claims it directly rather than excluding it. Only an order type outside the anchored four remains undefined by this rule, held under L1.unknown-codes and reported by inv.unknown_codes_held (inv.trade_first_seen_late_defined_or_held restates that narrower held set). L1.closed-account-activity asks three things of this job: a trade placed on an account after that account's closing statement is reported for review; closing unwinds nothing already attributed; and activity never reopens an account, since no trade creates a statement. The first is met by inv.trade_on_closed_account_reported, which reports exactly such a trade without deciding whether the closure or the trade is wrong. The second is met by inv.trade_placement_reference_frozen, which now also carries this clause: owning_account_effective_from is frozen at the trade's first anchored encounter and never re-resolved against a later account statement, so a closing statement recorded after a trade's placement can never move or unwind that trade's already-fixed ownership reference. The third is trivially satisfied by this job, which produces no account statements at all -- accounts are consumed from ownership-history, never written here, so this job has no mechanism by which a trade could reopen one; trivial satisfaction is still a claim this coverage makes, not one it assumes without saying so. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account- and customer-statement pins against any upstream statement ownership-history has deferred (a CDC-sourced account or customer update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order) or, for raw.trade_history, th_dts ordering, not batch identity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim."
+      "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time. placed_at is handed off, under selector first_encounter_only, from whichever anchored source holds that earliest report: raw.trade_cdc's t_dts for a trade whose held reports are Trade change records ordered by trade_code_meanings.report_order's (batch_date, cdc_dsn), or, for a historical-load trade with anchored raw.trade_history rows, raw.trade_history's th_dts on its earliest such row instead, per report_order's statement that such a trade's earliest held report is its earliest TradeHistory row, not its Trade snapshot; inv.trade_placed_at_matches_earliest_report makes this rule itself checkable, not merely that placed_at is set once. Together the two handoffs carry exactly that moment, frozen, across both anchored report sources; owning_account_number still comes only from raw.trade_cdc's t_ca_id regardless of which source supplies placed_at, since raw.trade_history carries no account field (sg.trade-shape). L1.attribution-at-placement requires the trade's ownership reference to be the pair of statements, account and customer, as they stood at that moment -- 'the account, and through it the customer, as they stood at the moment the trade was placed' -- not either one's current statement. L1.as-of defines each such answer as the upstream statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from, owning_customer_number, and owning_customer_effective_from as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account and customer entities they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies the exact account statement. owning_customer_number is handed off directly from that same pinned account statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it; owning_customer_effective_from, handed off from logical.customer.effective_from with selector as_of_event_time (also at or before placed_at), completes the (customer_number, effective_from) pair identifying the exact customer statement, satisfying the 'and through it the customer, as they stood' half of the clause in full -- not just which customer, but which of that customer's dated statements. inv.trade_placement_reference_frozen restates that all four reference attributes are set once, at first encounter, and never replaced. inv.trade_ownership_pin_present restates, as a single checkable fact, that a persisted trade never carries a null in any of these four attributes -- that the pin resolved, not merely that whatever it resolved to is frozen. first_seen_late, using trade_code_meanings.status_order and report_order together with order_type (handed off from raw.trade_cdc.t_tt_id under selector first_encounter_only and anchored, as to which codes exist and which are market or limit, by trade_code_meanings.trade_type_codes), marks a trade whose first-encountered report -- across both anchored sources -- as first seen late when its status (th_st_id or t_st_id) is later than its order type's first lifecycle event: PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage; so a limit order first reported anything other than PNDG is first seen late, and a market order first reported CMPT or CNCL is; the business has since answered L1.hole.market-order-seen-pending (closed): the brokerage's own systems record a market order as pending on receipt, before routing it, so a market order first reported PNDG or SBMT is decided, not held -- it is not first seen late, and inv.trade_first_seen_late_matches_status_order claims it directly rather than excluding it. Only an order type outside the anchored four remains undefined by this rule, held under L1.unknown-codes and reported by inv.unknown_codes_held (inv.trade_first_seen_late_defined_or_held restates that narrower held set). L1.closed-account-activity asks three things of this job: a trade placed on an account after that account's closing statement is reported for review; closing unwinds nothing already attributed; and activity never reopens an account, since no trade creates a statement. The first is met by inv.trade_on_closed_account_reported, which reports exactly such a trade without deciding whether the closure or the trade is wrong. The second is met by inv.trade_placement_reference_frozen, which now also carries this clause: owning_account_effective_from is frozen at the trade's first anchored encounter and never re-resolved against a later account statement, so a closing statement recorded after a trade's placement can never move or unwind that trade's already-fixed ownership reference. The third is trivially satisfied by this job, which produces no account statements at all -- accounts are consumed from ownership-history, never written here, so this job has no mechanism by which a trade could reopen one; trivial satisfaction is still a claim this coverage makes, not one it assumes without saying so. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account- and customer-statement pins against any upstream statement ownership-history has deferred (a CDC-sourced account or customer update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order) or, for raw.trade_history, th_dts ordering, not batch identity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change. L1.deletion-withdraws requires that a cdc_flag D report 'creates nothing'; this group's placement facts (placed_at, order_type, and, through owning_account_number, the account and customer pins) are therefore each taken from the trade's first-encountered anchored report with cdc_flag I or U, never from a D-flagged report, whatever its position in report order -- inv.trade_placed_at_matches_earliest_report, inv.trade_order_type_frozen, and inv.trade_placement_reference_frozen each restate this restriction directly. first_seen_late's own first-encountered-report comparison is restricted the same way. A trade_number whose anchored reports are all cdc_flag D has none of these values and no logical.trade row (sg.trade-identity); a trade withdrawn after an earlier I/U report keeps these values exactly as first pinned, since the clause states 'it does not reach back through what already followed.'",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group coverage; see coverage_claim."
     },
     {
       "id": "sg.trade-identity",
       "parent_clauses": [
-        "L1.identity"
+        "L1.identity",
+        "L1.deletion-withdraws"
       ],
       "members": [
         "type.trade_number",
         "logical.trade.trade_number",
         "handoff.raw.trade_cdc.t_id->logical.trade.trade_number",
-        "inv.every_received_trade_persisted"
+        "inv.every_received_trade_persisted",
+        "type.trade_withdrawn",
+        "logical.trade.withdrawn",
+        "handoff.raw.trade_cdc.cdc_flag->logical.trade.withdrawn",
+        "inv.trade_withdrawn_only_unclaimed",
+        "inv.trade_withdrawn_matches_deletion_report"
       ],
       "mode": "all_required",
-      "coverage_claim": "Every raw.trade_cdc row carries t_id, the brokerage's own trade number, handed off unchanged into trade_number with the identity mutation role; because this value is identical across every CDC row reporting the same trade, no later report ever produces a 'different' trade, satisfying L1.identity's persistence requirement for the trade entity. inv.every_received_trade_persisted extends this group's claim from consistency to completeness: every trade_number none of whose received reports carries cdc_flag D appears as exactly one logical.trade row, not zero and not more than one.",
-      "gap": "L1.hole.deletions bounds this group's completeness claim: a trade_number with any cdc_flag D report is not claimed by inv.every_received_trade_persisted and stays that hole's case."
+      "coverage_claim": "Every raw.trade_cdc row carries t_id, the brokerage's own trade number, handed off unchanged into trade_number with the identity mutation role; because this value is identical across every CDC row reporting the same trade, no later report ever produces a 'different' trade, satisfying L1.identity's persistence requirement for the trade entity. inv.every_received_trade_persisted extends this group's claim from consistency to completeness, now settled in both directions by L1.deletion-withdraws rather than provisionally excluding every D-having trade_number: a trade_number with at least one anchored cdc_flag I or U report appears as exactly one logical.trade row, whether or not it also has an anchored cdc_flag D report -- marked withdrawn (via the withdrawn attribute, handed off from cdc_flag and restated by inv.trade_withdrawn_matches_deletion_report) when it does, per the clause's 'a withdrawn trade keeps its record and is marked withdrawn, it is not among the trades the brokerage asserts, and everything that already followed from it stands as history.' A trade_number whose anchored reports are all cdc_flag D is claimed absent by inv.trade_withdrawn_only_unclaimed, per the clause's 'a thing whose only reports are withdrawals was never held at all: there is no earlier statement for a withdrawal to end, so no statement, no trade, and no holding comes into being from it.'",
+      "gap": "L1.hole.deletion-reversal bounds whether the withdrawn attribute, once true, could ever be reset by a later report resuming the record; until answered, it is never reset, per the withdrawn type's own parallel_assumption."
     },
     {
       "id": "sg.outcome",
@@ -1264,8 +1385,8 @@
         "inv.trade_outcome_updates_in_place"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.lifecycle-mutates-outcome enumerates exactly six outcome facts -- status, executed price, fees, commission, tax, quantity -- that change as a trade moves through its life, describing that change entirely in terms of the trade's four named lifecycle statuses (pending, submitted, completed, cancelled). Each fact is handed off from raw.trade_cdc's own field for that fact (t_st_id, t_trade_price, t_chrg, t_comm, t_tax, t_qty respectively), typed mutable, with selector latest_change ordering candidate reports by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, not a report carrying which file delivered it, which L1.hole.batch-identity leaves open. The anchored trade_code_meanings.cdc_flag states I as newly inserted and U as updating an existing record; both carry one of the clause's four named statuses, so latest_change's candidate set is I- and U-flagged reports, which inv.trade_outcome_updates_in_place restates directly. A cdc_flag D report is not one of these: 'deleted' is not a status the clause names, so latest_change does not select an outcome value from a D-flagged report; what a D-flagged report means for the trade's outcome -- whether it stands, is voided, or something else -- is L1.hole.deletions, not decided by this exclusion. All six facts the clause names are otherwise covered by a member of this group; the clause names no others.",
-      "gap": "L1.hole.deletions bounds what a D-flagged report means for a trade's outcome; L1.hole.batch-identity bounds latest_change's reliance on file production order rather than a report carrying which file delivered it."
+      "coverage_claim": "L1.lifecycle-mutates-outcome enumerates exactly six outcome facts -- status, executed price, fees, commission, tax, quantity -- that change as a trade moves through its life, describing that change entirely in terms of the trade's four named lifecycle statuses (pending, submitted, completed, cancelled). Each fact is handed off from raw.trade_cdc's own field for that fact (t_st_id, t_trade_price, t_chrg, t_comm, t_tax, t_qty respectively), typed mutable, with selector latest_change ordering candidate reports by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, not a report carrying which file delivered it, which L1.hole.batch-identity leaves open. The anchored trade_code_meanings.cdc_flag states I as newly inserted and U as updating an existing record; both carry one of the clause's four named statuses, so latest_change's candidate set is I- and U-flagged reports, which inv.trade_outcome_updates_in_place restates directly. A cdc_flag D report is not one of these: 'deleted' is not a status the clause names, so latest_change does not select an outcome value from a D-flagged report; L1.deletion-withdraws now decides what this means: the outcome fields simply stand as they last stood, unchanged by the D-flagged report, exactly as 'everything that already followed from it stands as history' requires; the row itself still exists when an earlier I/U report exists (sg.trade-identity), marked withdrawn, with its outcome untouched. All six facts the clause names are otherwise covered by a member of this group; the clause names no others.",
+      "gap": "L1.hole.batch-identity bounds latest_change reliance on file production order rather than a report carrying which file delivered it."
     },
     {
       "id": "sg.constructed-scenarios",
@@ -1313,19 +1434,6 @@
       ]
     },
     {
-      "id": "hole.deletions",
-      "question": "What does a deletion marker (cdc_flag D) in raw.trade_cdc mean for a trade's history, its recorded ownership, and the outcome facts this job carries? Anchored trade_code_meanings state I and U's meanings but leave D's meaning to this hole. This job's current handling -- excluding D-flagged reports from latest_change's candidate set, so the last I- or U-flagged outcome stands -- is provisional, pending this hole's resolution; it does not decide what a D-flagged report means for the trade otherwise, whether it stands, is voided, or something else, nor what it would mean if a trade's first-encountered report were itself D-flagged.",
-      "derived_from_hole": "L1.hole.deletions",
-      "owner_hat": "data-product-owner",
-      "disposition": "deferred",
-      "blocks": [
-        "sg.outcome",
-        "sg.placement-moment",
-        "sg.trade-shape",
-        "sg.trade-identity"
-      ]
-    },
-    {
       "id": "hole.securities_and_brokers",
       "question": "Securities, companies, and brokers are named on raw.trade_cdc (t_s_symb, t_exec_name) but not yet part of any job; when they are, the attribution rule must be restated for them. This job hands off neither field.",
       "derived_from_hole": "L1.hole.securities-and-brokers",
@@ -1362,6 +1470,16 @@
       "disposition": "deferred",
       "blocks": [
         "sg.placement-moment"
+      ]
+    },
+    {
+      "id": "hole.deletion_reversal",
+      "question": "May a withdrawal be undone? If a raw.trade_cdc report with cdc_flag I or U is received for a trade_number after an anchored cdc_flag D report already exists for it, does the trade resume being asserted (withdrawn reset to false), or does the report mean something else the business must resolve first? L1.deletion-withdraws does not say whether anything can follow a withdrawal. Until answered, this job's withdrawn attribute, once true, is never reset by a later report -- it only ever moves false to true.",
+      "derived_from_hole": "L1.hole.deletion-reversal",
+      "owner_hat": "data-product-owner",
+      "disposition": "deferred",
+      "blocks": [
+        "sg.trade-identity"
       ]
     }
   ],

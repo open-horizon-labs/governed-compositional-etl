@@ -1117,10 +1117,11 @@
     {
       "id": "inv.eligible_holding_report_persisted",
       "entity": "logical.holding_change",
-      "statement": "Every (original_trade_number, current_trade_number) pair reported by raw.holding_history, none of whose reports carries cdc_flag D, whose current_trade_number resolves to a logical.trade row carrying owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from all non-null, has exactly one logical.holding_change row. A pair with any cdc_flag D report is L1.hole.deletions' case and is not claimed by this invariant.",
+      "statement": "Every (original_trade_number, current_trade_number) pair reported by raw.holding_history whose reports are not all cdc_flag D, none of whose cdc_flag D reports is followed by a later non-D report, and whose current_trade_number resolves to a logical.trade row carrying owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from all non-null, has exactly one logical.holding_change row. A pair every one of whose reports is cdc_flag D has no row at all, per inv.holding_change_absent_for_withdrawn_only_pair and L1.deletion-withdraws; a pair with a D report followed by a later non-D report is L1.hole.deletion-reversal's case and is not claimed by this invariant.",
       "derived_from": [
         "L1.identity",
-        "L1.holdings-follow-trade"
+        "L1.holdings-follow-trade",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
@@ -1128,10 +1129,10 @@
         "inv.unknown_codes_held",
         "sketch-review"
       ],
-      "necessity": "L1.holdings-follow-trade and L1.identity together entail this entity's own grain, already stated in sg.holding-shape's coverage_claim: one row per (original_trade_number, current_trade_number) pair. sg.holding-attribution's coverage_claim already states the converse exclusion -- a holding change whose current trade's ownership pin does not resolve has no ownership reference to copy and so is excluded -- which inv.holding_change_ownership_present and inv.holding_change_current_trade_known make checkable from the excluded side. This invariant is the converse of the persisted-pair-without-report case that invariant's audit covers (a persisted pair with no surviving I/U report never surfaces): a pair that is reported, carries no D report, and whose current trade's pin fully resolves is not merely permitted to persist, it must -- exactly one row, neither zero nor more than one. A pair with any D report is excluded from this claim; what a D report means for row existence is L1.hole.deletions, not decided here.",
+      "necessity": "L1.holdings-follow-trade and L1.identity together entail this entity's own grain, already stated in sg.holding-shape's coverage_claim: one row per (original_trade_number, current_trade_number) pair. L1.deletion-withdraws narrows this invariant's abstention from any pair touched by a D report to only a D-only pair: its no-reach-back sentence means a pair with real I/U history that is later withdrawn still owes exactly one row standing as that history, and only a pair reported exclusively as D was never held at all. A pair with a D report followed by a later non-D report is excluded because what a report received after a withdrawal means is undecided (L1.hole.deletion-reversal), not because the row is optional.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Credible while every raw.holding_history report for the pair is either I, U, or a historical row, the same candidate set inv.holding_quantity_updates_in_place and the latest_change selector already use, and while a pair's current trade resolving to a fully pinned logical.trade row is itself stable across the reports considered. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact -- that report is neither I, U, nor D for this invariant's purposes.",
-      "review_trigger": "an eligible pair -- reported, carrying no D report, with its current trade resolved and all four ownership values non-null -- is found with zero or with more than one logical.holding_change row",
+      "parallel_assumption": "Credible while every raw.holding_history report for the pair is either I, U, D, or a historical row, the same candidate set inv.holding_quantity_updates_in_place and the latest_change selector already use, while report_order (batch_date, cdc_dsn) is enough to say whether a D report is followed by a later non-D report, and while a pair's current trade resolving to a fully pinned logical.trade row is itself stable across the reports considered. A cdc_flag value the anchors do not name is held under L1.unknown-codes and yields no derived fact -- that report is neither I, U, nor D for this invariant's purposes.",
+      "review_trigger": "an eligible pair -- reported, not all-D, with no D report followed by a later non-D report, its current trade resolved and all four ownership values non-null -- is found with zero or with more than one logical.holding_change row",
       "sufficiency_group": "sg.holding-shape"
     },
     {
@@ -1151,6 +1152,26 @@
       "parallel_assumption": "Credible while the anchored vocabulary (I, U, D, or null for a historical row) remains the complete set of cdc_flag values raw.holding_history rows in fact carry; a value outside it is exactly the case this invariant reports, not a case any derivation or handoff in this job may interpret, default, or silently drop.",
       "review_trigger": "a raw.holding_history row this job consumes is found to carry a cdc_flag value that is not I, U, D, or null on a historical row",
       "sufficiency_group": "sg.unknown-codes"
+    },
+    {
+      "id": "inv.holding_change_absent_for_withdrawn_only_pair",
+      "entity": "logical.holding_change",
+      "statement": "A (original_trade_number, current_trade_number) pair every one of whose raw.holding_history reports carries cdc_flag D has no logical.holding_change row.",
+      "derived_from": [
+        "L1.deletion-withdraws",
+        "L1.holdings-follow-trade"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "inv.eligible_holding_report_persisted",
+        "sketch-review"
+      ],
+      "necessity": "L1.deletion-withdraws states directly that a thing whose only reports are withdrawals was never held at all: no holding comes into being from it, and it contributes to no position. A pair reported only under cdc_flag D is exactly that case for a holding change, whose identity L1.holdings-follow-trade fixes as the (original_trade_number, current_trade_number) pair; the absence of a row is therefore a rule this clause requires, not a side effect of missing candidate quantities.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every report the brokerage has sent for the pair is accounted for in this evaluation -- a pair judged D-only must be checked against the complete report set for that pair, not a partial load -- and while cdc_flag D is read only as L1.deletion-withdraws defines it, never as an ordinary historical or current report.",
+      "review_trigger": "a pair every one of whose reports carries cdc_flag D is found with any logical.holding_change row",
+      "sufficiency_group": "sg.holding-shape"
     }
   ],
   "sufficiency_groups": [
@@ -1159,7 +1180,8 @@
       "parent_clauses": [
         "L1.identity",
         "L1.holdings-follow-trade",
-        "L1.attribution-at-placement"
+        "L1.attribution-at-placement",
+        "L1.deletion-withdraws"
       ],
       "members": [
         "logical.holding_change",
@@ -1168,11 +1190,12 @@
         "logical.holding_change.current_trade_number",
         "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number",
         "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number",
-        "inv.eligible_holding_report_persisted"
+        "inv.eligible_holding_report_persisted",
+        "inv.holding_change_absent_for_withdrawn_only_pair"
       ],
       "mode": "all_required",
-      "coverage_claim": "logical.holding_change's history kind, incremental_by_identity, follows from L1.holdings-follow-trade (a holding change is identified by its original trade and its current trade, and belongs to whoever owned the causing trade), L1.identity (those trade numbers persistently identify the same trades across every report), and L1.attribution-at-placement (the ownership, once fixed on the current trade, is not moved) -- together these entail one row per (original_trade_number, current_trade_number) pair, updated in place. original_trade_number and current_trade_number, handed off unchanged from raw.holding_history's own hh_h_t_id and hh_t_id with the identity mutation role, give this entity exactly the composite identity L1.holdings-follow-trade names. This group's scope is limited to the entity's shape and its two identity attributes; the ownership this entity copies through current_trade_number is the more specific claim covered by sg.holding-attribution instead. inv.eligible_holding_report_persisted makes the row-per-pair half of this grain checkable directly: an eligible pair -- reported, touched by no cdc_flag D report at all, and resolving to a fully pinned current trade -- has exactly one row; a pair touched by any D report, not merely one whose reports are all D-flagged, is the any-D abstention this invariant takes, left to L1.hole.deletions.",
-      "gap": "L1.hole.deletions bounds this group's own row-per-pair claim: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided."
+      "coverage_claim": "logical.holding_change's history kind, incremental_by_identity, follows from L1.holdings-follow-trade (a holding change is identified by its original trade and its current trade, and belongs to whoever owned the causing trade), L1.identity (those trade numbers persistently identify the same trades across every report), and L1.attribution-at-placement (the ownership, once fixed on the current trade, is not moved) -- together these entail one row per (original_trade_number, current_trade_number) pair, updated in place. original_trade_number and current_trade_number, handed off unchanged from raw.holding_history's own hh_h_t_id and hh_t_id with the identity mutation role, give this entity exactly the composite identity L1.holdings-follow-trade names. This group's scope is limited to the entity's shape and its two identity attributes; the ownership this entity copies through current_trade_number is the more specific claim covered by sg.holding-attribution instead. inv.eligible_holding_report_persisted makes the row-per-pair half of this grain checkable directly: an eligible pair -- reported, not all of whose reports carry cdc_flag D, with no D report followed by a later non-D report, and resolving to a fully pinned current trade -- has exactly one row, because L1.deletion-withdraws' no-reach-back sentence requires a pair's earlier I/U history to stand as history even after a later withdrawal. A pair every one of whose reports is D was never held at all under that same clause, and inv.holding_change_absent_for_withdrawn_only_pair claims its absence directly -- a rule the model holds rather than a filter that happens to produce the right rows. A pair with a D report followed by a later non-D report is L1.hole.deletion-reversal's case, not claimed by either invariant.",
+      "gap": "L1.hole.deletion-reversal bounds this group's row-per-pair claim for a pair with a cdc_flag D report followed by a later non-D report: what such a report means is undecided, so that ordering is excluded from both inv.eligible_holding_report_persisted and inv.holding_change_absent_for_withdrawn_only_pair."
     },
     {
       "id": "sg.holding-attribution",
@@ -1244,7 +1267,7 @@
       ],
       "mode": "conditional",
       "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. inv.unknown_codes_held (sg.unknown-codes) now states this selector's candidate set precisely: the anchored codes (I, U, D) or null for a historical row; a cdc_flag value outside that set is reported, and still outside the candidate set: the exclusion is no longer silent, retiring the cdc_flag-vocabulary question the L3 manifests had filed. inv.holding_quantity_change_is_difference makes the after-minus-before computation itself checkable on every row, and inv.holding_quantities_present makes non-null presence of before_qty, after_qty, and quantity_change checkable directly, so a report with no determinable quantity fires rather than silently dropping out of a sum. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total. inv.holding_change_ownership_present (in sg.holding-attribution) restates that drop-out itself as a checkable invariant on the persisted rows this group sums over; inv.holding_change_current_trade_known distinguishes the separate case of an hh_t_id that does not resolve to any logical.trade row at all, which does not drop out silently but fires as a violation instead.",
-      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution."
+      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; What a D-only pair's quantities are is now decided by L1.deletion-withdraws, not a hole: such a pair contributes no row at all, per sg.holding-shape's inv.holding_change_absent_for_withdrawn_only_pair, so it contributes nothing to any sum here either; a pair with a D report followed by a later non-D report remains L1.hole.deletion-reversal's case; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution."
     },
     {
       "id": "sg.constructed-scenarios",
@@ -1278,17 +1301,6 @@
       "derived_from_hole": "L1.hole.securities-and-brokers",
       "owner_hat": "data-product-owner",
       "disposition": "deferred"
-    },
-    {
-      "id": "hole.deletions",
-      "question": "What does a deletion marker (cdc_flag D) on a raw.holding_history row mean for a holding change's history, its copied ownership, and the before/after quantities this job sums? This job's handling -- excluding D-flagged reports from the latest_change candidate set feeding before_qty and after_qty, mirroring trade-lifecycle's own provisional handling of D on raw.trade_cdc -- is provisional; it does not decide what a D-flagged report means for the holding change otherwise, whether it stands, is voided, or removes the holding change from every position sum, nor what it would mean if a holding change's first-encountered report were itself D-flagged. Separately, and prior to any question of quantities: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided here too -- row existence, not only the values within an existing row. With no I, U, or historical report as a candidate for such a pair, the non-nullable before_qty and after_qty cannot be filled, so the model yields no row; that is one behavior consistent with the hole, not a resolution of it.",
-      "derived_from_hole": "L1.hole.deletions",
-      "owner_hat": "data-product-owner",
-      "disposition": "deferred",
-      "blocks": [
-        "sg.no-phantom-positions",
-        "sg.holding-shape"
-      ]
     },
     {
       "id": "hole.batch_identity",
@@ -1327,6 +1339,17 @@
       "disposition": "deferred",
       "blocks": [
         "sg.holding-attribution",
+        "sg.no-phantom-positions"
+      ]
+    },
+    {
+      "id": "hole.deletion_reversal",
+      "question": "If a raw.holding_history pair receives a non-D report after an earlier cdc_flag D report, does that later report resume the pair's standing, or must the brokerage resolve something first before it can be read at all? L1.deletion-withdraws settles that a withdrawal does not reach back and that a D-only pair was never held, but it does not say what a report received after a withdrawal means; this job excludes such a pair from both its exactly-one-row claim and its D-only-absence claim rather than guessing.",
+      "derived_from_hole": "L1.hole.deletion-reversal",
+      "owner_hat": "data-product-owner",
+      "disposition": "deferred",
+      "blocks": [
+        "sg.holding-shape",
         "sg.no-phantom-positions"
       ]
     }

@@ -139,16 +139,6 @@
       "to_job": "positions"
     },
     {
-      "clause": "L1.deletion-withdraws",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
-    },
-    {
-      "hole": "L1.hole.deletion-reversal",
-      "note": "no job carries this hole; either it touches no job or a job filled it silently",
-      "relation": "gap"
-    },
-    {
       "gap": "L1.hole.change-effective-time",
       "group": "sg.identity",
       "job": "ownership-history",
@@ -185,31 +175,31 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it; L1.hole.deletions bounds what a D-flagged first-encountered report would mean for owning_account_number.",
+      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it",
       "group": "sg.trade-shape",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group coverage; see coverage_claim.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.deletions bounds this group's completeness claim: a trade_number with any cdc_flag D report is not claimed by inv.every_received_trade_persisted and stays that hole's case.",
+      "gap": "L1.hole.deletion-reversal bounds whether the withdrawn attribute, once true, could ever be reset by a later report resuming the record; until answered, it is never reset, per the withdrawn type's own parallel_assumption.",
       "group": "sg.trade-identity",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.deletions bounds what a D-flagged report means for a trade's outcome; L1.hole.batch-identity bounds latest_change's reliance on file production order rather than a report carrying which file delivered it.",
+      "gap": "L1.hole.batch-identity bounds latest_change reliance on file production order rather than a report carrying which file delivered it.",
       "group": "sg.outcome",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.deletions bounds this group's own row-per-pair claim: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided.",
+      "gap": "L1.hole.deletion-reversal bounds this group's row-per-pair claim for a pair with a cdc_flag D report followed by a later non-D report: what such a report means is undecided, so that ordering is excluded from both inv.eligible_holding_report_persisted and inv.holding_change_absent_for_withdrawn_only_pair.",
       "group": "sg.holding-shape",
       "job": "positions",
       "relation": "named-gap"
@@ -221,7 +211,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution.",
+      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; What a D-only pair's quantities are is now decided by L1.deletion-withdraws, not a hole: such a pair contributes no row at all, per sg.holding-shape's inv.holding_change_absent_for_withdrawn_only_pair, so it contributes nothing to any sum here either; a pair with a D report followed by a later non-D report remains L1.hole.deletion-reversal's case; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution.",
       "group": "sg.no-phantom-positions",
       "job": "positions",
       "relation": "named-gap"
@@ -231,7 +221,7 @@
   "summary": {
     "contradiction": 0,
     "dependency": 7,
-    "gap": 2,
+    "gap": 0,
     "named-gap": 13,
     "overlap": 3
   }

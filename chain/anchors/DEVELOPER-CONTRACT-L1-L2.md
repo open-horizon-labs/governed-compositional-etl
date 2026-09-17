@@ -12,6 +12,23 @@
 
 **Guardrails:** the clauses are the only authority; holes stay open; no engine, SQL, table, or file names; no rule from data shape or warehouse habit; no reads outside the listed files; a conflict produces one question, not a guess.
 
+## You may be one of several Developers in this working tree
+
+Other Developers may be compiling other jobs or other engine targets at the same time as you, in the same checkout.
+So `git status` will show files modified that you did not write, and that is normal and expected. A modified file
+outside your write surface is someone else's work in progress. It is not evidence of a tool bug, and it is never
+yours to clean up.
+
+Therefore: never run a git command that changes the working tree. No `git checkout --`, `git restore`, `git stash`,
+`git clean`, `git reset`, `git checkout <branch>`. Reading is fine -- `git status`, `git diff`, `git log`, `git show`.
+If you believe a tool corrupted a file, say so in your final message and leave the file alone. Reverting another
+Developer's file destroys work in flight, and the destruction is silent: the other Developer does not find out.
+
+For the record, because this has been misdiagnosed once and cost a concurrent Developer its edits: `chain_l2.py check`
+writes nothing at all, and `chain_l2.py weave` writes only `chain/weave.json`, which is its own declared output.
+Neither one writes any job's `semantic-model.json`. If you see another job's model modified while you work, another
+Developer is writing it.
+
 ## Change contract (CESS working form)
 
 - **Prior policy authority:** `sketches/l1-brokerage-intent-v1.md`, the clauses listed for your job only.

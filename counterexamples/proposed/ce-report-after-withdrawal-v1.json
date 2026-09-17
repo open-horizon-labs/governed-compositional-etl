@@ -1,0 +1,74 @@
+{
+  "adjacent_not_authorized": [
+    "answering L1.hole.deletion-reversal from what this fixture happens to produce",
+    "treating the monotonic withdrawn flag as the business's decision rather than as a hole-bounded default",
+    "re-attributing the trade or recomputing the holdings that already followed from it"
+  ],
+  "approved_or_rejected_by": "proposed; L1.hole.deletion-reversal open, so this document asks rather than asserts",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "On both engines, while L1.hole.deletion-reversal is open: trade 353232 has exactly one row, marked withdrawn, and the two engines agree on every field of it including its status. The holding changes already derived from 353232 are byte-identical to a run without this scenario, because a withdrawal does not reach back through what already followed. Whether the status should be CMPT or CNCL is what the hole decides; that the two engines give the same answer is what this assertion holds.",
+  "expected": {
+    "not_asserted": "Which reading is right. This document must not be used to argue for one: it reports what the compiled chain does while the question is open.",
+    "under_the_open_hole": "UNVERIFIED PREDICTION, to be checked when the L2 recompile reaches L3, and recorded here as a prediction so it cannot later be mistaken for a measurement. trade-lifecycle's new withdrawn flag is derived from any anchored D report and is monotonic because L1.hole.deletion-reversal forbids treating a later report as resuming, while its outcome selector narrows to I and U and is not bounded by that hole. If both hold as written, 353232 comes out marked withdrawn AND carrying the post-withdrawal CNCL status -- withdrawn and yet freshly updated, a combination nobody chose, falling out of one derivation being bounded by the hole and another not being. If the re-projection shows that, it is the finding this document exists to produce and it belongs in front of the business as the reason the hole needs answering. If it does not show that, this prediction was wrong and the document should say so."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "trade_cdc": [
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488600,
+          "cdc_flag": "D",
+          "note": "The withdrawal of trade 353232, which the records already carry with a single I report at 2017-06-30. A real CDC delete echoes the row, so this one does.",
+          "t_bid_price": 6.52,
+          "t_ca_id": 428,
+          "t_chrg": 20.36,
+          "t_comm": 5337.23,
+          "t_dts": "2017-07-08 00:30:00",
+          "t_exec_name": "constructed",
+          "t_id": 353232,
+          "t_is_cash": true,
+          "t_qty": 5225,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "CMPT",
+          "t_tax": 4.01,
+          "t_trade_price": 40.02,
+          "t_tt_id": "TLB"
+        },
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488601,
+          "cdc_flag": "U",
+          "note": "The report that arrives after the withdrawal, and the whole point of the document. It carries a different status (CNCL) from the withdrawn row (CMPT) so that the two candidate readings give visibly different outcomes rather than coinciding by luck.",
+          "t_bid_price": 6.52,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2017-07-08 01:00:00",
+          "t_exec_name": "constructed",
+          "t_id": 353232,
+          "t_is_cash": true,
+          "t_qty": 5225,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "CNCL",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TLB"
+        }
+      ]
+    }
+  },
+  "id": "ce.report-after-withdrawal",
+  "labels": [
+    "L1.hole.deletion-reversal",
+    "L1.deletion-withdraws"
+  ],
+  "observed": "Measured on duckdb-native against the L3 projection as it stands BEFORE this cycle's L2 recompile reaches it: trade 353232 has one row with status CNCL, first_seen_late false, its 2012-11-15 account pin unchanged, and every audit at zero. The withdrawal is ignored outright -- there is no withdrawn attribute in the projection yet, and the post-withdrawal report moved the outcome exactly as an ordinary later report would. So today the chain answers the hole's case by not noticing it.",
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "counterexample/v1",
+  "status": "proposed",
+  "tempting_wrong_repair": "Making the withdrawn flag non-monotonic so the later report clears it, which answers the hole in SQL. Or suppressing the later report's outcome change to make withdrawn look consistent, which answers the hole the other way and also loses a received report. The honest move, if this fixture shows the incoherent combination above, is to carry it to the business as the reason the hole needs answering.",
+  "the_open_question": "L1.deletion-withdraws says a withdrawal ends a record's standing from its moment forward, and does not say whether anything may follow it. L1.hole.deletion-reversal reserves that. Two readings are live and this fixture separates them. Under resumption, trade 353232 is a trade the brokerage asserts again, its status is CNCL, and the withdrawal was an episode in its history. Under no-resumption, 353232 stays withdrawn, the later report is something the brokerage must resolve before it means anything, and its status must not be read as CNCL. A third reading is possible and worth naming: the later report is itself reportable for review, the way a trade on a closed account is, because only the brokerage can say whether the withdrawal or the later report is the error.",
+  "why_constructed": "Both L2 Developers of this cycle, independently and unprompted, noted that L1.hole.deletion-reversal has no test surface: no counterexample exercises a report that arrives after a withdrawal. Each then had to bound a derivation on the hole -- trade-lifecycle made its new withdrawn flag monotonic precisely because the hole forbids treating a later report as resuming the record, and positions kept its D-then-later-non-D ordering out of its narrowed rule for the same reason. So two jobs now carry a behavior chosen because a question is open, and nothing runs the case. This document runs it. It does not answer the hole, and nothing downstream may read an answer out of it: it exists so that when the business does answer, there is evidence to answer against, and so that the behavior the hole currently forces is visible rather than assumed."
+}
