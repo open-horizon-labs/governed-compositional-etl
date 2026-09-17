@@ -31,4 +31,4 @@ SELECT
   m.trade_number
 FROM @this_model AS m
 JOIN expected AS e ON e.trade_number = m.trade_number
-WHERE m.first_seen_late IS DISTINCT FROM (e.status_at_first_report <> 'PNDG');
+WHERE m.first_seen_late IS DISTINCT FROM (e.status_at_first_report IS DISTINCT FROM 'PNDG');

@@ -384,16 +384,31 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
     distinct values exist, swap one row's value for another row's. Reports mutations no audit catches as unprotected."""
     import shutil
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
-    if is_sqlmesh(profile):
-        raise L3Error("mutation testing runs on native targets; SQLMesh targets expose views over versioned physical tables")
+    sqlmesh_target = is_sqlmesh(profile)
     model, review = load_job(job)
     base = L3_DIR / target / job
     manifest = json.loads((base / "manifest.json").read_text())
     database = database or ROOT / f"build/chain-{target}-mutate.duckdb"
     run(target, job, "rollover", database=database)
-    scratch = database.with_name(database.stem + "-scratch.duckdb")
+    scratch_dir = database.parent / "mutate-scratch"
+    scratch_dir.mkdir(exist_ok=True)
+    scratch = scratch_dir / database.name  # same file stem: SQLMesh views embed the catalog name
     types = {t["id"]: t["mutation_role"] for t in model["types"]}
-    audits = [(a["invariant"], (base / a["file"]).read_text()) for a in manifest["audits"]]
+    audits = [(a["invariant"], body_of((base / a["file"]).read_text(), sqlmesh_target).replace("this_model_placeholder", "governed." + a["entity"].split(".")[-1])) for a in manifest["audits"]]
+
+    def physical(con, view: str) -> str:
+        """On SQLMesh targets governed.<entity> is a view over a versioned physical table; mutate that table."""
+        if not sqlmesh_target:
+            return view
+        schema, name = view.split(".")
+        row = con.execute("SELECT sql FROM duckdb_views() WHERE schema_name = ? AND view_name = ?", [schema, name]).fetchone()
+        if not row:
+            return view
+        m = re.search(r'FROM\s+("[^"]+"\.|[\w-]+\.)?("?[\w]+"?)\.("?[\w]+"?)', row[0], re.IGNORECASE)
+        if not m:
+            return view
+        return f"{m.group(2)}.{m.group(3)}".replace('"', "")
+
     results = []
     for entity in model["entities"]:
         table = "governed." + entity["id"].split(".")[-1]
@@ -408,19 +423,20 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
                 shutil.copy(database, scratch)
                 con = duckdb.connect(str(scratch))
                 try:
-                    rows = con.execute(f"SELECT {', '.join(ids)}, {attr['name']} FROM {table} ORDER BY 1, 2").fetchall()
+                    target_table = physical(con, table)
+                    rows = con.execute(f"SELECT {', '.join(ids)}, {attr['name']} FROM {target_table} ORDER BY 1, 2").fetchall()
                     candidates = [r for r in rows if r[-1] is not None] if kind == "null" else rows
                     if not candidates:
                         continue
                     target_row = candidates[-1]
                     where = " AND ".join(f"{c} = ?" for c in ids)
                     if kind == "null":
-                        con.execute(f"UPDATE {table} SET {attr['name']} = NULL WHERE {where}", list(target_row[:-1]))
+                        con.execute(f"UPDATE {target_table} SET {attr['name']} = NULL WHERE {where}", list(target_row[:-1]))
                     else:
                         others = [r[-1] for r in rows if r[-1] != target_row[-1] and r[-1] is not None]
                         if not others:
                             continue
-                        con.execute(f"UPDATE {table} SET {attr['name']} = ? WHERE {where}", [others[0], *target_row[:-1]])
+                        con.execute(f"UPDATE {target_table} SET {attr['name']} = ? WHERE {where}", [others[0], *target_row[:-1]])
                     fired = [inv for inv, sql in audits if con.execute(sql).fetchall()]
                 finally:
                     con.close()

@@ -1,9 +1,9 @@
 {
   "job": "trade-lifecycle",
-  "manifest_sha256": "222eb093b82e37566e73c236f1be5934f3a35b262c92ec9a8774046c0d4c51d1",
-  "notes": "see review-1.md and review-2.md",
+  "manifest_sha256": "2b6e98ecb445104770f6e25f8d3ab8196aedc507b4eb18c0ca0b86f0a87c8f40",
+  "notes": "see review-1..3",
   "rejected_artifacts": [],
-  "reviewer": "opus projection reviewer, L3 cycle 2 (scoped)",
+  "reviewer": "coordinator, audit null-sensitivity review 3 (mutation harness)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
   "verdict": "pass"

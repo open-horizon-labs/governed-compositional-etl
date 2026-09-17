@@ -56,7 +56,8 @@ FROM @this_model AS m
 JOIN first_report AS f ON f.trade_number = m.trade_number
 LEFT JOIN resolved_account AS ra ON ra.trade_number = m.trade_number
 LEFT JOIN resolved_customer AS rc ON rc.trade_number = m.trade_number
-WHERE m.placed_at IS DISTINCT FROM f.placed_at
+WHERE m.placed_at IS NULL
+   OR m.placed_at IS DISTINCT FROM f.placed_at
    OR m.owning_account_effective_from IS DISTINCT FROM ra.owning_account_effective_from
    OR m.owning_customer_number IS DISTINCT FROM ra.owning_customer_number
    OR m.owning_customer_effective_from IS DISTINCT FROM rc.owning_customer_effective_from;
