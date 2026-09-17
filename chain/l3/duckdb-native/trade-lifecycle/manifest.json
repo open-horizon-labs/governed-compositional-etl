@@ -121,7 +121,7 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/selected-model.json",
-    "review_sha256": "153309314e831c40440b6f9edb597c00eb86dba46d4db8e9daaa724d306f99f7"
+    "review_sha256": "c7ae3b58aba6b9ef99fdd2efe4d05f5749e6ee5b8d2f75e3edf34e9047623c2c"
   },
   "group_fingerprints": {
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",

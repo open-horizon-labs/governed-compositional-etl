@@ -1,24 +1,32 @@
--- inv.trade_placement_reference_frozen (L2 cycle 2): for any trade_number,
+-- inv.trade_placement_reference_frozen (restated): for any trade_number,
 -- placed_at, owning_account_effective_from, owning_customer_number, and
 -- owning_customer_effective_from are each set once -- from the trade's
 -- first-encountered report (across both anchored sources, raw.trade_history
--- preferred where it exists) and the account and customer statements resolved
--- as of that report's own time -- and are never replaced by a later report of
--- the same trade. Checked two ways: (1) recomputing the frozen quadruple
--- independently from raw.trade_cdc, raw.trade_history, governed.account, and
+-- preferred where it exists) and the account and customer statements
+-- resolved as of that report's own time -- and are never replaced by a
+-- later report of the same trade. A report held under L1.unknown-codes (any
+-- of cdc_flag, t_st_id, t_tt_id unanchored on raw.trade_cdc, or th_st_id
+-- unanchored on raw.trade_history; null-sensitive) is not evidence for
+-- either check below: it is held as a whole and supplies no fact. Checked
+-- two ways: (1) recomputing the frozen quadruple independently from
+-- anchored raw.trade_cdc and raw.trade_history rows, governed.account, and
 -- governed.customer, and diffing against what governed.trade actually
--- persisted; (2) the review_trigger's own literal form -- no report of a
--- trade, from either anchored source, carries an event time earlier than its
--- recorded placed_at. Zero rows means the invariant holds.
+-- persisted; (2) the review_trigger's own literal form -- no anchored
+-- report of a trade, from either source, carries an event time earlier than
+-- its recorded placed_at. Zero rows means the invariant holds.
 
 WITH first_cdc_report AS (
     SELECT t_id, t_dts, t_ca_id
     FROM raw.trade_cdc
+    WHERE cdc_flag IS NOT NULL AND cdc_flag IN ('I', 'U', 'D')
+      AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+      AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
     QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date, cdc_dsn) = 1
 ),
 first_history_report AS (
     SELECT th_t_id, th_dts
     FROM raw.trade_history
+    WHERE th_st_id IS NOT NULL AND th_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
     QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts) = 1
 ),
 first_report AS (
@@ -53,6 +61,18 @@ recomputed_pin AS (
       ON cust.customer_number = ap.owning_customer_number
      AND cust.effective_from <= ap.placed_at
     QUALIFY ROW_NUMBER() OVER (PARTITION BY ap.trade_number ORDER BY cust.effective_from DESC NULLS LAST) = 1
+),
+anchored_cdc_rows AS (
+    SELECT t_id, t_dts
+    FROM raw.trade_cdc
+    WHERE cdc_flag IS NOT NULL AND cdc_flag IN ('I', 'U', 'D')
+      AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+      AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
+),
+anchored_history_rows AS (
+    SELECT th_t_id, th_dts
+    FROM raw.trade_history
+    WHERE th_st_id IS NOT NULL AND th_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
 )
 SELECT t.trade_number, 'frozen_reference_mismatch' AS problem
 FROM governed.trade t
@@ -65,13 +85,13 @@ WHERE rp.placed_at IS DISTINCT FROM t.placed_at
 UNION ALL
 
 SELECT tc.t_id AS trade_number, 'later_cdc_report_earlier_event_time' AS problem
-FROM raw.trade_cdc tc
+FROM anchored_cdc_rows tc
 JOIN governed.trade t ON t.trade_number = tc.t_id
 WHERE t.placed_at IS NULL OR tc.t_dts < t.placed_at
 
 UNION ALL
 
 SELECT th.th_t_id AS trade_number, 'later_history_report_earlier_event_time' AS problem
-FROM raw.trade_history th
+FROM anchored_history_rows th
 JOIN governed.trade t ON t.trade_number = th.th_t_id
 WHERE t.placed_at IS NULL OR th.th_dts < t.placed_at;

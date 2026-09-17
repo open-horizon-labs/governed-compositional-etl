@@ -5,7 +5,7 @@
   ],
   "approved_or_rejected_by": "L1.unknown-codes approved; the hole open",
   "constructed_by_hat": "sketch-reviewer",
-  "deterministic_assertion": "After trade-lifecycle recompiles: inv.unknown_codes_held fires with four rows (900005, 900006's later report, 900007, 900008's first report); inv.trade_market_order_seen_pending_held with one (900004); 900006 stands at PNDG; 900005 and 900007 have no row; 900008 is held under its hole and has no row; both engines agree.",
+  "deterministic_assertion": "inv.unknown_codes_held fires with five rows (900005, 900006's later report, 900007, 900008's first report, 900009's first CDC report); inv.trade_market_order_seen_pending_held with one (900004); 900006 stands at PNDG; 900005, 900007, 900008 and 900009 have no row; both engines agree.",
   "expected": {
     "after_the_sketch_change": "both engines: inv.unknown_codes_held fires naming 900005 (TXX), 900006's second report (ZZZZ) and 900007's report (flag Q); inv.trade_market_order_seen_pending_held fires naming 900004; 900006's outcome stands at PNDG with no prices; 900007 has no governed.trade row and inv.every_received_trade_persisted does not claim it; nothing else fires. 900008 (first report held, later anchored): held and reported; no job asserts its placement while L1.hole.held-first-report-placement is open.",
     "before_the_sketch_change": "both engines: 900004 first_seen_late false, 900005 first_seen_late NULL, no audit fires."
@@ -153,6 +153,46 @@
           "t_tax": null,
           "t_trade_price": null,
           "t_tt_id": "TLB"
+        },
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed: earliest CDC report held (unknown order type), while the earliest history report is anchored.",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-03 10:05:00",
+          "t_exec_name": "constructed",
+          "t_id": 900009,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "PNDG",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TQQ"
+        },
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488413,
+          "cdc_flag": "U",
+          "note": "Constructed: later anchored CDC report. May it supply the owning account and order type? L1.hole.held-first-report-placement (widened).",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-03 10:05:00",
+          "t_exec_name": "constructed",
+          "t_id": 900009,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "SBMT",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TLB"
         }
       ],
       "trade_history": [
@@ -176,6 +216,13 @@
           "th_dts": "2010-03-03 10:02:00",
           "th_st_id": "PNDG",
           "th_t_id": 900006
+        },
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed: anchored earliest report (history).",
+          "th_dts": "2010-03-03 10:05:00",
+          "th_st_id": "PNDG",
+          "th_t_id": 900009
         }
       ]
     },

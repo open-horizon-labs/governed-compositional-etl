@@ -1,9 +1,12 @@
 AUDIT (name "inv.trade_outcome_updates_in_place");
 
--- For any trade_number, a later raw.trade_cdc report of that same trade with cdc_flag I or U
--- replaces status, executed_price, fees, commission, tax, and quantity with its newly
--- reported values on the same row; the trade_number itself is never replaced. A cdc_flag D
--- report is not a later report under this invariant.
+-- For any trade_number, a later raw.trade_cdc report of that same trade with cdc_flag I or U,
+-- and with every one of its coded fields (cdc_flag, t_st_id, t_tt_id) anchored, replaces
+-- status, executed_price, fees, commission, tax, and quantity with its newly reported values on
+-- the same row; the trade_number itself is never replaced. A cdc_flag D report is not a later
+-- report under this invariant. A report held under L1.unknown-codes -- any one of its coded
+-- fields unanchored -- is likewise not a later report: it is held as a whole, supplies no
+-- fact, and does not update the outcome; the hold is reported by inv.unknown_codes_held instead.
 WITH latest_change AS (
   SELECT
     t_id AS trade_number,
@@ -15,6 +18,8 @@ WITH latest_change AS (
     t_qty AS quantity
   FROM raw.trade_cdc
   WHERE cdc_flag IN ('I', 'U')
+    AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+    AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date DESC, cdc_dsn DESC) = 1
 )
 SELECT

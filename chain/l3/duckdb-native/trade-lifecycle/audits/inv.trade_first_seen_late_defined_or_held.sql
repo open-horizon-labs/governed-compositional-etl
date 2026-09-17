@@ -1,23 +1,30 @@
--- inv.trade_first_seen_late_defined_or_held: for any trade_number,
--- first_seen_late is null if and only if the trade is held: either
--- inv.unknown_codes_held reports its first-encountered report's status or
--- order type as outside the anchored vocabularies, or
+-- inv.trade_first_seen_late_defined_or_held (restated): for any
+-- trade_number that inv.every_received_trade_persisted claims a
+-- governed.trade row for, first_seen_late is null if and only if the trade
+-- is held: either inv.unknown_codes_held reports its first-encountered
+-- report's status or order type as outside the anchored vocabularies, or
 -- inv.trade_market_order_seen_pending_held reports it as a market order
 -- first reported PNDG. first_seen_late is non-null (true or false) for
--- every other trade. Zero rows means the invariant holds.
+-- every other claimed trade. A trade_number whose earliest report is itself
+-- held while a later raw.trade_cdc report is anchored
+-- (L1.hole.held-first-report-placement) is not claimed by
+-- inv.every_received_trade_persisted at all -- it has no governed.trade row
+-- and so no first_seen_late value for this invariant to claim either; the
+-- JOIN to governed.trade below naturally excludes it. Zero rows means the
+-- invariant holds.
 
 WITH valid_cdc_rows AS (
     -- A row carrying any code outside its anchored vocabulary in any of
-    -- cdc_flag, t_st_id, t_tt_id is held in its entirety; a trade whose
-    -- only raw.trade_cdc report is held never reaches first_cdc_report and
-    -- therefore never reaches governed.trade at all (see
-    -- inv.every_received_trade_persisted), so this invariant's join below
-    -- naturally excludes it too.
+    -- cdc_flag, t_st_id, t_tt_id (null-sensitive) is held in its entirety; a
+    -- trade whose only raw.trade_cdc report is held never reaches
+    -- first_cdc_report and therefore never reaches governed.trade at all
+    -- (see inv.every_received_trade_persisted), so this invariant's join
+    -- below naturally excludes it too.
     SELECT *
     FROM raw.trade_cdc
-    WHERE cdc_flag IN ('I', 'U', 'D')
-      AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-      AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
+    WHERE cdc_flag IS NOT NULL AND cdc_flag IN ('I', 'U', 'D')
+      AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+      AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
 ),
 first_cdc_report AS (
     SELECT t_id, t_st_id, t_tt_id

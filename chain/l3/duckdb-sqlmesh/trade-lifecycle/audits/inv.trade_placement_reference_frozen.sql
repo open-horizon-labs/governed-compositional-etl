@@ -1,18 +1,21 @@
 AUDIT (name "inv.trade_placement_reference_frozen");
 
 -- For any trade_number, placed_at, owning_account_effective_from, owning_customer_number,
--- and owning_customer_effective_from are each set once -- from the trade's first-encountered
+-- and owning_customer_effective_from are each set once -- from the trade's earliest anchored
 -- report and the account and customer statements resolved as of that report's own time -- and
 -- are never replaced by a later report of the same trade. Recompute all four fresh (placed_at
--- from the first-encountered report across both anchored sources; the account statement as of
--- the currently stored owning_account_number and placed_at; the customer statement as of the
--- currently stored owning_customer_number and placed_at) and diff against what governed.trade
--- actually holds.
+-- from the earliest anchored report across both anchored sources -- an unanchored report is
+-- held as a whole and is not evidence; the account statement as of the currently stored
+-- owning_account_number and placed_at; the customer statement as of the currently stored
+-- owning_customer_number and placed_at) and diff against what governed.trade actually holds.
 WITH first_cdc_report AS (
   SELECT
     t_id AS trade_number,
     t_dts AS placed_at
   FROM raw.trade_cdc
+  WHERE cdc_flag IS NOT NULL AND cdc_flag IN ('I', 'U', 'D')
+    AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+    AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date ASC, cdc_dsn ASC) = 1
 ),
 first_history_report AS (
@@ -20,6 +23,7 @@ first_history_report AS (
     th_t_id AS trade_number,
     th_dts AS placed_at
   FROM raw.trade_history
+  WHERE th_st_id IS NOT NULL AND th_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
   QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts ASC) = 1
 ),
 first_report AS (

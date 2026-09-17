@@ -1,27 +1,24 @@
 AUDIT (name "inv.every_received_trade_persisted");
 
--- For any trade_number that has at least one received report whose coded fields are all
--- anchored (cdc_flag, t_st_id, and t_tt_id for a raw.trade_cdc report; th_st_id for a
--- raw.trade_history report) and none of whose received reports carries cdc_flag D, exactly one
--- governed.trade row exists for that trade_number. A trade_number with any cdc_flag D report is
--- L1.hole.deletions' case and is not claimed by this invariant. A trade_number known only
--- through reports held under L1.unknown-codes -- none of its received reports has fully
--- anchored codes -- is not yet known to this job and is not claimed either; inv.unknown_codes_
--- held reports each such held report instead. raw.trade_history carries no cdc_flag column, so
--- a history report never carries D on its own.
+-- For any trade_number that has at least one received raw.trade_cdc report whose coded fields
+-- (cdc_flag, t_st_id, t_tt_id) are all anchored and that does not carry cdc_flag D, and whose
+-- earliest report (across both anchored sources) is not itself held under L1.unknown-codes,
+-- exactly one governed.trade row exists for that trade_number. A trade_number with any cdc_flag
+-- D report is L1.hole.deletions' case and is not claimed here. A trade_number known only
+-- through reports held under L1.unknown-codes, or known only through raw.trade_history rows (no
+-- identity handoff of its own), is not yet known to this job and is not claimed either;
+-- inv.unknown_codes_held reports each held report instead. A trade_number whose earliest report
+-- is itself held while a later raw.trade_cdc report is not is likewise not yet claimed, pending
+-- L1.hole.held-first-report-placement.
 WITH fully_anchored_trade_numbers AS (
-  SELECT t_id AS trade_number
+  SELECT DISTINCT t_id AS trade_number
   FROM raw.trade_cdc
-  WHERE cdc_flag IN ('I', 'U', 'D')
-    AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-    AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
-  UNION
-  SELECT th_t_id AS trade_number
-  FROM raw.trade_history
-  WHERE th_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+  WHERE cdc_flag IS NOT NULL AND cdc_flag IN ('I', 'U', 'D')
+    AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+    AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
 ),
 -- IS DISTINCT FROM is null-safe: it keeps any row whose cdc_flag is absent in scope rather
--- than unknown; raw.trade_history contributes no rows here since it has no cdc_flag column.
+-- than unknown.
 cdc_flag_scope AS (
   SELECT
     t_id AS trade_number,
@@ -29,11 +26,49 @@ cdc_flag_scope AS (
   FROM raw.trade_cdc
   GROUP BY t_id
 ),
+history_presence AS (
+  SELECT DISTINCT th_t_id AS trade_number
+  FROM raw.trade_history
+),
+earliest_history_any AS (
+  SELECT
+    th_t_id AS trade_number,
+    th_st_id AS status_at_first_report
+  FROM raw.trade_history
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts ASC) = 1
+),
+earliest_cdc_any AS (
+  SELECT
+    t_id AS trade_number,
+    cdc_flag,
+    t_st_id,
+    t_tt_id
+  FROM raw.trade_cdc
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date ASC, cdc_dsn ASC) = 1
+),
+earliest_report_held AS (
+  SELECT trade_number
+  FROM earliest_history_any
+  WHERE status_at_first_report IS NULL
+     OR status_at_first_report NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+  UNION
+  SELECT e.trade_number
+  FROM earliest_cdc_any AS e
+  LEFT JOIN history_presence AS h ON h.trade_number = e.trade_number
+  WHERE h.trade_number IS NULL
+    AND (
+      e.cdc_flag IS NULL OR e.cdc_flag NOT IN ('I', 'U', 'D')
+      OR e.t_st_id IS NULL OR e.t_st_id NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+      OR e.t_tt_id IS NULL OR e.t_tt_id NOT IN ('TLB', 'TLS', 'TMB', 'TMS')
+    )
+),
 in_scope_trade_numbers AS (
-  SELECT DISTINCT f.trade_number
+  SELECT f.trade_number
   FROM fully_anchored_trade_numbers AS f
   LEFT JOIN cdc_flag_scope AS s ON s.trade_number = f.trade_number
+  LEFT JOIN earliest_report_held AS held ON held.trade_number = f.trade_number
   WHERE COALESCE(s.has_no_d_report, TRUE)
+    AND held.trade_number IS NULL
 )
 SELECT
   i.trade_number
