@@ -378,6 +378,57 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
     return report
 
 
+def mutate(target: str, job: str, database: Path | None = None) -> dict:
+    """Audit sensitivity on native targets: corrupt one protected value at a time on a scratch copy and require an audit to fire.
+    Mutations: for every frozen_from_first_encounter or per_statement attribute, null one row's value and, where two
+    distinct values exist, swap one row's value for another row's. Reports mutations no audit catches as unprotected."""
+    import shutil
+    profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
+    if is_sqlmesh(profile):
+        raise L3Error("mutation testing runs on native targets; SQLMesh targets expose views over versioned physical tables")
+    model, review = load_job(job)
+    base = L3_DIR / target / job
+    manifest = json.loads((base / "manifest.json").read_text())
+    database = database or ROOT / f"build/chain-{target}-mutate.duckdb"
+    run(target, job, "rollover", database=database)
+    scratch = database.with_name(database.stem + "-scratch.duckdb")
+    types = {t["id"]: t["mutation_role"] for t in model["types"]}
+    audits = [(a["invariant"], (base / a["file"]).read_text()) for a in manifest["audits"]]
+    results = []
+    for entity in model["entities"]:
+        table = "governed." + entity["id"].split(".")[-1]
+        ids = entity["identifiers"]
+        for attr in entity["attributes"]:
+            role = types.get(attr["semantic_type"])
+            if role not in ("frozen_from_first_encounter", "per_statement"):
+                continue
+            for kind in ("null", "swap"):
+                if scratch.exists():
+                    scratch.unlink()
+                shutil.copy(database, scratch)
+                con = duckdb.connect(str(scratch))
+                try:
+                    rows = con.execute(f"SELECT {', '.join(ids)}, {attr['name']} FROM {table} ORDER BY 1, 2").fetchall()
+                    candidates = [r for r in rows if r[-1] is not None] if kind == "null" else rows
+                    if not candidates:
+                        continue
+                    target_row = candidates[-1]
+                    where = " AND ".join(f"{c} = ?" for c in ids)
+                    if kind == "null":
+                        con.execute(f"UPDATE {table} SET {attr['name']} = NULL WHERE {where}", list(target_row[:-1]))
+                    else:
+                        others = [r[-1] for r in rows if r[-1] != target_row[-1] and r[-1] is not None]
+                        if not others:
+                            continue
+                        con.execute(f"UPDATE {table} SET {attr['name']} = ? WHERE {where}", [others[0], *target_row[:-1]])
+                    fired = [inv for inv, sql in audits if con.execute(sql).fetchall()]
+                finally:
+                    con.close()
+                results.append({"entity": entity["id"], "attribute": attr["name"], "role": role, "mutation": kind, "fired": fired, "protected": bool(fired)})
+    unprotected = [r for r in results if not r["protected"]]
+    return {"target": target, "job": job, "mutations": len(results), "unprotected": unprotected, "results": results}
+
+
 def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> dict:
     """Engine independence: the same selected L2 projected on two targets must yield identical tables."""
     ra = run(target_a, job, phase, database=ROOT / f"build/chain-compare-{target_a}.duckdb")
@@ -406,7 +457,7 @@ def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=("check", "run", "stamp", "compare", "twophase"))
+    p.add_argument("command", choices=("check", "run", "stamp", "compare", "twophase", "mutate"))
     p.add_argument("target")
     p.add_argument("job")
     p.add_argument("--against", help="compare: the second target")
@@ -417,6 +468,8 @@ def main() -> int:
             r = check(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["status"] == "ok" else 3
         if a.command == "stamp":
             print(json.dumps(stamp(a.target, a.job), indent=2)); return 0
+        if a.command == "mutate":
+            r = mutate(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if not r["unprotected"] else 3
         if a.command == "twophase":
             r = run_two_phase(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["first_phase_ok"] and r["second_phase_ok"] else 3
         if a.command == "compare":

@@ -141,93 +141,6 @@
       "sufficiency_group": "sg.no-phantom-positions",
       "time_role": "none",
       "unit": "units"
-    },
-    {
-      "id": "position_quantity",
-      "derived_from": [
-        "L1.no-phantom-positions"
-      ],
-      "disposition": "candidate",
-      "feedback": [
-        "sketch-review"
-      ],
-      "history_role": "none",
-      "mutation_role": "mutable",
-      "necessity": "L1.no-phantom-positions requires a summed value per statement of an account or customer that can never go below zero; this type carries that sum, recomputed as holding changes attributed to the statement are added or updated.",
-      "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while every holding change attributed to a statement is included exactly once in that statement's sum.",
-      "physical_type": "integer",
-      "review_trigger": "a statement's summed value is found to omit or double-count a holding change attributed to it",
-      "semantic_kind": "position_quantity",
-      "sufficiency_group": "sg.no-phantom-positions",
-      "time_role": "none",
-      "unit": "units"
-    },
-    {
-      "id": "account_position_account_key",
-      "derived_from": [
-        "L1.identity",
-        "L1.no-phantom-positions"
-      ],
-      "disposition": "candidate",
-      "feedback": [
-        "sketch-review"
-      ],
-      "history_role": "none",
-      "mutation_role": "identity",
-      "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account; the account half of that statement's identity is the same persistent account number every holding change already carries as owning_account_number (physical_type integer, semantic_kind trade_owning_account_identity_reference, matched here), now playing the role of a grouping key rather than a frozen reference, per L1.identity's persistence requirement.",
-      "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while every holding change grouped under one account_position row carries the same owning_account_number value.",
-      "physical_type": "integer",
-      "review_trigger": "two holding changes grouped into the same account_position row are found to carry different owning_account_number values",
-      "semantic_kind": "trade_owning_account_identity_reference",
-      "sufficiency_group": "sg.no-phantom-positions",
-      "time_role": "none",
-      "unit": "none"
-    },
-    {
-      "id": "account_position_effective_from_key",
-      "derived_from": [
-        "L1.identity",
-        "L1.no-phantom-positions"
-      ],
-      "disposition": "candidate",
-      "feedback": [
-        "sketch-review"
-      ],
-      "history_role": "none",
-      "mutation_role": "identity",
-      "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account, not merely per account; the statement half of that identity is the same effective_from every holding change already carries as owning_account_effective_from (physical_type timestamp, semantic_kind statement_effective_time, matched here), now playing the role of a grouping key rather than a frozen reference. This is what makes two statements of the same account -- reached by trades placed under different account effective dates -- sum separately, so a holding opened under one statement can never be netted against one closed under another.",
-      "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while every holding change grouped under one account_position row carries the same owning_account_effective_from value.",
-      "physical_type": "timestamp",
-      "review_trigger": "two holding changes grouped into the same account_position row are found to carry different owning_account_effective_from values",
-      "semantic_kind": "statement_effective_time",
-      "sufficiency_group": "sg.no-phantom-positions",
-      "time_role": "effective",
-      "unit": "none"
-    },
-    {
-      "id": "customer_position_key",
-      "derived_from": [
-        "L1.identity",
-        "L1.no-phantom-positions"
-      ],
-      "disposition": "candidate",
-      "feedback": [
-        "sketch-review"
-      ],
-      "history_role": "none",
-      "mutation_role": "identity",
-      "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer as well as per account; this job's only customer-side value, on any holding change, is owning_customer_number (physical_type integer, semantic_kind account_owner_identity_reference, matched here), copied from the current trade with no independent customer effective_from beside it (the job's clause list does not include L1.owner-standing, which is what ties a customer's own statement to the account's). The derivable customer-side grouping key is therefore owning_customer_number alone, per L1.identity's persistence requirement for the customer.",
-      "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible only to the extent that owning_customer_number, without its own effective_from, is what this job's clause list makes available for grouping; if the business later supplies a customer-side effective time for this job, this key would need to be composite instead of single-valued.",
-      "physical_type": "integer",
-      "review_trigger": "two holding changes grouped into the same customer_position row are found to carry different owning_customer_number values, or the business states that customer statements matter to this job's positions independent of the account statement pinned on the trade",
-      "semantic_kind": "account_owner_identity_reference",
-      "sufficiency_group": "sg.no-phantom-positions",
-      "time_role": "none",
-      "unit": "none"
     }
   ],
   "entities": [
@@ -436,7 +349,7 @@
       "attributes": [
         {
           "name": "account_number",
-          "semantic_type": "account_position_account_key",
+          "semantic_type": "holding_owning_account_reference",
           "derived_from": [
             "L1.identity",
             "L1.no-phantom-positions"
@@ -446,7 +359,7 @@
             "inv.account_position_not_negative",
             "sketch-review"
           ],
-          "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account; this attribute carries the account half of that statement's identity, the same persistent account number every grouped holding_change already carries as owning_account_number, per L1.identity.",
+          "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account; this attribute carries the account half of that statement's identity by reusing holding_change's own owning_account_number type unchanged (same physical_type and semantic_kind, already frozen at each holding_change's first encounter per sg.holding-attribution), now also serving as this aggregate's grouping key, per L1.identity's persistence requirement.",
           "nullable": false,
           "owner_hat": "data-product-owner",
           "parallel_assumption": "Credible while every holding_change grouped into this row carries the same owning_account_number.",
@@ -455,7 +368,7 @@
         },
         {
           "name": "account_effective_from",
-          "semantic_type": "account_position_effective_from_key",
+          "semantic_type": "holding_owning_account_effective_from",
           "derived_from": [
             "L1.identity",
             "L1.no-phantom-positions"
@@ -465,7 +378,7 @@
             "inv.account_position_not_negative",
             "sketch-review"
           ],
-          "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account, not merely per account, so a holding opened under one statement is never netted against one closed under another; this attribute carries the statement half of that identity, the same effective_from every grouped holding_change already carries as owning_account_effective_from.",
+          "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account, not merely per account, so a holding opened under one statement is never netted against one closed under another; this attribute carries the statement half of that identity by reusing holding_change's own owning_account_effective_from type unchanged, now also serving as this aggregate's grouping key.",
           "nullable": false,
           "owner_hat": "data-product-owner",
           "parallel_assumption": "Credible while every holding_change grouped into this row carries the same owning_account_effective_from.",
@@ -474,7 +387,7 @@
         },
         {
           "name": "net_quantity",
-          "semantic_type": "position_quantity",
+          "semantic_type": "holding_quantity_change",
           "derived_from": [
             "L1.no-phantom-positions"
           ],
@@ -483,7 +396,7 @@
             "inv.account_position_not_negative",
             "sketch-review"
           ],
-          "necessity": "L1.no-phantom-positions requires a summed value per account statement that can never go below zero; this attribute is that sum, the total of quantity_change across every holding_change attributed to this (account_number, account_effective_from) statement.",
+          "necessity": "L1.no-phantom-positions requires a summed value per account statement that can never go below zero; this attribute is that sum, reusing quantity_change's own type (the per-holding-change net contribution) unchanged, totaled across every holding_change attributed to this (account_number, account_effective_from) statement.",
           "nullable": false,
           "owner_hat": "data-product-owner",
           "parallel_assumption": "Credible while every holding_change attributed to this statement is included exactly once in the sum.",
@@ -516,7 +429,7 @@
       "attributes": [
         {
           "name": "customer_number",
-          "semantic_type": "customer_position_key",
+          "semantic_type": "holding_owning_customer_reference",
           "derived_from": [
             "L1.identity",
             "L1.no-phantom-positions"
@@ -526,7 +439,7 @@
             "inv.customer_position_not_negative",
             "sketch-review"
           ],
-          "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer; this attribute carries the only customer-side identity this job's clauses make available, owning_customer_number, per L1.identity.",
+          "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer; this attribute carries the only customer-side identity this job's clauses make available by reusing holding_change's own owning_customer_number type unchanged, now also serving as this aggregate's grouping key, per L1.identity.",
           "nullable": false,
           "owner_hat": "data-product-owner",
           "parallel_assumption": "Credible while every holding_change grouped into this row carries the same owning_customer_number.",
@@ -535,7 +448,7 @@
         },
         {
           "name": "net_quantity",
-          "semantic_type": "position_quantity",
+          "semantic_type": "holding_quantity_change",
           "derived_from": [
             "L1.no-phantom-positions"
           ],
@@ -544,7 +457,7 @@
             "inv.customer_position_not_negative",
             "sketch-review"
           ],
-          "necessity": "L1.no-phantom-positions requires a summed value per customer that can never go below zero; this attribute is that sum, the total of quantity_change across every holding_change attributed to this customer_number.",
+          "necessity": "L1.no-phantom-positions requires a summed value per customer that can never go below zero; this attribute is that sum, reusing quantity_change's own type unchanged, totaled across every holding_change attributed to this customer_number.",
           "nullable": false,
           "owner_hat": "data-product-owner",
           "parallel_assumption": "Credible while every holding_change attributed to this customer is included exactly once in the sum.",
@@ -901,10 +814,6 @@
       "members": [
         "type.holding_quantity",
         "type.holding_quantity_change",
-        "type.position_quantity",
-        "type.account_position_account_key",
-        "type.account_position_effective_from_key",
-        "type.customer_position_key",
         "logical.holding_change.before_qty",
         "logical.holding_change.after_qty",
         "logical.holding_change.quantity_change",
@@ -926,7 +835,7 @@
         "inv.customer_position_not_negative"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or customer can never go below zero. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change, state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds. logical.account_position aggregates quantity_change, with selector sum_of_deltas, per (account_number, account_effective_from) -- the same pair every holding change already carries as its copied ownership reference (sg.holding-attribution) -- and logical.customer_position aggregates it per customer_number, the only customer-side identity this job's clause list makes available downstream of trade-lifecycle (L1.owner-standing, which would let a customer's own statement be time-sliced independent of the account's, is not among positions' listed clauses). inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly. This coverage is conditional: latest_change and the aggregation itself rest on the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; and what a cdc_flag D raw.holding_history report means for a holding change's quantities is L1.hole.deletions, not decided here.",
+      "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or customer can never go below zero. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change, state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds. logical.account_position aggregates quantity_change, with selector sum_of_deltas, per (account_number, account_effective_from) -- the same pair every holding change already carries as its copied ownership reference (sg.holding-attribution), reusing those two types and quantity_change's own type unchanged for the aggregate's key and summed value, so no value crosses into this entity under a new type -- and logical.customer_position aggregates it per customer_number, the only customer-side identity this job's clause list makes available downstream of trade-lifecycle (L1.owner-standing, which would let a customer's own statement be time-sliced independent of the account's, is not among positions' listed clauses). inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly. This coverage is conditional: latest_change and the aggregation itself rest on the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; and what a cdc_flag D raw.holding_history report means for a holding change's quantities is L1.hole.deletions, not decided here.",
       "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; see coverage_claim."
     },
     {

@@ -1,0 +1,4 @@
+# Audit sensitivity findings (mutation testing), ownership-history on duckdb-native
+
+Protected: effective_from (null, swap), is_current (null, swap), owning_customer_number (null), status (null), tier (null), tax_treatment (null), provenance (null, swap).
+Unprotected: status swap (customer and account), tax_treatment swap. No deterministic invariant states that a statement's status equals the anchored meaning of its producing action, or that tax treatment equals the producing row's value. These are value-correctness properties of interpreted handoffs; the L2 model carries them only as sketch-review feedback. Routed to the next authorized L2 change as candidate invariants (an invariant per interpreted handoff: the projected value equals the anchored interpretation of the source row), or to the L3 contract as a recompute-and-diff audit requirement.

@@ -860,3 +860,7 @@ Five cycles on one job with a Sonnet Developer and an Opus reviewer. Every failu
 - Same L2, two engines, one guard, one materialization workaround confined to the profile that needs it. That is the solution space's third success signal.
 - The native Developer self-reported reading gate source against its brief and drew no policy from it. Recorded; the reads restriction stays in the brief.
 - Both trade projections are with projection reviewers. Positions L2 and the counterfactual compile of ownership-history without the statement-content clauses are still running.
+
+### Audit mutation testing mechanized (2026-09-17)
+
+- `chain_l3.py mutate` corrupts one protected value at a time on a scratch copy (null it; swap it for another row's value) and requires an audit to fire. Ownership-history: 18 mutations, 3 unprotected (status swaps, tax-treatment swap): no invariant states that an interpreted value equals its anchored interpretation. Trade-lifecycle: 7 mutations, 3 unprotected (nulls on owning account, placement time, late marker): recomputation audits compare with equality, so a null passes. Both recorded as findings beside the projections and routed to the next authorized changes. The reviewer did this by hand for one projection; now every native projection gets it.
