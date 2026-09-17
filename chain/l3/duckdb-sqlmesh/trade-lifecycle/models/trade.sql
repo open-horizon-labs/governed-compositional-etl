@@ -30,7 +30,9 @@ MODEL (
     "inv.trade_first_seen_late_matches_status_order",
     "inv.trade_placed_at_matches_earliest_report",
     "inv.trade_outcome_updates_in_place",
-    "inv.trade_ownership_provenance_reachable"
+    "inv.trade_ownership_provenance_reachable",
+    "inv.trade_ownership_pin_present",
+    "inv.every_received_trade_persisted"
   ),
   depends_on (governed.account, governed.customer)
 );
