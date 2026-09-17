@@ -1,0 +1,125 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.customer_mgmt_action.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.6"
+    ]
+  },
+  "grain": "one row per CustomerMgmt action (action_at, customer_id, account_id)",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "source.customer-mgmt-fields-beyond-slice",
+      "owner_hat": "domain-reviewer",
+      "question": "Which remaining CustomerMgmt fields (names, addresses, contacts, tax ids) are anchored once DimCustomer leaves stub scope?",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "action_at",
+    "customer_id"
+  ],
+  "input": {
+    "entity": "raw.customer_mgmt_action",
+    "fields": [
+      {
+        "name": "action_type",
+        "semantic_type": "action_type"
+      },
+      {
+        "name": "action_ts",
+        "semantic_type": "action_timestamp"
+      },
+      {
+        "name": "c_id",
+        "semantic_type": "customer_natural_id"
+      },
+      {
+        "name": "ca_id",
+        "semantic_type": "account_natural_id"
+      },
+      {
+        "name": "ca_b_id",
+        "semantic_type": "broker_natural_id"
+      },
+      {
+        "name": "ca_tax_st",
+        "semantic_type": "tax_status_id"
+      },
+      {
+        "name": "c_tier",
+        "semantic_type": "customer_tier"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "action_type",
+        "semantic_type": "action_type",
+        "source": "action_type"
+      },
+      {
+        "name": "action_at",
+        "semantic_type": "action_timestamp",
+        "source": "action_ts"
+      },
+      {
+        "name": "customer_id",
+        "semantic_type": "customer_natural_id",
+        "source": "c_id"
+      },
+      {
+        "name": "account_id",
+        "semantic_type": "account_natural_id",
+        "source": "ca_id"
+      },
+      {
+        "name": "broker_id",
+        "semantic_type": "broker_natural_id",
+        "source": "ca_b_id"
+      },
+      {
+        "name": "tax_status_id",
+        "semantic_type": "tax_status_id",
+        "source": "ca_tax_st"
+      },
+      {
+        "name": "tier",
+        "semantic_type": "customer_tier",
+        "source": "c_tier"
+      }
+    ]
+  },
+  "rule_order": [
+    "customer-mgmt.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.6",
+      "id": "customer-mgmt.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v2",
+  "stage_id": "stage.customer_mgmt_action",
+  "verification": [
+    {
+      "id": "customer_mgmt_action.exact-structural-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "customer_mgmt_action.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

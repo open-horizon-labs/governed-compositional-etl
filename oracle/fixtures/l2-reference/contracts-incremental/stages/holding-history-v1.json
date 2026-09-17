@@ -1,0 +1,103 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.holding_history.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.9"
+    ]
+  },
+  "grain": "one holding change per (original_trade_id, current_trade_id)",
+  "holes": [],
+  "identifiers": [
+    "original_trade_id",
+    "current_trade_id"
+  ],
+  "input": {
+    "entity": "raw.holding_history",
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag"
+      },
+      {
+        "name": "cdc_dsn",
+        "semantic_type": "cdc_sequence"
+      },
+      {
+        "name": "hh_h_t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "hh_t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "hh_before_qty",
+        "semantic_type": "holding_quantity"
+      },
+      {
+        "name": "hh_after_qty",
+        "semantic_type": "holding_quantity"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag",
+        "source": "cdc_flag"
+      },
+      {
+        "name": "cdc_sequence",
+        "semantic_type": "cdc_sequence",
+        "source": "cdc_dsn"
+      },
+      {
+        "name": "original_trade_id",
+        "semantic_type": "trade_id",
+        "source": "hh_h_t_id"
+      },
+      {
+        "name": "current_trade_id",
+        "semantic_type": "trade_id",
+        "source": "hh_t_id"
+      },
+      {
+        "name": "before_quantity",
+        "semantic_type": "holding_quantity",
+        "source": "hh_before_qty"
+      },
+      {
+        "name": "after_quantity",
+        "semantic_type": "holding_quantity",
+        "source": "hh_after_qty"
+      }
+    ]
+  },
+  "rule_order": [
+    "holding-history.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.9",
+      "id": "holding-history.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v2",
+  "stage_id": "stage.holding_history",
+  "verification": [
+    {
+      "id": "holding_history.exact-structural-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "holding_history.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

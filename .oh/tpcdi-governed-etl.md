@@ -526,3 +526,245 @@ Pruned early: C fails criterion 2; D fails criterion 4 and adds fork risk for no
 - SQLMesh restatement plans reuse prod snapshots and ignore local model edits. A changed model is itself the plan; do not combine the two in a test.
 - SQLMesh caches parsed models by file mtime; an edit within one second of compilation needs `.cache` cleared.
 - The key-binding model is insert-only through the same materialization with an empty mutable list; it doubles as the audit's reference and as the first-encounter carrier the weave asked for.
+
+## Dissent (phase 2 chain claim, 2026-09-16)
+
+**Decision under review:** that the five links (DimCustomer, DimAccount, DimTrade incremental, FactHoldings, position metrics) form a compositional CESS chain rather than five CESS instances sharing a database.
+**Stakes:** the whole phase-2 aim is compositional governance. If this is five models with `depends_on` in their frontmatter, the repo demonstrates nothing phase 1 did not.
+**Confidence before dissent:** MEDIUM.
+
+### Steel-Man Position
+Each link has its own Sketch, contracts, gate, and repair authority. They share one role vocabulary, so a frozen key means the same thing in every consumer. Edge contracts map producer outputs to consumer inputs by semantic type. A revalidation profile compiles typed edges from those mappings, so the affected set after a violation is computed across links. Repair authorities forbid adjacent links' Sketches and all metrics, so a repair cannot leak sideways. One constructed CE enters at link 2 as labeled data and is expected to be caught at links 3 and 4 by the guard and at link 5 by the invariant. That is a chain: one failure, one entry point, governed propagation, bounded repair.
+
+### Contrary Evidence
+1. Nothing checks a handoff. Phase 1 had `validate_edge_bindings`: the producer contract's output type had to equal the consumer input type, and evidence could not declare its own type. Phase 2's edge contracts list `reference.dim_account_as_of.sk_account_id` but no code verifies that `logical.dim_account` has an attribute of that name and semantic type. The mappings are prose in JSON.
+2. Nothing constrains what a link's projection may read. A Developer for FactHoldings can join `governed.dim_account` directly and re-resolve keys. That is the tempting wrong repair for link 4, it passes the MERGE guard because the write surface is fine, and only the runtime gate would notice. The chain boundary is not mechanical.
+3. The revalidation profile is computed but unused. No runner takes a violated node, selects the downstream gates, and runs only those. The AFFECTED list prints; nothing acts on it.
+4. The CE's lineage across links is not recorded. The phase-2 archive index says the CE resolves two rules on the trade edge. The FactHoldings repair authority cites the CE, the position invariant depends on it, and neither is in the index. `A` is incomplete about which links one CE governs.
+5. Sketch review has no judge at any link, and no composite acceptance exists. `accepted(chain)` is undefined. Five green gates is not a chain accepting a case.
+6. Link 3 says it extends `trade-dim-v1` and closes none of its six holes formally. The phase-1 holes that motivated phase 2 are still open in phase 1's Sketch while phase 2 acts as if they were closed.
+
+### Pre-Mortem Scenarios
+1. **Functional:** a Sonnet Developer for link 4 joins DimAccount directly, all gates pass on the fixture because the fixture's current version happens to match, and the "second consumer catches it" demonstration is false. Warning sign ignored: no table-reference check.
+2. **Adoption:** a practitioner reads five Sketches, sees five SQLMesh models with audits, and says "this is dbt with contracts." Warning sign ignored: the composite behaviors (cone selection, chain acceptance, cross-link CE lineage) are described but not runnable.
+3. **Opportunity cost:** the time goes into five SCD2 and fact bodies while the one artifact that makes composition mechanical, the handoff check, never gets built. Phase 1 already had it for one edge.
+
+### Hidden Assumptions
+| Assumption | Evidence | Risk if Wrong | Test |
+|---|---|---|---|
+| Shared semantic types make handoffs governed | Types exist; edges name them | Producer and consumer drift silently; a rename breaks meaning without a failure | Harness check: every edge mapping `from` resolves to a producer attribute of identical semantic type |
+| A link's projection reads only its declared producers | Edge contracts list producers | Re-resolution shortcut passes the guard | Harness check: model body table references must be a subset of the edge's producer entities |
+| The CE propagates through the chain | Design intent | It is caught only where a fixture happens to make it visible | Run the cone from the violated node and require downstream gates to fail on the naive body |
+| Five per-link acceptances imply chain acceptance | None | Path failures with locally valid links pass | Composite acceptance = all links pass G and review on active case plus R, plus path invariants |
+
+### Reconstructed Story
+- **Still true:** the role vocabulary, the guard, the per-link Sketches and authorities, and the CE entering as labeled data are the right parts. The revalidation profile is the right composite gate skeleton.
+- **Weakest assumption:** that naming producers in an edge contract governs what the projection reads.
+- **Changed situation model:** composition has to be mechanical in the harness, not asserted in JSON. Four checks are missing and each is small: handoff type binding, table-reference containment, cone-driven gate selection, and composite acceptance with a judge per link.
+- **Changed beliefs:** confidence that the current artifacts are a chain drops to LOW. Confidence that they become one with those four checks is HIGH, because phase 1 already did the first for one edge.
+- **Next action:** add the handoff and table-reference checks to the harness before any Developer is spawned, so the Developer boundary is enforced, not described.
+
+### Decision
+**Recommendation:** ADJUST.
+**Reasoning:** the user is right about the present state. Five Sketches with `depends_on` and a shared type file are five instances. What makes it a chain is enforcement at the seams, and none of the seam checks exist yet.
+**Modifications:**
+1. Harness `anchors()` validates every edge mapping against the producer logical model or stage contract: same attribute, same semantic type, no type declared by the consumer. Fail otherwise.
+2. Harness `check` extracts every table reference from a governed body and rejects any not in the edge's declared producers. FactHoldings may read `holding_history_stage` and `dim_trade_incremental` only.
+3. Harness `cone` takes a violated node, computes affected models from the profile, and runs only their gates. The CE report uses it instead of running everything.
+4. Harness `accept` produces the two-check matrix for the active case and `R` across all links, with a sketch-review judge per link given only that link's Sketch and its observed rows.
+5. Archive index records, per CE, the links whose rules, authorities, and gates it governs.
+6. Phase-1 `trade-dim-v1` gets a note under its holes: which are addressed by `trade-dim-incremental-v1` under an assumed decision, without editing the hole rows.
+**Confidence after dissent:** MEDIUM, rising to HIGH once checks 1 and 2 reject a deliberately shortcutting body.
+**Follow-up artifact:** this section; the harness checks are the executable record.
+
+## Dissent (compile chain versus data pipeline, 2026-09-16)
+
+**Decision under review:** whether the five-link data DAG with per-stage Sketches is compositional CESS at all, given the user's reference case: a JTBD to UI compiler where intent compiles to a semantic component spec, which compiles to device-specific layouts.
+**Stakes:** the aim of the repo. If this is a data pipeline with contracts, there is nothing to demonstrate.
+**Confidence before dissent:** LOW, after the user's challenge.
+
+### Steel-Man Position
+The five links share a role vocabulary, typed handoffs, read containment, a computed revalidation cone, and one CE that enters at one link and is caught at three. Phase 1's own vocabulary is stage, edge, path: a data DAG. The chain is consistent with the repo's history.
+
+### Contrary Evidence
+1. **In the reference case, P becomes S.** JTBD -> semantic Sketch -> component spec -> layout. Each level's projection is the next level's governing input. In my chain, no Sketch is compiled from another. The Sketches are siblings, authored by hand, each governing a SQL transform. That is five instances, not a composition.
+2. **My semantic layer is hand-authored when it should be compiled.** Semantic types v2, the logical models, the edge contracts, and the `frozen_from_first_encounter` role are exactly what a level-1 intent ("attribute a position to the account version that owned the trade when it was placed") should compile into. I wrote the compiled output by hand and called it the Sketch. So the role is asserted policy, not derived meaning, and the CE can only ever test SQL.
+3. **The SQLMesh workaround is a device capability, not semantics.** In the UI chain, "ESP32 has 128 pixels" lives in the target profile, not in the JTBD. I put "SQLMesh has no DuckDB MERGE" in the semantic Sketch. That is a level confusion the reference case exposes immediately. The engine profile belongs to the last compilation step, and there should be several targets to prove the semantic level is engine-independent.
+4. **Locating the earliest wrong decision is a compile-chain question.** The repo's aim says locate the first incorrect semantic decision. In a data DAG that means "which stage." In a compile chain it means "which level's sketch lost the meaning": did intent state it, did the semantic compiler derive it, did the engine projection enforce it. The second question is the one nobody's dbt project answers.
+5. **Practitioner recognition cuts against me.** Dave has seen dbt contracts, tests, and lineage. He has not seen a business question compiled into mutation roles and then into three engines' incremental strategies with one guard.
+
+### Pre-Mortem Scenarios
+1. **Functional:** Sonnet writes five bodies, the CE passes, and the result is indistinguishable from a dbt project with contract tests. Warning sign: every artifact maps one-to-one onto a dbt concept.
+2. **Adoption:** the walkthrough teaches "add roles to your types," which is a lint rule, not a method. Nobody changes how they specify pipelines.
+3. **Opportunity cost:** the compile-chain demo, intent to semantic model to multiple engine projections, never gets built, and it is the one that mirrors the working JTBD compiler.
+
+### Hidden Assumptions
+| Assumption | Evidence | Risk if Wrong | Test |
+|---|---|---|---|
+| "Chain" means data lineage | Phase-1 vocabulary | Composition is asserted, not real | Does any link consume another link's Sketch as its input? No. |
+| Per-stage Sketches compose by sharing types | Shared type file | A vocabulary is not a compilation | Remove one Sketch; do the others change? No. |
+| The frozen role is authored policy | I wrote it | The CE cannot test whether meaning was derived correctly | Delete the role and ask what upstream statement would regenerate it. Today: nothing. |
+| The engine workaround is semantic | It sits in the Sketch | Semantic layer is not engine-independent | Project the same semantic model to a second engine; the workaround should vanish without touching S2. |
+
+### Reconstructed Story
+- **Still true:** the guard, the materialization, the seam checks, the loader, the fixture, and the CE are sound parts. They are level-3 gate machinery and a level-2 validity check, not the chain.
+- **Weakest assumption:** that composition lives in the data DAG. It lives in successive compilation.
+- **Changed situation model:** the demonstration is a compile chain with three levels. L1 intent Sketch (business hat): analytical jobs and their meaning. L1 to L2 Developer compiles the semantic model: entities, grain, identity, history semantics, mutation roles, attribution paths, invariants. L2, once reviewed, is the Sketch for L3. L2 to L3 Developers compile per engine target with a capability profile: SQLMesh on DuckDB (custom materialization), DuckDB native MERGE, and at least one more. One CE observed at L3 is classified to the earliest level whose sketch lost the meaning. The data DAG is content inside L2 and L3, not the chain.
+- **Changed beliefs:** confidence that the current work is a chain: none. Confidence that its parts survive into the compile chain: HIGH. The four seam checks become G for the compiled semantic model. The guard and materialization become G and P for one engine target. The five hand-written Sketches become the expected output of the L1 to L2 compiler, useful as a regression against what a Developer derives.
+- **Next action:** return to solution space with the compile-chain frame. Write S1 first, in business language, with holes. Then delegate L1 to L2 to a Developer under a change contract and compare its derived roles with the hand-written ones.
+
+### Decision
+**Recommendation:** RECONSIDER.
+**Reasoning:** the user's reference case defines composition as projection-becomes-sketch. Nothing built so far does that. The pieces are reusable; the structure is wrong.
+**Confidence after dissent:** HIGH that the frame must change.
+**Follow-up artifact:** this section; solution space to be rewritten under the compile-chain frame.
+
+## Solution Space (compile chain, 2026-09-16, supersedes the phase-2 mechanism section)
+
+### Solution Space Analysis
+
+**Problem:** Demonstrate compositional CESS as a chain of compilations, where each level's reviewed projection is the next level's Sketch, and a counterexample observed at any level is classified to the earliest level whose sketch lost the meaning, then regenerates only what derives from that change.
+**Key Constraint:** Each compile step must be delegable to a low-competence Developer under an explicit change contract. A boundary that needs a strong model to cross is drawn wrong.
+**Working Story:** Mirror the working JTBD to UI compiler. L1 is business intent about a brokerage's positions, ownership, and history, in business language with holes. L1 compiles to L2, a semantic model: entities, grain, identity, history semantics, mutation roles, attribution paths, invariants, each element recording the L1 clauses it derives from. L2, once reviewed, compiles to L3 per engine target with a capability profile, each artifact recording the L2 elements it derives from. The data DAG is content inside L2 and L3.
+**Success Signal:** (1) A Developer compiles L2 from L1 and derives `frozen_from_first_encounter` on account and customer keys from the attribution clause, without seeing the hand-written reference. (2) Removing that clause from L1 makes a fresh L2 compile omit the role, proving it is derived not asserted. (3) The same L2 projects to two or more engines with one guard, and the SQLMesh workaround appears only in that target's profile. (4) The account-428 CE, observed at L3, is classified to its level with the affected set computed from derivation edges.
+**Decision Criteria:** projection-becomes-sketch at every level; derivation recorded on every compiled element; level-scoped CE cones; Developer delegability; reuse of the guard, materialization, seam checks, loader, fixture.
+**Critical Assumptions:** L1 can be written in business language precise enough to compile; the L2 shape (types v2, logical models, edge contracts) is an adequate semantic model format; a second engine target is cheap enough to build (DuckDB native MERGE without SQLMesh is nearly free).
+
+### Level structure and CE scope
+| Level | Sketch `S` | Anchors `K` | Projection `P` | Gate `G` | A CE here regenerates |
+|---|---|---|---|---|---|
+| L1 | intent Sketch, business hat | TPC-DI source anchors, natural identities | none; L1 is authored | review only | L2 elements deriving from the changed clause, and their L3 descendants |
+| L2 | reviewed L1 projection: the semantic model | L1 clauses, contract schemas v2, role vocabulary | types, logical models, edges, invariants, each with `derived_from` L1 clause ids | schema validity, handoff binding, read containment, role reuse, sketch review against L1 | L3 artifacts deriving from the changed element, in every target |
+| L3 | reviewed L2 | engine capability profile per target | SQL models, audits, materialization, each with `derived_from` L2 element ids | AST guard, audits, CE run, sketch review against L2 | that target's projection only |
+
+### Candidates Considered
+| Option | Level | Approach | Main Trade-off |
+|---|---|---|---|
+| A | Reframe | Three-level compile chain as above; L2 Developer delegated first; two L3 targets | Discards the five hand-written Sketches as Sketches; keeps them as a reference output in oracle context |
+| B | Local optimum | Keep the five-link DAG, add derivation ids and call it a chain | Composition still asserted; fails the "remove one Sketch" test |
+| C | Redesign | Four levels: split L2 into conceptual model and physical-logical model | More faithful to the UI chain's component-spec versus layout split, but nothing in this slice forces the fourth level yet |
+
+### Interpretive Variety Check
+- Different frames: B keeps data lineage as the chain; A and C make compilation the chain.
+- Current-frame test: A tests projection-becomes-sketch directly with the L1-clause-removal counterfactual.
+- Failure would teach: if a Developer cannot derive roles from L1, the L1 language or the L2 format is wrong, which is the boundary lesson the user asked for.
+
+### Risk Retirement Plan
+| Risk / Assumption / Alternate Frame | Planned Disposition | Tempting Patch This Must Fail | Required Evidence or Rationale | Stop/Pivot If |
+|---|---|---|---|---|
+| Roles are derived, not asserted | Retired by evidence | Handing the Developer the reference contracts | Counterfactual compile without the attribution clause omits the role | The role appears anyway; then the Developer is inferring from raw or schema and L1 language must tighten |
+| L2 format is a sufficient semantic model | Retired by evidence | Adding fields ad hoc during the Developer run | Developer produces valid L2 that passes the seam checks and review, or returns one precise question | Developer needs more than one question; the format has a hole |
+| Engine independence of L2 | Retired by evidence | Leaving the SQLMesh workaround in L2 | Two L3 targets from one L2; workaround appears only in the SQLMesh profile | Any L2 element mentions an engine |
+| Level-scoped cones are computable | Retired by evidence | Hard-coding affected lists | `derived_from` on every element; cone command over the derivation graph | Any element lacks provenance |
+| Low-competence delegability | Retired by evidence | Using Fable for the Developer | Sonnet Developers for L1 to L2 and each L3 target | A boundary needs Fable; redraw it |
+| Constructed CE stays out of records | Triggered if violated | Editing raw fixture | Labeled CE stage, audited | Any raw diff |
+
+### Recommendation
+**Selected:** Option A, three-level compile chain.
+**Level:** Reframe
+**Rationale:** it is the only option where removing an upstream artifact changes downstream ones, which is the definition of composition the reference case uses. The reusable parts all keep their jobs, at the right level.
+**Accepted trade-offs:** the five per-stage Sketches stop being Sketches; the SCD2 and holdings semantics move from authored policy to compiled output that must be reviewed; more Developer runs.
+
+### S&T Selection (supersedes the earlier selection)
+| Step ID | Disposition | Note |
+|---|---|---|
+| L1 | selected | Write the intent Sketch in business language with stable clause ids and holes |
+| L2 | selected | Sonnet Developer compiles the semantic model under a change contract; harness seam checks are its gate; reviewer judges against L1 |
+| L2-cf | selected | Counterfactual compile without the attribution clause |
+| L3-sqlmesh | selected | Existing materialization and guard, profiled as a target |
+| L3-native | selected | DuckDB native MERGE executed directly, same guard |
+| CE-level | selected | CE records carry a level and target; cone over derivation edges |
+| U2, E3 | selected (carried) | Conventional repair comparison, now at L3 |
+| E1.1, E2, E4, T3 as originally scoped | deferred | Scorer fix, Jev arm, rater study, full XML extraction |
+
+### Execution Handoff
+- Preserve: projection-becomes-sketch; derivation recorded on every element; roles derived from L1; engine facts only in L3 profiles; Developers get S and K and a change contract, never the CE archive or the reference output.
+- Verify via: the counterfactual compile; two targets from one L2; cone from an L1 clause selects the right L2 elements and L3 artifacts; the 428 CE classified to a level.
+- Invalidated if: a Developer cannot compile L2 from L1 with at most one question, or roles survive removal of the clause.
+- Needs human verification: the L1 Sketch itself is the business hat's document; the user reviews it before any Developer compiles from it.
+
+### Solution outline addendum: cache, multiple L2s, and Jev (2026-09-16)
+
+**Compile chain.** L1 is one intent Sketch in business language with individually addressable, hashed clauses. Several L2 semantic models compile from it, one per job, each from a subset of clauses: ownership-history (customer and account versions), trade-lifecycle (trades and their ownership), positions (holdings and metrics). Each L2 compiles to L3 projections, one per engine target with a capability profile. Every compiled element records `derived_from`.
+
+**Cache.** Fingerprint of an L1 clause = hash of its normalized text. Fingerprint of an L2 element = hash of the fingerprints it derives from plus the L2 compiler contract version. Fingerprint of an L3 artifact = hash of its L2 inputs plus the target profile. A manifest caches fingerprints. On any change, recompute; unchanged fingerprints are cache hits and never re-project. The revalidation cone is the stale set.
+
+**Jev.** Deterministic hashing is the floor. Above it, Jev (TypeSafe System One) makes the typed decisions over code-built state:
+- Invalidation: for each cached element whose input hash changed, Noul "does this clause change alter the behavior this element must produce?" High-confidence no keeps the hit; high-confidence yes invalidates the element and its L3 descendants; low confidence routes to the reviewer. This is the composite selection.
+- CE level classification: Choice over {L1 gap, L2 gap, L3 defect} given clauses, element, observed and corrected output; confidence-gated; reviewer confirms.
+- L3 strategy selection: Choice over materialization strategies from an L2 element and an engine profile, where capability flags leave it open.
+- Review triage: one Noul per clause, "does the observed output follow this clause," selecting cases and clauses for the capable reviewer. Not a replacement for sketch review.
+Every call is logged with request and response hashes, probabilities, confidence, and tokens. Without a key the selector records not-run and the cache treats hash-changed as invalidated.
+
+**Developer boundaries.** L1 to L2 per job and L2 to L3 per target and job are delegated to Sonnet under the CESS Developer change contract, given S and K only. The hand-written contracts from earlier today move to oracle context as a reference output for comparison, never as Developer input.
+
+## Dissent (S&T nesting applied to the compile chain, 2026-09-16)
+
+**Decision under review:** the compile-chain design as drafted: L1 clauses, an L2 semantic-model format whose elements carry `derived_from`, a gate over derivation and typing, a fingerprint cache with Jev invalidation, and Developer contracts. Tested against the nesting that `/strategy-clarity` and `/problem-weave` prescribe for strategy and execution.
+**Stakes:** if the levels nest the way S&T steps nest, the chain reasons; if they only point upward, it is lineage metadata again.
+**Confidence before dissent:** MEDIUM.
+
+### Steel-Man Position
+Projection-becomes-sketch is in place at each level boundary. Every L2 element records the L1 clauses it derives from; the gate rejects elements citing clauses the job does not list, frozen roles without a clause, roles on columns, untyped handoffs, and reads outside upstream jobs. Fingerprints over derivation give a cache and a cone. Developers get S and K and a change contract. That is the CESS contract applied three times, connected by derivation.
+
+### Contrary Evidence
+1. **`derived_from` is provenance, not justification.** An S&T step carries necessity (why indispensable to the parent), a parallel assumption (why credible under current conditions), and a sufficiency claim about its sibling set. My elements carry a parent pointer. A Developer can cite the attribution clause on anything and the gate cannot tell decoration from derivation; my keyword heuristic for frozen roles is the confession.
+2. **Sufficiency is unchecked.** Sufficiency is a claim about a named set of siblings covering a parent, never row-local. Nothing asks whether the elements citing `L1.lifecycle-mutates-outcome` together cover it. A model that omits fees, commission, and tax passes the gate. That is the exact failure `/problem-weave` warns about: a flattened table with free-form links is not a tree.
+3. **No dispositions.** S&T steps are candidate, selected, rejected, or deferred, with owner and review trigger, and only selected steps route to planning. My L2 has no disposition, so L3 would compile from unreviewed L2, and the cache would cache candidates. Holes are deferred steps and CE tempting-wrong-repairs are rejected steps; neither has a place in the tree.
+4. **No interweave across sibling L2s.** `/problem-weave` compiles independent passes, then normalizes and interweaves with a relation map: overlap, complement, dependency, opposition, gap, contradiction. My three jobs compile independently and are connected only by `upstream_jobs` and a handoff type check, which is one relation (dependency). A clause realized in two jobs with different roles is a contradiction nobody detects. A clause no job covers is a gap nobody reports.
+5. **The Developer brief is a prompt, not a strategy artifact.** `/strategy-clarity` says an agent brief carries aim, mechanism, feedback, guardrails, files, behavior contract, checks, stop conditions, and review criteria. Mine has files, behavior contract, checks, and stop conditions. It never states the mechanism (why compiling from clauses should produce a correct model) or the review criteria the judge will apply, so the Developer optimizes for the gate.
+6. **Cache unit is wrong.** Fingerprinting individual elements means a clause change stales scattered elements. The natural unit is the sufficiency group under that clause. It is also the unit a reviewer re-judges and the unit Jev should be asked about, with necessity and parallel-assumption text as state, since "why was this credible?" is exactly what a clause change may have broken.
+
+### Pre-Mortem Scenarios
+1. **Functional:** Sonnet returns a schema-valid L2 that covers half of each clause; gate passes; L3 is built on a model with unnamed gaps; the CE run "passes" because the fixture never touches the missing half.
+2. **Adoption:** a reader sees JSON with `derived_from` arrays and calls it lineage metadata, which it is. What a reader recognizes as reasoning is necessity, assumption, and sufficiency text next to the element.
+3. **Opportunity cost:** the interweave step, the only place composition across L2s is judged, never gets built because each job "passes" alone.
+
+### Hidden Assumptions
+| Assumption | Evidence | Risk if Wrong | Test |
+|---|---|---|---|
+| A parent pointer is enough to judge derivation | Gate passes on it | Decorative citations pass | Require necessity text; reviewer rejects an element whose necessity does not follow from the clause |
+| A job passing alone means the job is right | Gate is per job | Gaps and contradictions across jobs | Weave step: every L1 clause covered by a group in some job; same semantic kind carries one role across jobs |
+| L3 can compile from any gate-passing L2 | Nothing blocks it | Projection of unreviewed policy | Dispositions; L3 compiles only from selected steps |
+| Element-level fingerprints are the right cache unit | Convenient | Partial invalidation of a group | Group-level fingerprints with element detail inside |
+
+### Reconstructed Story
+- **Still true:** three levels, projection-becomes-sketch, clause-level hashing, role vocabulary, the gate's structural checks, Jev above the hash floor, Developer delegation.
+- **Weakest assumption:** that provenance is justification.
+- **Changed situation model:** every L2 element is an S&T step. Its strategy is the L1 clause set it serves. Its tactic is the element. It carries necessity, a parallel assumption, feedback (the invariant or gate that checks it), owner hat, review trigger, and a disposition. Each job declares sufficiency groups per clause with mode, coverage claim, and named gap. Holes are deferred steps; tempting wrong repairs from CEs are rejected steps kept visible. After all jobs compile, a weave step produces the relation map across jobs and is itself reviewed. The cache and Jev operate on sufficiency groups. L3 compiles only from selected steps.
+- **Changed beliefs:** confidence that the drafted format demonstrates reasoning rather than lineage: LOW. Confidence in the adjusted format: HIGH, because it is the nesting the two skills already use for strategy and the user's compiler uses for UI.
+- **Next action:** revise the L2 schema, format, gate, and Developer brief before spawning a Developer; add the weave command; make the cache group-level.
+
+### Decision
+**Recommendation:** ADJUST.
+**Reasoning:** the chain's levels already nest; the steps inside a level do not. Without necessity, sufficiency, dispositions, and an interweave, the L2 is a typed dependency graph, and the user's "old hat" verdict returns one level down.
+**Modifications:**
+1. L2 schema v2: each type, entity, attribute, handoff, and invariant carries `necessity`, `parallel_assumption`, `feedback`, `disposition`, `owner_hat`, `review_trigger`, `sufficiency_group`. Job-level `sufficiency_groups`: id, parent clauses, members, mode, coverage claim, gap. Holes are deferred steps citing an L1 hole. Rejected steps allowed with `rejected_because`.
+2. Gate: every clause the job lists has at least one group; every element is in exactly one group; frozen roles need non-empty necessity; rejected and deferred steps excluded from anything downstream.
+3. `weave`: normalize across jobs; report overlap, dependency, gap, contradiction; write `chain/weave.json` for review.
+4. Cache and Jev at group level, with necessity and parallel assumption in the Jev state.
+5. Developer brief in agent-brief form: aim, mechanism, feedback, guardrails, files, behavior contract, checks, stop conditions, review criteria. Developers must write necessity and parallel assumption for every element.
+6. L1 jobs gain a feedback line naming the validation obligations the reviewer applies to that job.
+**Confidence after dissent:** HIGH that the adjusted format is the right unit; MEDIUM that a Sonnet Developer fills necessity and parallel assumption well on the first pass, which is itself the delegability test.
+
+## Execute (compile chain, cycle 1, 2026-09-16)
+
+### CESS cycle report: L1 -> L2, job ownership-history
+
+- **Active case and classification:** initial compilation of `ownership-history` by a Sonnet Developer under `chain/anchors/DEVELOPER-CONTRACT-L1-L2.md`. Gate passed; sketch review (Opus, given S and K and the model only) failed it. Classification: projection defects (undated CDC handoffs, roles by elimination, decorative citations, gaps not naming holes, two possibly missing holes) plus one missing sketch rule at L1 (what a statement carries) plus one anchor gap (no `per_statement` role).
+- **Sketch clause before and after:** L1 unchanged pending authority. Proposed `L1.statement-content` filed as `chain/ce/proposed/ce.l1.statement-content.md`.
+- **Projection surfaces rebuilt or repaired:** none yet; the Developer's model stands as cycle-1 evidence. Anchor K repaired: `per_statement` added to `semantic-model-v2.schema.json`, `L2-FORMAT.md`, and `merge_guard.ROLES` (treated as never-updated-in-place by the write-surface guard).
+- **Deterministic regression added:** six gate rules in `chain_l2.py check`: versioned attributes may not be `mutable`; versioned entities must carry statement content; a handoff from a source with no effective-time handoff must be deferred; group gaps name `none` or an L1 hole; element derivations are a subset of their group's parents; holes list every group with deferred members. Re-running the gate on the cycle-1 model yields 20 rejections where it previously passed.
+- **Deterministic results:** gate fail (20 problems) after mechanization; pass before.
+- **Sketch review results:** fail; full text retained in `chain/l2/ownership-history/review-1.md`; verdict recorded in `review.json`.
+- **Tempting wrong repair and evidence it still fails:** picking customer and account "standing" facts from anchored field names. The gate cannot detect this; the reviewer can, and the CE names it. The Developer contract forbids it.
+- **Approval authority and decision:** business authority (the user, data-product-owner hat) for `L1.statement-content`; pending. Data-architect hat (coordinator) for the `per_statement` anchor change; approved as K, settles no business question.
+- **CE evidence entailing each new rule:** the content-free `logical.customer` and `logical.account` entail the L1 clause proposal; the four `mutable` versioned attributes entail the anchor role.
+- **Adjacent choices left open:** owner-change re-versioning; change effective time; closed-account activity; batch identity.
+- **Next active failure:** recompile `ownership-history` after the L1 amendment, under a change contract naming the approved clause and the anchor change. Then review again. Only then compile `trade-lifecycle`.
+
+### Jev
+Invalidation selector live: substantive clause reversal 0.93 (invalidate), wording change adding the customer 0.39 (review). Calls logged in `evidence/jev/calls.jsonl`.
+
+### Weave
+`chain/weave.json`: four L1 clauses uncovered (they belong to jobs not yet compiled), four holes uncarried, five named gaps. No contradictions yet because only one L2 exists.

@@ -1,0 +1,281 @@
+{
+  "authority": {
+    "kind": "tpc_di_files",
+    "note": "TPC-DI 1.1.0 source file layouts; used as a research workload, not a benchmark",
+    "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"
+  },
+  "entities": [
+    {
+      "description": "Batch1 CustomerMgmt.xml actions (NEW, ADDACCT, UPDACCT, UPDCUST, CLOSEACCT, INACT); field-minimal extraction",
+      "fields": [
+        {
+          "name": "action_type",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "action_ts",
+          "physical_type": "TIMESTAMP"
+        },
+        {
+          "name": "c_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "ca_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "ca_b_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "ca_tax_st",
+          "physical_type": "SMALLINT"
+        },
+        {
+          "name": "c_tier",
+          "physical_type": "SMALLINT"
+        }
+      ],
+      "identifiers": [
+        "action_ts",
+        "c_id"
+      ],
+      "name": "raw.customer_mgmt_action"
+    },
+    {
+      "description": "Batch2+ Account.txt change records; no timestamp of their own; batch_date added by the loader",
+      "fields": [
+        {
+          "name": "cdc_flag",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "cdc_dsn",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "ca_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "ca_b_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "c_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "ca_name",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "ca_tax_st",
+          "physical_type": "SMALLINT"
+        },
+        {
+          "name": "ca_st_id",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "batch_date",
+          "physical_type": "DATE"
+        }
+      ],
+      "identifiers": [
+        "ca_id",
+        "cdc_dsn"
+      ],
+      "name": "raw.account_cdc"
+    },
+    {
+      "description": "Batch2+ Customer.txt change records; status and tier only; batch_date added by the loader",
+      "fields": [
+        {
+          "name": "cdc_flag",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "cdc_dsn",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "c_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "c_st_id",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "c_tier",
+          "physical_type": "SMALLINT"
+        },
+        {
+          "name": "batch_date",
+          "physical_type": "DATE"
+        }
+      ],
+      "identifiers": [
+        "c_id",
+        "cdc_dsn"
+      ],
+      "name": "raw.customer_cdc"
+    },
+    {
+      "description": "Batch1 Trade.txt rows loaded as initial encounters (cdc_flag I, cdc_dsn 0) and Batch2+ Trade.txt change records",
+      "fields": [
+        {
+          "name": "cdc_flag",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "cdc_dsn",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "t_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "t_dts",
+          "physical_type": "TIMESTAMP"
+        },
+        {
+          "name": "t_st_id",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "t_tt_id",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "t_is_cash",
+          "physical_type": "BOOLEAN"
+        },
+        {
+          "name": "t_s_symb",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "t_qty",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "t_bid_price",
+          "physical_type": "DECIMAL(8,2)"
+        },
+        {
+          "name": "t_ca_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "t_exec_name",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "t_trade_price",
+          "physical_type": "DECIMAL(8,2)"
+        },
+        {
+          "name": "t_chrg",
+          "physical_type": "DECIMAL(10,2)"
+        },
+        {
+          "name": "t_comm",
+          "physical_type": "DECIMAL(10,2)"
+        },
+        {
+          "name": "t_tax",
+          "physical_type": "DECIMAL(10,2)"
+        },
+        {
+          "name": "batch_date",
+          "physical_type": "DATE"
+        }
+      ],
+      "identifiers": [
+        "t_id",
+        "cdc_dsn"
+      ],
+      "name": "raw.trade_cdc"
+    },
+    {
+      "description": "Batch1 HoldingHistory.txt (no CDC columns) and Batch2+ change records",
+      "fields": [
+        {
+          "name": "cdc_flag",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "cdc_dsn",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "hh_h_t_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "hh_t_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "hh_before_qty",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "hh_after_qty",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "batch_date",
+          "physical_type": "DATE"
+        }
+      ],
+      "identifiers": [
+        "hh_h_t_id",
+        "hh_t_id"
+      ],
+      "name": "raw.holding_history"
+    },
+    {
+      "description": "Constructed account changes for labeled scenarios only; never received records",
+      "fields": [
+        {
+          "name": "account_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "action_at",
+          "physical_type": "TIMESTAMP"
+        },
+        {
+          "name": "tax_status_id",
+          "physical_type": "SMALLINT"
+        },
+        {
+          "name": "status_id",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "provenance",
+          "physical_type": "VARCHAR"
+        }
+      ],
+      "identifiers": [
+        "account_id",
+        "action_at"
+      ],
+      "name": "ce.account_changes"
+    }
+  ],
+  "natural_identity_hints": {
+    "account": "ca_id / account number",
+    "customer": "c_id / customer number",
+    "holding change": "(hh_h_t_id original trade, hh_t_id current trade)",
+    "trade": "t_id / trade number"
+  },
+  "note": "Structural anchors K. Field names, physical types, and natural identifiers only. They authorize no rule; see sketches/l1-brokerage-intent-v1.md.",
+  "schema_version": "source-anchors/v1"
+}

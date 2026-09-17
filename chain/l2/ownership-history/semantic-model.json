@@ -1,0 +1,797 @@
+{
+  "schema_version": "semantic-model/v2",
+  "derived_from_sketch": "sketches/l1-brokerage-intent-v1.md",
+  "job": "ownership-history",
+  "upstream_jobs": [],
+  "types": [
+    {
+      "id": "customer_number",
+      "derived_from": [
+        "L1.identity"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "none",
+      "mutation_role": "identity",
+      "necessity": "L1.identity requires that a change to a customer does not make it a different customer; a value invariant across all of a customer's dated statements is required to express that persistence, which is exactly the identity mutation role.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while the brokerage's customer number is never reassigned to a different customer; if a customer number were reused for a different customer this role would misidentify statements, which should trigger review.",
+      "physical_type": "integer",
+      "review_trigger": "the same customer_number value appears to identify two customers the business considers different",
+      "semantic_kind": "customer_identity",
+      "sufficiency_group": "sg.identity",
+      "time_role": "none",
+      "unit": "none"
+    },
+    {
+      "id": "account_number",
+      "derived_from": [
+        "L1.identity"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "none",
+      "mutation_role": "identity",
+      "necessity": "L1.identity requires that a change to an account does not make it a different account; a value invariant across all of an account's dated statements is required to express that persistence, which is exactly the identity mutation role.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while the brokerage's account number is never reassigned to a different account; if an account number were reused for a different account this role would misidentify statements, which should trigger review.",
+      "physical_type": "integer",
+      "review_trigger": "the same account_number value appears to identify two accounts the business considers different",
+      "semantic_kind": "account_identity",
+      "sufficiency_group": "sg.identity",
+      "time_role": "none",
+      "unit": "none"
+    },
+    {
+      "id": "statement_effective_from",
+      "derived_from": [
+        "L1.history",
+        "L1.as-of"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "effective_interval",
+      "mutation_role": "mutable",
+      "necessity": "L1.history requires the moment a change took effect be kept beside the statement, and L1.as-of requires ordering statements by that moment to answer any as-of question; a dedicated effective-time value is indispensable to both.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while every statement's effective moment can be determined at all; where a source supplies no moment of its own, this value cannot yet be assigned and as-of answers for that statement are unavailable.",
+      "physical_type": "timestamp",
+      "review_trigger": "a statement is recorded with no determinable effective moment, or two statements of the same identity report the same moment",
+      "semantic_kind": "statement_effective_time",
+      "sufficiency_group": "sg.history-asof",
+      "time_role": "effective",
+      "unit": "none"
+    },
+    {
+      "id": "statement_is_current",
+      "derived_from": [
+        "L1.current-version"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "status_observation",
+      "mutation_role": "mutable",
+      "necessity": "L1.current-version defines the current statement as the one with no later statement and requires exactly one per customer or account; a flag recording that fact is indispensable to expose it without recomputation.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible as long as effective moments are known and ordered for every statement of a thing; if effective moments are missing, the current flag cannot be determined either.",
+      "physical_type": "boolean",
+      "review_trigger": "more than one or zero statements of the same identity are flagged current",
+      "semantic_kind": "current_statement_flag",
+      "sufficiency_group": "sg.current-version",
+      "time_role": "none",
+      "unit": "none"
+    },
+    {
+      "id": "account_owner_reference",
+      "derived_from": [
+        "L1.owner-standing"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "none",
+      "mutation_role": "mutable",
+      "necessity": "L1.owner-standing requires that an account's standing include its owner's standing; the account's statement must therefore carry which customer it belongs to so that customer's as-of statement can be found for the same moment.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while every account statement's owning customer is knowable at the moment the statement is recorded; whether a change to the owner alone creates a new account statement is unresolved.",
+      "physical_type": "integer",
+      "review_trigger": "an account statement has no resolvable owning customer, or the owner recorded contradicts the customer entity's identity values",
+      "semantic_kind": "account_owner_identity_reference",
+      "sufficiency_group": "sg.owner-standing",
+      "time_role": "none",
+      "unit": "none"
+    },
+    {
+      "id": "constructed_scenario_label",
+      "derived_from": [
+        "L1.constructed-scenarios"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "history_role": "none",
+      "mutation_role": "mutable",
+      "necessity": "the clause requires any constructed scenario be labeled wherever it appears and never mixed into received records; a dedicated provenance value is indispensable to carry that label through the model.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while every constructed scenario is loaded only through its labeled source and every received record is loaded only through raw sources.",
+      "physical_type": "string",
+      "review_trigger": "a statement sourced from a raw feed carries a constructed label, or a statement sourced from a labeled constructed feed carries none",
+      "semantic_kind": "constructed_scenario_provenance",
+      "sufficiency_group": "sg.constructed-scenarios",
+      "time_role": "none",
+      "unit": "none"
+    }
+  ],
+  "entities": [
+    {
+      "id": "logical.customer",
+      "derived_from": [
+        "L1.identity",
+        "L1.history",
+        "L1.as-of",
+        "L1.current-version"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "grain": "one dated statement about one customer, holding from its effective moment until superseded by a later statement of the same customer",
+      "history": "versioned",
+      "identifiers": [
+        "customer_number"
+      ],
+      "necessity": "L1.identity requires the customer to be a persistent identified thing rather than a row that changes identity; L1.history requires every change kept beside the earlier one with its effective moment; L1.as-of and L1.current-version require the kept statements be ordered so any moment resolves to exactly one of them \u2014 together these entail a versioned entity of dated statements about one identified customer.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every recorded change to a customer is delivered as a new statement rather than an overwrite of a prior one.",
+      "review_trigger": "a customer's prior statement is found overwritten rather than superseded by a new one",
+      "sufficiency_group": "sg.identity",
+      "attributes": [
+        {
+          "name": "customer_number",
+          "semantic_type": "customer_number",
+          "derived_from": [
+            "L1.identity"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "sketch-review"
+          ],
+          "necessity": "L1.identity requires a value that identifies which customer a statement is about and stays the same across that customer's changes; this attribute carries the identity type for exactly that purpose.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible while the brokerage's customer number is stable and unique per customer.",
+          "review_trigger": "two statements with different customer_number values are claimed to be about the same customer, or vice versa",
+          "sufficiency_group": "sg.identity"
+        },
+        {
+          "name": "effective_from",
+          "semantic_type": "statement_effective_from",
+          "derived_from": [
+            "L1.history",
+            "L1.as-of"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "inv.customer_statements_no_overlap",
+            "inv.customer_asof_has_unique_answer",
+            "sketch-review"
+          ],
+          "necessity": "L1.history requires the moment a change took effect be kept with the statement; L1.as-of requires that moment to determine which statement answers a query as of any time.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible where the source of this statement supplies its own moment of change; not yet derivable for incremental customer change records.",
+          "review_trigger": "a customer statement has no source-supplied moment of change",
+          "sufficiency_group": "sg.history-asof"
+        },
+        {
+          "name": "is_current",
+          "semantic_type": "statement_is_current",
+          "derived_from": [
+            "L1.current-version"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "inv.customer_single_current",
+            "sketch-review"
+          ],
+          "necessity": "L1.current-version requires exactly one current statement per customer, defined as the one with no later statement; this attribute exposes that fact directly.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible once every customer statement has a known effective_from to order it against the others.",
+          "review_trigger": "zero or more than one statement of the same customer_number is flagged current",
+          "sufficiency_group": "sg.current-version"
+        }
+      ]
+    },
+    {
+      "id": "logical.account",
+      "derived_from": [
+        "L1.identity",
+        "L1.history",
+        "L1.as-of",
+        "L1.current-version",
+        "L1.owner-standing"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "grain": "one dated statement about one account, holding from its effective moment until superseded by a later statement of the same account",
+      "history": "versioned",
+      "identifiers": [
+        "account_number"
+      ],
+      "necessity": "L1.identity, L1.history, L1.as-of, and L1.current-version require the same versioned-and-identified shape as the customer entity; L1.owner-standing additionally requires that each account statement be able to name the customer whose standing it must be paired with.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every recorded change to an account is delivered as a new statement rather than an overwrite of a prior one.",
+      "review_trigger": "an account's prior statement is found overwritten rather than superseded by a new one",
+      "sufficiency_group": "sg.identity",
+      "attributes": [
+        {
+          "name": "account_number",
+          "semantic_type": "account_number",
+          "derived_from": [
+            "L1.identity"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "sketch-review"
+          ],
+          "necessity": "L1.identity requires a value that identifies which account a statement is about and stays the same across that account's changes; this attribute carries the identity type for exactly that purpose.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible while the brokerage's account number is stable and unique per account.",
+          "review_trigger": "two statements with different account_number values are claimed to be about the same account, or vice versa",
+          "sufficiency_group": "sg.identity"
+        },
+        {
+          "name": "effective_from",
+          "semantic_type": "statement_effective_from",
+          "derived_from": [
+            "L1.history",
+            "L1.as-of"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "inv.account_statements_no_overlap",
+            "inv.account_asof_has_unique_answer",
+            "sketch-review"
+          ],
+          "necessity": "L1.history requires the moment a change took effect be kept with the statement; L1.as-of requires that moment to determine which statement answers a query as of any time.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible where the source of this statement supplies its own moment of change; not yet derivable for incremental account change records.",
+          "review_trigger": "an account statement has no source-supplied moment of change",
+          "sufficiency_group": "sg.history-asof"
+        },
+        {
+          "name": "is_current",
+          "semantic_type": "statement_is_current",
+          "derived_from": [
+            "L1.current-version"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "inv.account_single_current",
+            "sketch-review"
+          ],
+          "necessity": "L1.current-version requires exactly one current statement per account, defined as the one with no later statement; this attribute exposes that fact directly.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible once every account statement has a known effective_from to order it against the others.",
+          "review_trigger": "zero or more than one statement of the same account_number is flagged current",
+          "sufficiency_group": "sg.current-version"
+        },
+        {
+          "name": "owning_customer_number",
+          "semantic_type": "account_owner_reference",
+          "derived_from": [
+            "L1.owner-standing"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "inv.account_asof_carries_customer_asof",
+            "sketch-review"
+          ],
+          "necessity": "L1.owner-standing requires that an account's standing include its owner's standing; this attribute names which customer that is so the customer's as-of statement can be looked up for the same moment.",
+          "nullable": false,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible for whatever account statements exist; whether a change to the customer alone produces a new account statement carrying this same value is unresolved.",
+          "review_trigger": "an account statement's owning_customer_number does not match any customer_number known to the customer entity",
+          "sufficiency_group": "sg.owner-standing"
+        },
+        {
+          "name": "provenance",
+          "semantic_type": "constructed_scenario_label",
+          "derived_from": [
+            "L1.constructed-scenarios"
+          ],
+          "disposition": "candidate",
+          "feedback": [
+            "inv.constructed_scenarios_labeled",
+            "sketch-review"
+          ],
+          "necessity": "the clause requires a constructed scenario be labeled wherever it appears; this attribute carries that label on the account statement so it is never mistaken for a received record.",
+          "nullable": true,
+          "owner_hat": "data-product-owner",
+          "parallel_assumption": "Credible while the only anchored constructed-scenario source for this job is account-level; no equivalent labeled source exists yet for customer statements.",
+          "review_trigger": "an account statement sourced from a raw feed carries a provenance value, or one sourced from the labeled constructed feed carries none",
+          "sufficiency_group": "sg.constructed-scenarios"
+        }
+      ]
+    }
+  ],
+  "handoffs": [
+    {
+      "from": "raw.customer_mgmt_action.c_id",
+      "to": "logical.customer.customer_number",
+      "derived_from": [
+        "L1.identity"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.identity requires the customer's own number as its identity; this file is where a customer is first recorded (NEW) or later actioned (UPDCUST), and c_id is the brokerage's customer number on each such record.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while c_id values in this file are the brokerage's real customer numbers and not reused for different customers.",
+      "review_trigger": "a c_id value in this file is found reassigned to a different customer",
+      "sufficiency_group": "sg.identity"
+    },
+    {
+      "from": "raw.customer_mgmt_action.action_ts",
+      "to": "logical.customer.effective_from",
+      "derived_from": [
+        "L1.history",
+        "L1.as-of"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.history requires the moment a customer change took effect; action_ts is this file's own recorded moment for the action, unlike incremental change files which carry none of their own.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while action_ts records the moment the brokerage considers the change to have taken effect, not merely when it was received into this file.",
+      "review_trigger": "action_ts is found to record only receipt time, not effective time",
+      "selector": "as_of_event_time",
+      "sufficiency_group": "sg.history-asof"
+    },
+    {
+      "from": "raw.customer_cdc.c_id",
+      "to": "logical.customer.customer_number",
+      "derived_from": [
+        "L1.identity"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "identity of the customer a change applies to must be carried even where the change's effective moment is not yet resolvable; c_id is this file's customer number.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while c_id values in this file match the same numbering as the historical load.",
+      "review_trigger": "a c_id in this file does not match any customer_number known from the historical load",
+      "sufficiency_group": "sg.identity"
+    },
+    {
+      "from": "raw.customer_mgmt_action.ca_id",
+      "to": "logical.account.account_number",
+      "derived_from": [
+        "L1.identity"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.identity requires the account's own number as its identity; this file's account actions (ADDACCT, UPDACCT, CLOSEACCT, INACT) carry ca_id as that number.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while ca_id values in this file are the brokerage's real account numbers.",
+      "review_trigger": "a ca_id value is found reassigned to a different account",
+      "sufficiency_group": "sg.identity"
+    },
+    {
+      "from": "raw.customer_mgmt_action.c_id",
+      "to": "logical.account.owning_customer_number",
+      "derived_from": [
+        "L1.owner-standing"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.owner-standing requires the account's statement to name the customer whose standing it includes; this file's account actions carry c_id as the owning customer at the moment of the action.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while an account action in this file always reports the customer who owns the account at that same moment.",
+      "review_trigger": "an account action's c_id does not match the customer_number reported for the same customer elsewhere in this file",
+      "sufficiency_group": "sg.owner-standing"
+    },
+    {
+      "from": "raw.customer_mgmt_action.action_ts",
+      "to": "logical.account.effective_from",
+      "derived_from": [
+        "L1.history",
+        "L1.as-of"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.history requires the moment an account change took effect; action_ts is this file's own recorded moment for the action, unlike incremental change files which carry none of their own.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while action_ts records the moment the brokerage considers the change to have taken effect, not merely when it was received into this file.",
+      "review_trigger": "action_ts is found to record only receipt time, not effective time",
+      "selector": "as_of_event_time",
+      "sufficiency_group": "sg.history-asof"
+    },
+    {
+      "from": "raw.account_cdc.ca_id",
+      "to": "logical.account.account_number",
+      "derived_from": [
+        "L1.identity"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "identity of the account a change applies to must be carried even where the change's effective moment is not yet resolvable; ca_id is this file's account number.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while ca_id in this file matches the same numbering as the historical load.",
+      "review_trigger": "a ca_id in this file does not match any account_number known from the historical load",
+      "sufficiency_group": "sg.identity"
+    },
+    {
+      "from": "raw.account_cdc.c_id",
+      "to": "logical.account.owning_customer_number",
+      "derived_from": [
+        "L1.owner-standing"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.owner-standing requires the owning customer be carried on the account's statement; this incremental file's c_id supplies that value even while the statement's own effective moment is unresolved.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while c_id on an account change record names the customer who owns the account as of that change, independent of when the change is deemed to take effect.",
+      "review_trigger": "an account_cdc record's c_id contradicts the owning customer known from an earlier statement of the same account",
+      "sufficiency_group": "sg.owner-standing"
+    },
+    {
+      "from": "ce.account_changes.account_id",
+      "to": "logical.account.account_number",
+      "derived_from": [
+        "L1.identity",
+        "L1.constructed-scenarios"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "the account this labeled scenario is about must carry the same identity role as any received account statement; account_id is this constructed source's account number.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while account_id in a constructed scenario names an account_number already or separately established as identity.",
+      "review_trigger": "a constructed scenario's account_id cannot be reconciled with any account_number",
+      "sufficiency_group": "sg.constructed-scenarios"
+    },
+    {
+      "from": "ce.account_changes.action_at",
+      "to": "logical.account.effective_from",
+      "derived_from": [
+        "L1.history",
+        "L1.as-of",
+        "L1.constructed-scenarios"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "unlike incremental CDC files, this labeled constructed source carries its own explicit moment of change (action_at), so the effective_from this job requires under L1.history and L1.as-of is directly available without resolving the change-effective-time hole.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while action_at records the moment the constructed scenario asserts the change takes effect.",
+      "review_trigger": "a constructed scenario's action_at is absent or ambiguous",
+      "selector": "as_of_event_time",
+      "sufficiency_group": "sg.constructed-scenarios"
+    },
+    {
+      "from": "ce.account_changes.provenance",
+      "to": "logical.account.provenance",
+      "derived_from": [
+        "L1.constructed-scenarios"
+      ],
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "the clause requires a constructed scenario be labeled wherever it appears; this source's own provenance field is the label to carry through.",
+      "owner_hat": "semantic-modeler",
+      "parallel_assumption": "Credible while every row from this source carries a non-empty provenance label.",
+      "review_trigger": "a row from this source has an empty or missing provenance value",
+      "sufficiency_group": "sg.constructed-scenarios"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "inv.customer_single_current",
+      "entity": "logical.customer",
+      "statement": "For any customer_number, at most one statement has is_current = true, and if any statement of that customer exists, exactly one does.",
+      "derived_from": [
+        "L1.current-version"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.current-version states there is exactly one current statement per customer; this invariant is the direct restatement of that requirement over the is_current flag.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds as long as every statement of a customer is recorded with a determinable order; two statements claiming the same effective moment would make the current one undecidable.",
+      "review_trigger": "two statements for the same customer_number report the same effective_from",
+      "sufficiency_group": "sg.current-version"
+    },
+    {
+      "id": "inv.account_single_current",
+      "entity": "logical.account",
+      "statement": "For any account_number, at most one statement has is_current = true, and if any statement of that account exists, exactly one does.",
+      "derived_from": [
+        "L1.current-version"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.current-version states there is exactly one current statement per account; this invariant is the direct restatement of that requirement over the is_current flag.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds as long as every statement of an account is recorded with a determinable order; two statements claiming the same effective moment would make the current one undecidable.",
+      "review_trigger": "two statements for the same account_number report the same effective_from",
+      "sufficiency_group": "sg.current-version"
+    },
+    {
+      "id": "inv.customer_statements_no_overlap",
+      "entity": "logical.customer",
+      "statement": "No two statements of the same customer_number both apply at the same moment; each moment in time is covered by at most one statement of that customer.",
+      "derived_from": [
+        "L1.history",
+        "L1.current-version"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.history keeps a later statement beside the earlier one rather than overlapping it, and L1.current-version's single-current requirement only holds if statements partition time without overlap.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while effective_from values are strictly ordered per customer; a duplicate or out-of-order effective_from would break the partition and should trigger review.",
+      "review_trigger": "two statements of the same customer_number share an effective_from",
+      "sufficiency_group": "sg.history-asof"
+    },
+    {
+      "id": "inv.account_statements_no_overlap",
+      "entity": "logical.account",
+      "statement": "No two statements of the same account_number both apply at the same moment; each moment in time is covered by at most one statement of that account.",
+      "derived_from": [
+        "L1.history",
+        "L1.current-version"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.history keeps a later statement beside the earlier one rather than overlapping it, and L1.current-version's single-current requirement only holds if statements partition time without overlap.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while effective_from values are strictly ordered per account; a duplicate or out-of-order effective_from would break the partition and should trigger review.",
+      "review_trigger": "two statements of the same account_number share an effective_from",
+      "sufficiency_group": "sg.history-asof"
+    },
+    {
+      "id": "inv.customer_asof_has_unique_answer",
+      "entity": "logical.customer",
+      "statement": "For any customer_number and any moment T, exactly one statement of that customer is the latest one effective at or before T, or none if T precedes the customer's first statement.",
+      "derived_from": [
+        "L1.as-of"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review.",
+      "review_trigger": "an as-of query for a customer_number returns more than one candidate statement",
+      "sufficiency_group": "sg.history-asof"
+    },
+    {
+      "id": "inv.account_asof_has_unique_answer",
+      "entity": "logical.account",
+      "statement": "For any account_number and any moment T, exactly one statement of that account is the latest one effective at or before T, or none if T precedes the account's first statement.",
+      "derived_from": [
+        "L1.as-of"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review.",
+      "review_trigger": "an as-of query for an account_number returns more than one candidate statement",
+      "sufficiency_group": "sg.history-asof"
+    },
+    {
+      "id": "inv.account_asof_carries_customer_asof",
+      "entity": "logical.account",
+      "statement": "For any account_number and moment T, the account's as-of statement's owning_customer_number, looked up as of the same moment T in the customer entity, yields the customer's as-of statement; the account's as-of answer is not complete without it.",
+      "derived_from": [
+        "L1.owner-standing",
+        "L1.as-of"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.owner-standing requires that an account's standing at a moment include how its customer stood at that same moment; L1.as-of supplies the same-moment lookup rule for both entities.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds as long as the account's owning_customer_number is known for the statement in question; where it is not yet derivable, the paired customer as-of answer cannot be produced either.",
+      "review_trigger": "an account's as-of statement has no resolvable owning_customer_number, or the customer entity has no statement effective at the same moment",
+      "sufficiency_group": "sg.owner-standing"
+    },
+    {
+      "id": "inv.constructed_scenarios_labeled",
+      "entity": "logical.account",
+      "statement": "Every account statement whose source is a labeled constructed scenario carries a non-null provenance value; no account statement sourced from received records carries a provenance value.",
+      "derived_from": [
+        "L1.constructed-scenarios"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "the clause requires constructed scenarios to be labeled wherever they appear and never mixed into received records; this invariant is the direct check of that requirement at the attribute level.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds as long as constructed scenarios are only ever loaded through the labeled ce.account_changes source and never through a raw source.",
+      "review_trigger": "an account statement sourced from a raw handoff carries a non-null provenance value, or one sourced from ce.account_changes carries a null provenance value",
+      "sufficiency_group": "sg.constructed-scenarios"
+    }
+  ],
+  "sufficiency_groups": [
+    {
+      "id": "sg.identity",
+      "parent_clauses": [
+        "L1.identity"
+      ],
+      "members": [
+        "type.customer_number",
+        "type.account_number",
+        "logical.customer",
+        "logical.account",
+        "logical.customer.customer_number",
+        "logical.account.account_number",
+        "handoff.raw.customer_mgmt_action.c_id->logical.customer.customer_number",
+        "handoff.raw.customer_cdc.c_id->logical.customer.customer_number",
+        "handoff.raw.customer_mgmt_action.ca_id->logical.account.account_number",
+        "handoff.raw.account_cdc.ca_id->logical.account.account_number"
+      ],
+      "mode": "all_required",
+      "coverage_claim": "Every source this job reads through a raw feed that reports a customer or account (the historical action file and both incremental CDC files) carries its own identity handoff into the customer_number or account_number attribute, typed with the identity mutation role; together they give every received statement of a customer or account the same invariant identity value across changes, exactly what L1.identity requires. The labeled constructed account scenario's own identity handoff is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source.",
+      "gap": "none, for customer and account; L1.identity also names a trade number, but trade identity is out of this job's scope (see job:trade-lifecycle)."
+    },
+    {
+      "id": "sg.history-asof",
+      "parent_clauses": [
+        "L1.history",
+        "L1.as-of"
+      ],
+      "members": [
+        "type.statement_effective_from",
+        "logical.customer.effective_from",
+        "logical.account.effective_from",
+        "handoff.raw.customer_mgmt_action.action_ts->logical.customer.effective_from",
+        "handoff.raw.customer_mgmt_action.action_ts->logical.account.effective_from",
+        "inv.customer_statements_no_overlap",
+        "inv.account_statements_no_overlap",
+        "inv.customer_asof_has_unique_answer",
+        "inv.account_asof_has_unique_answer"
+      ],
+      "mode": "conditional",
+      "coverage_claim": "For every received statement whose source carries its own moment of change (the historical action file's action_ts), effective_from is populated and the no-overlap and unique-answer invariants hold over it, satisfying L1.history's 'kept, with the moment it took effect' and L1.as-of's 'the latest one that took effect at or before it.' The labeled constructed account scenario's own effective_from handoff (action_at) is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source.",
+      "gap": "L1.hole.change-effective-time: incremental customer and account change records carry no moment of their own; this model assigns them no effective_from, so as-of coverage does not extend to any customer or account whose only statements come from those files."
+    },
+    {
+      "id": "sg.current-version",
+      "parent_clauses": [
+        "L1.current-version"
+      ],
+      "members": [
+        "type.statement_is_current",
+        "logical.customer.is_current",
+        "logical.account.is_current",
+        "inv.customer_single_current",
+        "inv.account_single_current"
+      ],
+      "mode": "all_required",
+      "coverage_claim": "The is_current flag, true for exactly the statement of a customer or account with no later statement and false for every other, together with the single-current invariants, is a direct restatement of L1.current-version's 'exactly one current statement per customer and per account.'",
+      "gap": "current-version coverage depends on effective_from being known for every statement of a thing (see sg.history-asof's gap); where it is not, the current statement for that customer or account cannot yet be determined."
+    },
+    {
+      "id": "sg.owner-standing",
+      "parent_clauses": [
+        "L1.owner-standing"
+      ],
+      "members": [
+        "type.account_owner_reference",
+        "logical.account.owning_customer_number",
+        "handoff.raw.customer_mgmt_action.c_id->logical.account.owning_customer_number",
+        "handoff.raw.account_cdc.c_id->logical.account.owning_customer_number",
+        "inv.account_asof_carries_customer_asof"
+      ],
+      "mode": "all_required",
+      "coverage_claim": "Every account statement carries the identity of its owning customer from the same source that reports the account change, and the account_asof_carries_customer_asof invariant requires that value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing.'",
+      "gap": "L1.hole.owner-change-reversions-account: whether a change to a customer's own standing alone causes a new statement of that customer's accounts is not decided here; this model requires only that whatever account statements exist carry the current owner link, not that a customer change triggers a new account statement."
+    },
+    {
+      "id": "sg.constructed-scenarios",
+      "parent_clauses": [
+        "L1.constructed-scenarios"
+      ],
+      "members": [
+        "type.constructed_scenario_label",
+        "logical.account.provenance",
+        "handoff.ce.account_changes.account_id->logical.account.account_number",
+        "handoff.ce.account_changes.action_at->logical.account.effective_from",
+        "handoff.ce.account_changes.provenance->logical.account.provenance",
+        "inv.constructed_scenarios_labeled"
+      ],
+      "mode": "conditional",
+      "coverage_claim": "The only handoffs drawing from the labeled ce.account_changes source populate account_number, effective_from, and a non-null provenance value together, and no handoff from a raw source ever populates provenance, satisfying 'labeled... wherever it appears' and 'never mixed into the received records' for account-level scenarios.",
+      "gap": "chain/anchors/sources-v1.json anchors no constructed-scenario source for customer-level changes, so this model cannot yet label a constructed customer statement; coverage is limited to account-level constructed scenarios."
+    }
+  ],
+  "holes": [
+    {
+      "id": "hole.owner_change_reversions_account",
+      "question": "When a customer's standing changes, does every account of that customer receive a new dated statement at that same moment, or only the customer?",
+      "derived_from_hole": "L1.hole.owner-change-reversions-account",
+      "owner_hat": "data-product-owner",
+      "disposition": "deferred",
+      "blocks": [
+        "sg.owner-standing"
+      ]
+    },
+    {
+      "id": "hole.change_effective_time",
+      "question": "Does a change recorded in an incremental customer or account change file take effect at the file's batch date, or at some other moment?",
+      "derived_from_hole": "L1.hole.change-effective-time",
+      "owner_hat": "data-product-owner",
+      "disposition": "deferred",
+      "blocks": [
+        "sg.history-asof",
+        "sg.current-version"
+      ]
+    },
+    {
+      "id": "hole.deletions",
+      "question": "What does a deletion marker in an incremental account or customer change file mean for that thing's history, its current statement, and the owner-standing an account carries?",
+      "derived_from_hole": "L1.hole.deletions",
+      "owner_hat": "data-product-owner",
+      "disposition": "deferred",
+      "blocks": [
+        "sg.history-asof",
+        "sg.current-version",
+        "sg.owner-standing"
+      ]
+    }
+  ]
+}

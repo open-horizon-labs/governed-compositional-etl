@@ -1,0 +1,28 @@
+{
+  "attributes": [
+    {
+      "name": "sk_account_id",
+      "nullable": false,
+      "semantic_type": "account_surrogate_key",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    },
+    {
+      "name": "position",
+      "nullable": false,
+      "semantic_type": "position_quantity",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    }
+  ],
+  "disposition": "partial",
+  "grain": "one row per account version",
+  "holes": [],
+  "identifiers": [
+    "sk_account_id"
+  ],
+  "model_id": "logical.position_by_account",
+  "schema_version": "logical-model/v1",
+  "verification": [
+    "gate.position_by_account.nonnegative",
+    "review.position_metrics.current_sketch"
+  ]
+}

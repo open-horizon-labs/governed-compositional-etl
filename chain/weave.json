@@ -1,0 +1,85 @@
+{
+  "jobs": [
+    "ownership-history"
+  ],
+  "relations": [
+    {
+      "clause": "L1.attribution-at-placement",
+      "note": "no job's sufficiency group covers this clause",
+      "relation": "gap"
+    },
+    {
+      "clause": "L1.lifecycle-mutates-outcome",
+      "note": "no job's sufficiency group covers this clause",
+      "relation": "gap"
+    },
+    {
+      "clause": "L1.holdings-follow-trade",
+      "note": "no job's sufficiency group covers this clause",
+      "relation": "gap"
+    },
+    {
+      "clause": "L1.no-phantom-positions",
+      "note": "no job's sufficiency group covers this clause",
+      "relation": "gap"
+    },
+    {
+      "hole": "L1.hole.closed-account-activity",
+      "note": "no job carries this hole; either it touches no job or a job filled it silently",
+      "relation": "gap"
+    },
+    {
+      "hole": "L1.hole.trade-timestamps",
+      "note": "no job carries this hole; either it touches no job or a job filled it silently",
+      "relation": "gap"
+    },
+    {
+      "hole": "L1.hole.securities-and-brokers",
+      "note": "no job carries this hole; either it touches no job or a job filled it silently",
+      "relation": "gap"
+    },
+    {
+      "hole": "L1.hole.batch-identity",
+      "note": "no job carries this hole; either it touches no job or a job filled it silently",
+      "relation": "gap"
+    },
+    {
+      "gap": "none, for customer and account; L1.identity also names a trade number, but trade identity is out of this job's scope (see job:trade-lifecycle).",
+      "group": "sg.identity",
+      "job": "ownership-history",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.change-effective-time: incremental customer and account change records carry no moment of their own; this model assigns them no effective_from, so as-of coverage does not extend to any customer or account whose only statements come from those files.",
+      "group": "sg.history-asof",
+      "job": "ownership-history",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "current-version coverage depends on effective_from being known for every statement of a thing (see sg.history-asof's gap); where it is not, the current statement for that customer or account cannot yet be determined.",
+      "group": "sg.current-version",
+      "job": "ownership-history",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.owner-change-reversions-account: whether a change to a customer's own standing alone causes a new statement of that customer's accounts is not decided here; this model requires only that whatever account statements exist carry the current owner link, not that a customer change triggers a new account statement.",
+      "group": "sg.owner-standing",
+      "job": "ownership-history",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "chain/anchors/sources-v1.json anchors no constructed-scenario source for customer-level changes, so this model cannot yet label a constructed customer statement; coverage is limited to account-level constructed scenarios.",
+      "group": "sg.constructed-scenarios",
+      "job": "ownership-history",
+      "relation": "named-gap"
+    }
+  ],
+  "schema_version": "l2-weave/v1",
+  "summary": {
+    "contradiction": 0,
+    "dependency": 0,
+    "gap": 8,
+    "named-gap": 5,
+    "overlap": 0
+  }
+}

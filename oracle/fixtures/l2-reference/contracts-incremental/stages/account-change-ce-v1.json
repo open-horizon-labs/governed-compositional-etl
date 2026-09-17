@@ -1,0 +1,94 @@
+{
+  "confidence": "reviewed_decision",
+  "contract_id": "stage.account_change_ce.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "issue-8-scd2-versioning-adjudication"
+    ]
+  },
+  "grain": "one constructed account change per (account_id, action_at); every row is labeled controlled_counterexample",
+  "holes": [],
+  "identifiers": [
+    "account_id",
+    "action_at"
+  ],
+  "input": {
+    "entity": "ce.account_changes",
+    "fields": [
+      {
+        "name": "account_id",
+        "semantic_type": "account_natural_id"
+      },
+      {
+        "name": "action_at",
+        "semantic_type": "action_timestamp"
+      },
+      {
+        "name": "tax_status_id",
+        "semantic_type": "tax_status_id"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "account_status_id"
+      },
+      {
+        "name": "provenance",
+        "semantic_type": "change_provenance"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "account_id",
+        "semantic_type": "account_natural_id",
+        "source": "account_id"
+      },
+      {
+        "name": "action_at",
+        "semantic_type": "action_timestamp",
+        "source": "action_at"
+      },
+      {
+        "name": "tax_status_id",
+        "semantic_type": "tax_status_id",
+        "source": "tax_status_id"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "account_status_id",
+        "source": "status_id"
+      },
+      {
+        "name": "provenance",
+        "semantic_type": "change_provenance",
+        "source": "provenance"
+      }
+    ]
+  },
+  "rule_order": [
+    "account-change-ce.labeled-copy"
+  ],
+  "rules": [
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "account-change-ce.labeled-copy",
+      "operation": "copy_labeled_counterexample_rows",
+      "status": "assumed"
+    }
+  ],
+  "schema_version": "stage-contract/v2",
+  "stage_id": "stage.account_change_ce",
+  "verification": [
+    {
+      "id": "account_change_ce.exact-structural-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "account_change_ce.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

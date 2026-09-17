@@ -1,0 +1,79 @@
+{
+  "attributes": [
+    {
+      "name": "original_trade_id",
+      "nullable": false,
+      "semantic_type": "trade_id",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    },
+    {
+      "name": "current_trade_id",
+      "nullable": false,
+      "semantic_type": "trade_id",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    },
+    {
+      "name": "sk_account_id",
+      "nullable": false,
+      "semantic_type": "account_surrogate_key",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    },
+    {
+      "name": "sk_customer_id",
+      "nullable": false,
+      "semantic_type": "customer_surrogate_key",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    },
+    {
+      "name": "before_quantity",
+      "nullable": false,
+      "semantic_type": "holding_quantity",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    },
+    {
+      "name": "after_quantity",
+      "nullable": false,
+      "semantic_type": "holding_quantity",
+      "source_rule": "tpc-di-1.1.0-factholdings-unverified"
+    }
+  ],
+  "disposition": "partial",
+  "grain": "one row per holding change (original_trade_id, current_trade_id)",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "fact-holdings.security-company-keys",
+      "owner_hat": "data-product-owner",
+      "question": "How are SK_SecurityID and SK_CompanyID resolved through the current trade once those dimensions enter the slice?",
+      "status": "open"
+    },
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "fact-holdings.price-and-date-keys",
+      "owner_hat": "domain-reviewer",
+      "question": "How are CurrentPrice, SK_DateID and SK_TimeID assigned?",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "original_trade_id",
+    "current_trade_id"
+  ],
+  "model_id": "logical.fact_holdings",
+  "schema_version": "logical-model/v1",
+  "verification": [
+    "guard.fact_holdings.merge_surface",
+    "gate.fact_holdings.frozen_keys_bound_once",
+    "review.fact_holdings.current_sketch"
+  ]
+}

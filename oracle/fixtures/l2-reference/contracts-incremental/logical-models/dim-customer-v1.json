@@ -1,0 +1,72 @@
+{
+  "attributes": [
+    {
+      "name": "customer_id",
+      "nullable": false,
+      "semantic_type": "customer_natural_id",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    },
+    {
+      "name": "effective_from",
+      "nullable": false,
+      "semantic_type": "version_effective_timestamp",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    },
+    {
+      "name": "sk_customer_id",
+      "nullable": false,
+      "semantic_type": "customer_surrogate_key",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    },
+    {
+      "name": "effective_to",
+      "nullable": false,
+      "semantic_type": "version_end_timestamp",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    },
+    {
+      "name": "is_current",
+      "nullable": false,
+      "semantic_type": "current_version_flag",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    },
+    {
+      "name": "status_id",
+      "nullable": false,
+      "semantic_type": "customer_status_id",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    },
+    {
+      "name": "tier",
+      "nullable": true,
+      "semantic_type": "customer_tier",
+      "source_rule": "tpc-di-1.1.0-dimaccount-scd2-unverified"
+    }
+  ],
+  "disposition": "partial",
+  "grain": "one row per customer version (customer_id, effective_from)",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "dim-customer.attributes-beyond-status",
+      "owner_hat": "data-product-owner",
+      "question": "Which customer attributes (name, address, tax id, phones, email, income) version the dimension? Only status and tier enter this stub.",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "customer_id",
+    "effective_from"
+  ],
+  "model_id": "logical.dim_customer",
+  "schema_version": "logical-model/v1",
+  "verification": [
+    "gate.dim_customer.one_current_version_per_customer",
+    "review.dim_customer.current_sketch"
+  ]
+}

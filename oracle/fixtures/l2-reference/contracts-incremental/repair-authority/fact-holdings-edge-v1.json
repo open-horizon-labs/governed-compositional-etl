@@ -1,0 +1,41 @@
+{
+  "active_authority": {
+    "basis": [
+      {
+        "id": "issue-8-incremental-key-binding-adjudication",
+        "kind": "approved_decision",
+        "locator": "Decision",
+        "source": ".oh/metis/issue-8-incremental-key-binding-adjudication.md"
+      },
+      {
+        "id": "ce-account-428-rollover-v1",
+        "kind": "approved_counterexample",
+        "locator": "general_rule",
+        "source": "counterexamples/archive/ce-account-428-rollover-v1.json"
+      }
+    ],
+    "hat": "data-product-owner",
+    "scope": "HoldingHistory to FactHoldings key resolution through the current trade"
+  },
+  "allowed_artifacts": [
+    "sketch.edge.holding_history_to_fact_holdings"
+  ],
+  "authority_id": "repair.fact-holdings-edge.v1",
+  "conflict_behavior": {
+    "authority_conflict": "stop_and_adjudicate_under_domain_reviewer_hat",
+    "projection_edit": "reject_and_regenerate_from_governing_sketch",
+    "raw_or_schema_inference": "reject_as_non_authority"
+  },
+  "forbidden_adjacent_policy": [
+    "sketch.stage.holding_history",
+    "sketch.edge.trade_cdc_to_dim_trade_incremental",
+    "sketch.edge.change_feeds_to_dim_account",
+    "sqlmesh.model.fact_holdings",
+    "generated_sql.fact_holdings",
+    "duckdb.fact_holdings",
+    "materialization.governed_merge",
+    "metric.position_by_account",
+    "metric.position_by_customer"
+  ],
+  "schema_version": "repair-authority/v1"
+}

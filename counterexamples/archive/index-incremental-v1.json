@@ -1,13 +1,55 @@
 {
   "accepted_counterexamples": [
     {
+      "enters_at": {
+        "link": 2,
+        "rule": "edge.account.admit-labeled-counterexample-stage",
+        "sketch": "dim-account-scd2-v1",
+        "stage": "stage.account_change_ce.v1"
+      },
+      "governs": [
+        {
+          "authority": "repair.dim-trade-incremental-edge.v1",
+          "gates": [
+            "guard.dim_trade_incremental.merge_surface",
+            "dim_trade_incremental_frozen_keys_bound_once"
+          ],
+          "link": 3,
+          "rules": [
+            "edge.bind-frozen-keys-once",
+            "edge.update-mutable-roles-only"
+          ],
+          "sketch": "trade-dim-incremental-v1"
+        },
+        {
+          "authority": "repair.fact-holdings-edge.v1",
+          "gates": [
+            "guard.fact_holdings.merge_surface",
+            "fact_holdings_frozen_keys_bound_once"
+          ],
+          "link": 4,
+          "rules": [
+            "edge.holdings.bind-frozen-keys-once"
+          ],
+          "sketch": "fact-holdings-v1"
+        },
+        {
+          "authority": "none (metrics are forbidden repair surfaces)",
+          "gates": [
+            "position_by_account_nonnegative",
+            "position_by_customer_nonnegative"
+          ],
+          "link": 5,
+          "rules": [
+            "edge.metrics.nonnegative-invariant"
+          ],
+          "sketch": "position-metrics-v1"
+        }
+      ],
       "id": "ce-account-428-rollover-v1",
       "path": "counterexamples/archive/ce-account-428-rollover-v1.json",
       "provenance": "constructed",
-      "resolves": [
-        "edge.bind-frozen-keys-once",
-        "edge.update-mutable-roles-only"
-      ]
+      "regression": "regressions/curated-incremental-v1.json#incremental-frozen-key-rebinding-v1"
     }
   ],
   "note": "Phase-1 index-v1.json stays empty and frozen; this index belongs to the incremental slice.",

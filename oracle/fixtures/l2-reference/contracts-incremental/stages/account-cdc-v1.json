@@ -1,0 +1,121 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.account_cdc.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.1"
+    ]
+  },
+  "grain": "one change record per (cdc_sequence) for an account within one incremental batch",
+  "holes": [],
+  "identifiers": [
+    "account_id",
+    "cdc_sequence"
+  ],
+  "input": {
+    "entity": "raw.account_cdc",
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag"
+      },
+      {
+        "name": "cdc_dsn",
+        "semantic_type": "cdc_sequence"
+      },
+      {
+        "name": "ca_id",
+        "semantic_type": "account_natural_id"
+      },
+      {
+        "name": "ca_b_id",
+        "semantic_type": "broker_natural_id"
+      },
+      {
+        "name": "c_id",
+        "semantic_type": "customer_natural_id"
+      },
+      {
+        "name": "ca_tax_st",
+        "semantic_type": "tax_status_id"
+      },
+      {
+        "name": "ca_st_id",
+        "semantic_type": "account_status_id"
+      },
+      {
+        "name": "batch_date",
+        "semantic_type": "batch_date"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag",
+        "source": "cdc_flag"
+      },
+      {
+        "name": "cdc_sequence",
+        "semantic_type": "cdc_sequence",
+        "source": "cdc_dsn"
+      },
+      {
+        "name": "account_id",
+        "semantic_type": "account_natural_id",
+        "source": "ca_id"
+      },
+      {
+        "name": "broker_id",
+        "semantic_type": "broker_natural_id",
+        "source": "ca_b_id"
+      },
+      {
+        "name": "customer_id",
+        "semantic_type": "customer_natural_id",
+        "source": "c_id"
+      },
+      {
+        "name": "tax_status_id",
+        "semantic_type": "tax_status_id",
+        "source": "ca_tax_st"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "account_status_id",
+        "source": "ca_st_id"
+      },
+      {
+        "name": "batch_date",
+        "semantic_type": "batch_date",
+        "source": "batch_date"
+      }
+    ]
+  },
+  "rule_order": [
+    "account-cdc.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.1",
+      "id": "account-cdc.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v2",
+  "stage_id": "stage.account_cdc",
+  "verification": [
+    {
+      "id": "account_cdc.exact-structural-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "account_cdc.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

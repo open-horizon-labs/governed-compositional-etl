@@ -1,0 +1,135 @@
+{
+  "confidence": "reviewed_decision",
+  "consumer": {
+    "contract": "logical.fact_holdings",
+    "grain": "one row per holding change"
+  },
+  "contract_id": "edge.holding_history_to_fact_holdings.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-factholdings-unverified",
+      "issue-8-incremental-key-binding-adjudication"
+    ]
+  },
+  "history_policy": {
+    "key_resolution": "dimension keys come from the DimTrade row whose trade_id equals current_trade_id; FactHoldings never re-resolves against dimensions",
+    "mutation_policy_source": "semantic type mutation_role; the edge restates no column list",
+    "ordering": "cdc_sequence ascending within (original_trade_id, current_trade_id)"
+  },
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "fact-holdings.key-resolution-authority",
+      "owner_hat": "data-product-owner",
+      "question": "Which TPC-DI 1.1.0 clause states that FactHoldings takes SK_AccountID and SK_CustomerID from the DimTrade row of the current trade?",
+      "status": "open"
+    }
+  ],
+  "mappings": [
+    {
+      "authority": "tpc-di-1.1.0-factholdings-unverified",
+      "from": "stage.holding_history.original_trade_id",
+      "source_semantic_type": "trade_id",
+      "target_semantic_type": "trade_id",
+      "to": "logical.fact_holdings.original_trade_id"
+    },
+    {
+      "authority": "tpc-di-1.1.0-factholdings-unverified",
+      "from": "stage.holding_history.current_trade_id",
+      "source_semantic_type": "trade_id",
+      "target_semantic_type": "trade_id",
+      "to": "logical.fact_holdings.current_trade_id"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "reference.dim_trade_incremental.sk_account_id",
+      "selector": "through_current_trade",
+      "source_semantic_type": "account_surrogate_key",
+      "target_semantic_type": "account_surrogate_key",
+      "to": "logical.fact_holdings.sk_account_id"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "reference.dim_trade_incremental.sk_customer_id",
+      "selector": "through_current_trade",
+      "source_semantic_type": "customer_surrogate_key",
+      "target_semantic_type": "customer_surrogate_key",
+      "to": "logical.fact_holdings.sk_customer_id"
+    },
+    {
+      "authority": "tpc-di-1.1.0-factholdings-unverified",
+      "from": "stage.holding_history.before_quantity",
+      "source_semantic_type": "holding_quantity",
+      "target_semantic_type": "holding_quantity",
+      "to": "logical.fact_holdings.before_quantity"
+    },
+    {
+      "authority": "tpc-di-1.1.0-factholdings-unverified",
+      "from": "stage.holding_history.after_quantity",
+      "source_semantic_type": "holding_quantity",
+      "target_semantic_type": "holding_quantity",
+      "to": "logical.fact_holdings.after_quantity"
+    }
+  ],
+  "producer": {
+    "contracts": [
+      "stage.holding_history.v1"
+    ],
+    "identity_join": "current_trade_id",
+    "reference": "logical.dim_trade_incremental row of the current trade"
+  },
+  "rule_order": [
+    "edge.holdings.require-identity",
+    "edge.holdings.resolve-keys-through-current-trade",
+    "edge.holdings.bind-frozen-keys-once",
+    "edge.holdings.emit-merge-surface-from-roles"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-factholdings-unverified",
+      "id": "edge.holdings.require-identity",
+      "operation": "match_on_original_and_current_trade_id",
+      "status": "known"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "id": "edge.holdings.resolve-keys-through-current-trade",
+      "operation": "lookup_keys_via_dim_trade_row",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "id": "edge.holdings.bind-frozen-keys-once",
+      "operation": "insert_only_for_frozen_from_first_encounter_roles",
+      "status": "assumed"
+    },
+    {
+      "authority": "sketch.fact-holdings-v1.rule-4",
+      "id": "edge.holdings.emit-merge-surface-from-roles",
+      "operation": "derive_merge_from_mutation_roles",
+      "status": "known"
+    }
+  ],
+  "schema_version": "edge-contract/v2",
+  "verification": [
+    {
+      "id": "guard.fact_holdings.merge_surface",
+      "kind": "contract_check"
+    },
+    {
+      "id": "gate.fact_holdings.frozen_keys_bound_once",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "edge.holdings.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

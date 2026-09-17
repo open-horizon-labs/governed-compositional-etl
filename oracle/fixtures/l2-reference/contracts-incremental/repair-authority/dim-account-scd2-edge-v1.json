@@ -1,0 +1,39 @@
+{
+  "active_authority": {
+    "basis": [
+      {
+        "id": "issue-8-scd2-versioning-adjudication",
+        "kind": "approved_decision",
+        "locator": "Decision",
+        "source": ".oh/metis/issue-8-scd2-versioning-adjudication.md"
+      }
+    ],
+    "hat": "data-product-owner",
+    "scope": "customer and account change feeds to DimCustomer and DimAccount SCD2 versions"
+  },
+  "allowed_artifacts": [
+    "sketch.edge.change_feeds_to_dim_account",
+    "sketch.edge.change_feeds_to_dim_customer"
+  ],
+  "authority_id": "repair.dim-account-scd2-edge.v1",
+  "conflict_behavior": {
+    "authority_conflict": "stop_and_adjudicate_under_domain_reviewer_hat",
+    "projection_edit": "reject_and_regenerate_from_governing_sketch",
+    "raw_or_schema_inference": "reject_as_non_authority"
+  },
+  "forbidden_adjacent_policy": [
+    "sketch.stage.customer_mgmt_action",
+    "sketch.stage.account_cdc",
+    "sketch.stage.customer_cdc",
+    "sketch.stage.account_change_ce",
+    "sketch.edge.trade_cdc_to_dim_trade_incremental",
+    "sqlmesh.model.dim_account",
+    "sqlmesh.model.dim_customer",
+    "generated_sql.dim_account",
+    "duckdb.dim_account",
+    "materialization.governed_merge",
+    "metric.position_by_account",
+    "metric.position_by_customer"
+  ],
+  "schema_version": "repair-authority/v1"
+}

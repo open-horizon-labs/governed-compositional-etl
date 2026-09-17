@@ -1,0 +1,19 @@
+{
+  "capabilities": {
+    "custom_materialization": true,
+    "ignore_nulls": true,
+    "native_merge": false,
+    "qualify": true,
+    "reason_native_merge_false": "SQLMesh's DuckDB adapter uses logical_merge (delete+insert) and raises on when_matched; DuckDB itself supports MERGE INTO",
+    "scd2_kind": "SCD_TYPE_2_BY_TIME available but versions here are derived from a complete change feed",
+    "window_functions": true
+  },
+  "engine": "duckdb 1.5.5",
+  "orchestrator": "sqlmesh 0.236.1",
+  "schema_version": "engine-profile/v1",
+  "strategy_for_aggregate": "FULL",
+  "strategy_for_incremental_by_identity": "kind CUSTOM materialization governed_merge executing a role-derived SQLGlot MERGE through the adapter; frozen columns excluded from WHEN MATCHED by construction",
+  "strategy_for_versioned": "FULL rebuild from the complete change feed",
+  "target": "duckdb-sqlmesh",
+  "workaround_note": "The custom materialization is a target-level workaround, classified as projection. Retire when SQLMesh supports native DuckDB merge with when_matched."
+}

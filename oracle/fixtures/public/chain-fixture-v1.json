@@ -1,0 +1,179 @@
+{
+  "batch_dates": {
+    "1": "2017-06-30",
+    "2": "2017-07-08"
+  },
+  "id": "chain-fixture-v1",
+  "note": "Bounded raw anchors for the chain: real DIGen scale-factor-3 rows for customer 238, account 428, trades 353232 and 372101, and their holding rows. No account rollover exists in DIGen for 428; the constructed one lives only in the counterexample's ce_account_changes and is applied through a labeled CE stage.",
+  "phases": {
+    "first_encounter": {
+      "apply_counterexample": false,
+      "include_batches": [
+        "1"
+      ]
+    },
+    "rollover": {
+      "apply_counterexample": true,
+      "include_batches": [
+        "1",
+        "2"
+      ]
+    }
+  },
+  "raw": {
+    "account_cdc": [],
+    "customer_cdc": [],
+    "customer_mgmt_action": [
+      {
+        "action_ts": "2007-12-29 14:22:12",
+        "action_type": "NEW",
+        "c_id": 238,
+        "c_tier": 3,
+        "ca_b_id": 7114,
+        "ca_id": 428,
+        "ca_tax_st": 1
+      },
+      {
+        "action_ts": "2008-03-14 10:13:57",
+        "action_type": "ADDACCT",
+        "c_id": 238,
+        "c_tier": null,
+        "ca_b_id": 11583,
+        "ca_id": 624,
+        "ca_tax_st": 2
+      },
+      {
+        "action_ts": "2008-03-23 05:17:00",
+        "action_type": "INACT",
+        "c_id": 238,
+        "c_tier": null,
+        "ca_b_id": null,
+        "ca_id": null,
+        "ca_tax_st": null
+      },
+      {
+        "action_ts": "2010-02-07 22:20:25",
+        "action_type": "UPDACCT",
+        "c_id": 238,
+        "c_tier": null,
+        "ca_b_id": 9938,
+        "ca_id": 624,
+        "ca_tax_st": 1
+      },
+      {
+        "action_ts": "2012-11-15 18:05:28",
+        "action_type": "CLOSEACCT",
+        "c_id": 238,
+        "c_tier": null,
+        "ca_b_id": null,
+        "ca_id": 428,
+        "ca_tax_st": null
+      }
+    ],
+    "holding_history": [
+      {
+        "batch_date": "2017-06-30",
+        "cdc_dsn": null,
+        "cdc_flag": null,
+        "hh_after_qty": 5225,
+        "hh_before_qty": 0,
+        "hh_h_t_id": 353232,
+        "hh_t_id": 353232,
+        "source": "Batch1 HoldingHistory.txt 353232|353232|0|5225"
+      },
+      {
+        "batch_date": "2017-07-08",
+        "cdc_dsn": 1488406,
+        "cdc_flag": "I",
+        "hh_after_qty": 0,
+        "hh_before_qty": 5225,
+        "hh_h_t_id": 353232,
+        "hh_t_id": 372101,
+        "source": "Batch2 HoldingHistory.txt I|1488406|353232|372101|5225|0"
+      }
+    ],
+    "trade_cdc": [
+      {
+        "batch_date": "2017-06-30",
+        "cdc_dsn": 0,
+        "cdc_flag": "I",
+        "source": "Batch1 Trade.txt (historical, no CDC flag; loaded as initial encounter)",
+        "t_bid_price": 6.57,
+        "t_ca_id": 428,
+        "t_chrg": 40.02,
+        "t_comm": 20.36,
+        "t_dts": "2017-04-10 20:26:42",
+        "t_exec_name": "5166",
+        "t_id": 353232,
+        "t_is_cash": true,
+        "t_qty": 5225,
+        "t_s_symb": "AAAAAAAAAAAABFV",
+        "t_st_id": "CMPT",
+        "t_tax": 5337.23,
+        "t_trade_price": 6.52,
+        "t_tt_id": "TLB"
+      },
+      {
+        "batch_date": "2017-06-30",
+        "cdc_dsn": 0,
+        "cdc_flag": "I",
+        "source": "Batch1 Trade.txt",
+        "t_bid_price": 4.06,
+        "t_ca_id": 428,
+        "t_chrg": null,
+        "t_comm": null,
+        "t_dts": "2017-04-10 19:28:01",
+        "t_exec_name": "990",
+        "t_id": 372101,
+        "t_is_cash": false,
+        "t_qty": 5225,
+        "t_s_symb": "AAAAAAAAAAAABFV",
+        "t_st_id": "PNDG",
+        "t_tax": null,
+        "t_trade_price": null,
+        "t_tt_id": "TLS"
+      },
+      {
+        "batch_date": "2017-07-08",
+        "cdc_dsn": 1488405,
+        "cdc_flag": "U",
+        "source": "Batch2 Trade.txt",
+        "t_bid_price": 4.06,
+        "t_ca_id": 428,
+        "t_chrg": null,
+        "t_comm": null,
+        "t_dts": "2017-07-08 00:57:49",
+        "t_exec_name": "990",
+        "t_id": 372101,
+        "t_is_cash": false,
+        "t_qty": 5225,
+        "t_s_symb": "AAAAAAAAAAAABFV",
+        "t_st_id": "SBMT",
+        "t_tax": null,
+        "t_trade_price": null,
+        "t_tt_id": "TLS"
+      },
+      {
+        "batch_date": "2017-07-08",
+        "cdc_dsn": 1488406,
+        "cdc_flag": "U",
+        "source": "Batch2 Trade.txt",
+        "t_bid_price": 4.06,
+        "t_ca_id": 428,
+        "t_chrg": 7.85,
+        "t_comm": 7.66,
+        "t_dts": "2017-07-08 00:59:31",
+        "t_exec_name": "990",
+        "t_id": 372101,
+        "t_is_cash": false,
+        "t_qty": 5225,
+        "t_s_symb": "AAAAAAAAAAAABFV",
+        "t_st_id": "CMPT",
+        "t_tax": 5516.66,
+        "t_trade_price": 4.01,
+        "t_tt_id": "TLS"
+      }
+    ]
+  },
+  "schema_version": "chain-fixture/v1"
+}

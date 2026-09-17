@@ -14,7 +14,7 @@
     ]
   },
   "history_policy": {
-    "current_version_predicate": "dim_account.is_current",
+    "account_version_resolution": "as_of_trade_record_timestamp",
     "mutation_policy_source": "semantic type mutation_role; the edge restates no column list",
     "ordering": "cdc_sequence ascending within trade_id",
     "resolution": "one CDC row"
@@ -43,16 +43,16 @@
     },
     {
       "authority": "issue-8-incremental-key-binding-adjudication",
-      "from": "reference.dim_account_current.sk_account_id",
-      "selector": "current_account_version_at_first_encounter",
+      "from": "reference.dim_account_as_of.sk_account_id",
+      "selector": "account_version_as_of_recorded_at_first_encounter",
       "source_semantic_type": "account_surrogate_key",
       "target_semantic_type": "account_surrogate_key",
       "to": "logical.dim_trade_incremental.sk_account_id"
     },
     {
       "authority": "issue-8-incremental-key-binding-adjudication",
-      "from": "reference.dim_account_current.sk_customer_id",
-      "selector": "current_account_version_at_first_encounter",
+      "from": "reference.dim_account_as_of.sk_customer_id",
+      "selector": "account_version_as_of_recorded_at_first_encounter",
       "source_semantic_type": "customer_surrogate_key",
       "target_semantic_type": "customer_surrogate_key",
       "to": "logical.dim_trade_incremental.sk_customer_id"
@@ -119,11 +119,11 @@
       "stage.trade_cdc.v1"
     ],
     "identity_join": "trade_id",
-    "reference": "governed.dim_account current version by account_id"
+    "reference": "logical.dim_account version as of the CDC row's recorded_at, at first encounter only"
   },
   "rule_order": [
     "edge.require-identity",
-    "edge.resolve-current-account-at-first-encounter",
+    "edge.resolve-account-version-as-of-first-encounter",
     "edge.bind-frozen-keys-once",
     "edge.update-mutable-roles-only",
     "edge.emit-merge-surface-from-roles"
@@ -137,8 +137,8 @@
     },
     {
       "authority": "issue-8-incremental-key-binding-adjudication",
-      "id": "edge.resolve-current-account-at-first-encounter",
-      "operation": "lookup_current_dimension_version",
+      "id": "edge.resolve-account-version-as-of-first-encounter",
+      "operation": "lookup_dimension_version_as_of",
       "status": "assumed"
     },
     {

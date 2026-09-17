@@ -2,3 +2,4 @@ duckdb==1.5.5
 jsonschema==4.25.1
 sqlglot==30.8.0
 sqlmesh==0.236.1
+typesafe-sdk

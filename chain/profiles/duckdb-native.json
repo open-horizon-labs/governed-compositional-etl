@@ -1,0 +1,16 @@
+{
+  "capabilities": {
+    "custom_materialization": false,
+    "ignore_nulls": true,
+    "native_merge": true,
+    "qualify": true,
+    "window_functions": true
+  },
+  "engine": "duckdb 1.5.5",
+  "orchestrator": "none; a Python runner executes SQL files in dependency order",
+  "schema_version": "engine-profile/v1",
+  "strategy_for_aggregate": "CREATE OR REPLACE TABLE AS",
+  "strategy_for_incremental_by_identity": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT",
+  "strategy_for_versioned": "CREATE OR REPLACE TABLE AS from the complete change feed",
+  "target": "duckdb-native"
+}

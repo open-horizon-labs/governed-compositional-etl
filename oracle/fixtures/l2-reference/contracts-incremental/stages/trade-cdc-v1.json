@@ -43,6 +43,10 @@
         "semantic_type": "trade_id"
       },
       {
+        "name": "t_dts",
+        "semantic_type": "trade_record_timestamp"
+      },
+      {
         "name": "t_st_id",
         "semantic_type": "status_id"
       },
@@ -92,6 +96,11 @@
         "name": "trade_id",
         "semantic_type": "trade_id",
         "source": "t_id"
+      },
+      {
+        "name": "recorded_at",
+        "semantic_type": "trade_record_timestamp",
+        "source": "t_dts"
       },
       {
         "name": "status_id",
@@ -146,7 +155,7 @@
       "status": "known"
     }
   ],
-  "schema_version": "stage-contract/v1",
+  "schema_version": "stage-contract/v2",
   "stage_id": "stage.trade_cdc",
   "verification": [
     {

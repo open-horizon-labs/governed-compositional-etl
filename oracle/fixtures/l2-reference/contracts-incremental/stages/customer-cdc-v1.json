@@ -1,0 +1,103 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.customer_cdc.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.5"
+    ]
+  },
+  "grain": "one change record per (cdc_sequence) for a customer within one incremental batch",
+  "holes": [],
+  "identifiers": [
+    "customer_id",
+    "cdc_sequence"
+  ],
+  "input": {
+    "entity": "raw.customer_cdc",
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag"
+      },
+      {
+        "name": "cdc_dsn",
+        "semantic_type": "cdc_sequence"
+      },
+      {
+        "name": "c_id",
+        "semantic_type": "customer_natural_id"
+      },
+      {
+        "name": "c_st_id",
+        "semantic_type": "customer_status_id"
+      },
+      {
+        "name": "c_tier",
+        "semantic_type": "customer_tier"
+      },
+      {
+        "name": "batch_date",
+        "semantic_type": "batch_date"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag",
+        "source": "cdc_flag"
+      },
+      {
+        "name": "cdc_sequence",
+        "semantic_type": "cdc_sequence",
+        "source": "cdc_dsn"
+      },
+      {
+        "name": "customer_id",
+        "semantic_type": "customer_natural_id",
+        "source": "c_id"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "customer_status_id",
+        "source": "c_st_id"
+      },
+      {
+        "name": "tier",
+        "semantic_type": "customer_tier",
+        "source": "c_tier"
+      },
+      {
+        "name": "batch_date",
+        "semantic_type": "batch_date",
+        "source": "batch_date"
+      }
+    ]
+  },
+  "rule_order": [
+    "customer-cdc.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.5",
+      "id": "customer-cdc.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v2",
+  "stage_id": "stage.customer_cdc",
+  "verification": [
+    {
+      "id": "customer_cdc.exact-structural-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "customer_cdc.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

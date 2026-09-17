@@ -15,7 +15,8 @@ from pathlib import Path
 
 from sqlglot import exp, parse, parse_one
 
-ROLES = ("none", "identity", "mutable", "frozen_from_first_encounter")
+ROLES = ("none", "identity", "per_statement", "mutable", "frozen_from_first_encounter")
+PER_STATEMENT = "per_statement"
 FROZEN = "frozen_from_first_encounter"
 
 
@@ -63,10 +64,10 @@ def update_surface(column_roles_map: dict[str, str]) -> dict[str, list[str]]:
             surface["identity"].append(column)
         elif role == "mutable":
             surface["mutable"].append(column)
-        elif role == FROZEN:
-            surface["frozen"].append(column)
-    if len(surface["identity"]) != 1:
-        raise GuardError("exactly one identity column is required for a MERGE match")
+        elif role in (FROZEN, PER_STATEMENT):
+            surface["frozen"].append(column)  # per_statement values are never updated in place either
+    if not surface["identity"]:
+        raise GuardError("at least one identity column is required for a MERGE match")
     if not surface["frozen"]:
         raise GuardError("no frozen_from_first_encounter column; this guard is not needed")
     return surface
@@ -75,7 +76,7 @@ def update_surface(column_roles_map: dict[str, str]) -> dict[str, list[str]]:
 def build_merge(target: str, source_sql: str, column_roles_map: dict[str, str]) -> exp.Merge:
     """Derive the MERGE from roles. Only mutable columns enter WHEN MATCHED UPDATE SET."""
     surface = update_surface(column_roles_map)
-    key = surface["identity"][0]
+    keys = surface["identity"]
     columns = list(column_roles_map)
     whens = []
     if surface["mutable"]:
@@ -105,7 +106,7 @@ def build_merge(target: str, source_sql: str, column_roles_map: dict[str, str]) 
             this=parse_one(source_sql, dialect="duckdb"),
             alias=exp.TableAlias(this=exp.to_identifier("src")),
         ),
-        on=exp.EQ(this=exp.column(key, "tgt"), expression=exp.column(key, "src")),
+        on=exp.and_(*[exp.EQ(this=exp.column(k, "tgt"), expression=exp.column(k, "src")) for k in keys]),
         whens=exp.Whens(expressions=whens),
     )
 

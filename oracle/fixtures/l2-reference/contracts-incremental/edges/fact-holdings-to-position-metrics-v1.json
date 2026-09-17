@@ -1,0 +1,94 @@
+{
+  "confidence": "reviewed_decision",
+  "consumer": {
+    "contract": "logical.position_by_account and logical.position_by_customer",
+    "grain": "one row per dimension version"
+  },
+  "contract_id": "edge.fact_holdings_to_position_metrics.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "sketch.position-metrics-v1.rule-1",
+      "sketch.position-metrics-v1.rule-2"
+    ]
+  },
+  "history_policy": {
+    "invariant": "a dimension version never holds a negative position; a negative value means a lot was opened under one version and closed under another",
+    "measure": "position = sum(after_quantity - before_quantity) per dimension version",
+    "mutation_policy_source": "semantic type mutation_role; the edge restates no column list"
+  },
+  "holes": [],
+  "mappings": [
+    {
+      "authority": "sketch.position-metrics-v1.rule-1",
+      "from": "logical.fact_holdings.sk_account_id",
+      "source_semantic_type": "account_surrogate_key",
+      "target_semantic_type": "account_surrogate_key",
+      "to": "logical.position_by_account.sk_account_id"
+    },
+    {
+      "authority": "sketch.position-metrics-v1.rule-1",
+      "from": "logical.fact_holdings.after_quantity",
+      "selector": "sum_of_after_minus_before",
+      "source_semantic_type": "holding_quantity",
+      "target_semantic_type": "position_quantity",
+      "to": "logical.position_by_account.position"
+    },
+    {
+      "authority": "sketch.position-metrics-v1.rule-1",
+      "from": "logical.fact_holdings.sk_customer_id",
+      "source_semantic_type": "customer_surrogate_key",
+      "target_semantic_type": "customer_surrogate_key",
+      "to": "logical.position_by_customer.sk_customer_id"
+    },
+    {
+      "authority": "sketch.position-metrics-v1.rule-1",
+      "from": "logical.fact_holdings.after_quantity",
+      "selector": "sum_of_after_minus_before",
+      "source_semantic_type": "holding_quantity",
+      "target_semantic_type": "position_quantity",
+      "to": "logical.position_by_customer.position"
+    }
+  ],
+  "producer": {
+    "contracts": [
+      "logical.fact_holdings"
+    ],
+    "identity_join": "sk_account_id",
+    "reference": "none"
+  },
+  "rule_order": [
+    "edge.metrics.sum-quantity-deltas",
+    "edge.metrics.nonnegative-invariant"
+  ],
+  "rules": [
+    {
+      "authority": "sketch.position-metrics-v1.rule-1",
+      "id": "edge.metrics.sum-quantity-deltas",
+      "operation": "aggregate_quantity_delta",
+      "status": "known"
+    },
+    {
+      "authority": "sketch.position-metrics-v1.rule-2",
+      "id": "edge.metrics.nonnegative-invariant",
+      "operation": "path_invariant",
+      "status": "known"
+    }
+  ],
+  "schema_version": "edge-contract/v2",
+  "verification": [
+    {
+      "id": "gate.position_by_account.nonnegative",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "gate.position_by_customer.nonnegative",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "edge.metrics.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

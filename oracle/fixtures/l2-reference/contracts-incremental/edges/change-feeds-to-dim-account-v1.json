@@ -1,0 +1,210 @@
+{
+  "confidence": "reviewed_decision",
+  "consumer": {
+    "contract": "logical.dim_account",
+    "grain": "one row per account version"
+  },
+  "contract_id": "edge.change_feeds_to_dim_account.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "issue-8-scd2-versioning-adjudication"
+    ]
+  },
+  "history_policy": {
+    "active_status": "ACTV",
+    "close_actions": [
+      "CLOSEACCT"
+    ],
+    "counterexample_stage": "stage.account_change_ce.v1 rows carry provenance controlled_counterexample and never enter raw",
+    "inactive_status": "INAC",
+    "mutation_policy_source": "semantic type mutation_role; the edge restates no column list",
+    "new_actions": [
+      "NEW",
+      "ADDACCT"
+    ],
+    "propagate_customer_versions": "a new customer version re-versions every account of that customer open at that time",
+    "surrogate_key_policy": "ordinal over (effective_from, natural_id) across the complete change feed",
+    "update_actions": [
+      "UPDACCT"
+    ],
+    "version_boundary": "a version starts at its change event time and ends at the next version of the same natural identity; 9999-12-31 while current"
+  },
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "edge.account.cdc-timestamp",
+      "owner_hat": "domain-reviewer",
+      "question": "Does an Account CDC row version at the batch date or at another recorded time?",
+      "status": "open"
+    }
+  ],
+  "mappings": [
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.customer_mgmt_action.account_id",
+      "source_semantic_type": "account_natural_id",
+      "target_semantic_type": "account_natural_id",
+      "to": "logical.dim_account.account_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.customer_mgmt_action.action_at",
+      "selector": "version_creating_action",
+      "source_semantic_type": "action_timestamp",
+      "target_semantic_type": "version_effective_timestamp",
+      "to": "logical.dim_account.effective_from"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.account_cdc.batch_date",
+      "selector": "cdc_row_versions_at_batch_date",
+      "source_semantic_type": "batch_date",
+      "target_semantic_type": "version_effective_timestamp",
+      "to": "logical.dim_account.effective_from"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.account_change_ce.action_at",
+      "selector": "labeled_counterexample_change",
+      "source_semantic_type": "action_timestamp",
+      "target_semantic_type": "version_effective_timestamp",
+      "to": "logical.dim_account.effective_from"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "reference.dim_customer_as_of.sk_customer_id",
+      "selector": "customer_version_as_of_effective_from",
+      "source_semantic_type": "customer_surrogate_key",
+      "target_semantic_type": "customer_surrogate_key",
+      "to": "logical.dim_account.sk_customer_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.customer_mgmt_action.action_type",
+      "selector": "status_from_action_type",
+      "source_semantic_type": "action_type",
+      "target_semantic_type": "account_status_id",
+      "to": "logical.dim_account.status_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.account_cdc.status_id",
+      "source_semantic_type": "account_status_id",
+      "target_semantic_type": "account_status_id",
+      "to": "logical.dim_account.status_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.account_change_ce.status_id",
+      "source_semantic_type": "account_status_id",
+      "target_semantic_type": "account_status_id",
+      "to": "logical.dim_account.status_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.customer_mgmt_action.tax_status_id",
+      "selector": "carry_forward_when_null",
+      "source_semantic_type": "tax_status_id",
+      "target_semantic_type": "tax_status_id",
+      "to": "logical.dim_account.tax_status_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.account_cdc.tax_status_id",
+      "source_semantic_type": "tax_status_id",
+      "target_semantic_type": "tax_status_id",
+      "to": "logical.dim_account.tax_status_id"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "from": "stage.account_change_ce.tax_status_id",
+      "source_semantic_type": "tax_status_id",
+      "target_semantic_type": "tax_status_id",
+      "to": "logical.dim_account.tax_status_id"
+    }
+  ],
+  "producer": {
+    "contracts": [
+      "stage.customer_mgmt_action.v1",
+      "stage.account_cdc.v1",
+      "stage.account_change_ce.v1"
+    ],
+    "identity_join": "account_id",
+    "reference": "logical.dim_customer version as of effective_from"
+  },
+  "rule_order": [
+    "edge.account.version-per-action",
+    "edge.account.status-from-action",
+    "edge.account.propagate-customer-versions",
+    "edge.account.resolve-customer-version-as-of",
+    "edge.account.assign-ordinal-surrogate-key",
+    "edge.account.close-previous-version",
+    "edge.account.admit-labeled-counterexample-stage"
+  ],
+  "rules": [
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "edge.account.version-per-action",
+      "operation": "one_version_per_change_event",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "edge.account.status-from-action",
+      "operation": "derive_status_from_action_type",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "edge.account.propagate-customer-versions",
+      "operation": "reversion_accounts_on_customer_change",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "edge.account.resolve-customer-version-as-of",
+      "operation": "lookup_dimension_version_as_of",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "edge.account.assign-ordinal-surrogate-key",
+      "operation": "ordinal_surrogate_key",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-scd2-versioning-adjudication",
+      "id": "edge.account.close-previous-version",
+      "operation": "set_effective_to_and_current_flag",
+      "status": "assumed"
+    },
+    {
+      "authority": "sketch.dim-account-scd2-v1.rule-6",
+      "id": "edge.account.admit-labeled-counterexample-stage",
+      "operation": "union_labeled_counterexample_changes",
+      "status": "known"
+    }
+  ],
+  "schema_version": "edge-contract/v2",
+  "verification": [
+    {
+      "id": "gate.dim_account.one_current_version_per_account",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "gate.dim_account.versions_do_not_overlap",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "edge.account.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

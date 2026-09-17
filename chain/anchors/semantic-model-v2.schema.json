@@ -1,0 +1,630 @@
+{
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:semantic-model:v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "derived_from_sketch": {
+      "const": "sketches/l1-brokerage-intent-v1.md"
+    },
+    "entities": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "attributes": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "derived_from": {
+                  "items": {
+                    "pattern": "^L1\\.[a-z0-9-]+$",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "disposition": {
+                  "description": "Developers write candidate. Only a reviewer promotes to selected, outside this file.",
+                  "enum": [
+                    "candidate",
+                    "rejected",
+                    "deferred"
+                  ]
+                },
+                "feedback": {
+                  "description": "Invariant ids, gate names, or 'sketch-review' that check this element.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "name": {
+                  "pattern": "^[a-z][a-z0-9_]+$",
+                  "type": "string"
+                },
+                "necessity": {
+                  "description": "Why this element is indispensable to the clauses it cites. Must follow from the clause text, not from data shape or convention.",
+                  "minLength": 20,
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string"
+                },
+                "nullable": {
+                  "type": "boolean"
+                },
+                "owner_hat": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "parallel_assumption": {
+                  "description": "Why this derivation is credible under current conditions; the condition whose failure should trigger review.",
+                  "minLength": 10,
+                  "type": "string"
+                },
+                "rejected_because": {
+                  "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
+                  "type": "string"
+                },
+                "review_trigger": {
+                  "minLength": 5,
+                  "type": "string"
+                },
+                "semantic_type": {
+                  "type": "string"
+                },
+                "sufficiency_group": {
+                  "pattern": "^sg\\.[a-z0-9.-]+$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "derived_from",
+                "disposition",
+                "feedback",
+                "name",
+                "necessity",
+                "nullable",
+                "owner_hat",
+                "parallel_assumption",
+                "review_trigger",
+                "semantic_type",
+                "sufficiency_group"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "derived_from": {
+            "items": {
+              "pattern": "^L1\\.[a-z0-9-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "disposition": {
+            "description": "Developers write candidate. Only a reviewer promotes to selected, outside this file.",
+            "enum": [
+              "candidate",
+              "rejected",
+              "deferred"
+            ]
+          },
+          "feedback": {
+            "description": "Invariant ids, gate names, or 'sketch-review' that check this element.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "grain": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "history": {
+            "enum": [
+              "versioned",
+              "incremental_by_identity",
+              "append_by_identity",
+              "aggregate"
+            ]
+          },
+          "id": {
+            "pattern": "^logical\\.[a-z][a-z0-9_]+$",
+            "type": "string"
+          },
+          "identifiers": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "necessity": {
+            "description": "Why this element is indispensable to the clauses it cites. Must follow from the clause text, not from data shape or convention.",
+            "minLength": 20,
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "owner_hat": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "parallel_assumption": {
+            "description": "Why this derivation is credible under current conditions; the condition whose failure should trigger review.",
+            "minLength": 10,
+            "type": "string"
+          },
+          "rejected_because": {
+            "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
+            "type": "string"
+          },
+          "review_trigger": {
+            "minLength": 5,
+            "type": "string"
+          },
+          "sufficiency_group": {
+            "pattern": "^sg\\.[a-z0-9.-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attributes",
+          "derived_from",
+          "disposition",
+          "feedback",
+          "grain",
+          "history",
+          "id",
+          "identifiers",
+          "necessity",
+          "owner_hat",
+          "parallel_assumption",
+          "review_trigger",
+          "sufficiency_group"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "handoffs": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_from": {
+            "items": {
+              "pattern": "^L1\\.[a-z0-9-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "disposition": {
+            "description": "Developers write candidate. Only a reviewer promotes to selected, outside this file.",
+            "enum": [
+              "candidate",
+              "rejected",
+              "deferred"
+            ]
+          },
+          "feedback": {
+            "description": "Invariant ids, gate names, or 'sketch-review' that check this element.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "from": {
+            "pattern": "^(raw|ce)\\.[a-z_]+\\.[a-z_]+$|^logical\\.[a-z_]+\\.[a-z_]+$",
+            "type": "string"
+          },
+          "necessity": {
+            "description": "Why this element is indispensable to the clauses it cites. Must follow from the clause text, not from data shape or convention.",
+            "minLength": 20,
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "owner_hat": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "parallel_assumption": {
+            "description": "Why this derivation is credible under current conditions; the condition whose failure should trigger review.",
+            "minLength": 10,
+            "type": "string"
+          },
+          "rejected_because": {
+            "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
+            "type": "string"
+          },
+          "review_trigger": {
+            "minLength": 5,
+            "type": "string"
+          },
+          "selector": {
+            "description": "how the value is chosen when several source rows qualify, e.g. as_of_event_time, latest_change, first_encounter_only, sum_of_deltas",
+            "type": "string"
+          },
+          "sufficiency_group": {
+            "pattern": "^sg\\.[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "to": {
+            "pattern": "^logical\\.[a-z_]+\\.[a-z_]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "derived_from",
+          "disposition",
+          "feedback",
+          "from",
+          "necessity",
+          "owner_hat",
+          "parallel_assumption",
+          "review_trigger",
+          "sufficiency_group",
+          "to"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "holes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "derived_from_hole": {
+            "pattern": "^L1\\.hole\\.[a-z0-9-]+$",
+            "type": "string"
+          },
+          "disposition": {
+            "const": "deferred"
+          },
+          "id": {
+            "pattern": "^hole\\.[a-z][a-z0-9_.-]+$",
+            "type": "string"
+          },
+          "owner_hat": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "question": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "derived_from_hole",
+          "owner_hat"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "invariants": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_from": {
+            "items": {
+              "pattern": "^L1\\.[a-z0-9-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "deterministic": {
+            "type": "boolean"
+          },
+          "disposition": {
+            "description": "Developers write candidate. Only a reviewer promotes to selected, outside this file.",
+            "enum": [
+              "candidate",
+              "rejected",
+              "deferred"
+            ]
+          },
+          "entity": {
+            "type": "string"
+          },
+          "feedback": {
+            "description": "Invariant ids, gate names, or 'sketch-review' that check this element.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^inv\\.[a-z][a-z0-9_.-]+$",
+            "type": "string"
+          },
+          "necessity": {
+            "description": "Why this element is indispensable to the clauses it cites. Must follow from the clause text, not from data shape or convention.",
+            "minLength": 20,
+            "type": "string"
+          },
+          "owner_hat": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "parallel_assumption": {
+            "description": "Why this derivation is credible under current conditions; the condition whose failure should trigger review.",
+            "minLength": 10,
+            "type": "string"
+          },
+          "rejected_because": {
+            "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
+            "type": "string"
+          },
+          "review_trigger": {
+            "minLength": 5,
+            "type": "string"
+          },
+          "statement": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "sufficiency_group": {
+            "pattern": "^sg\\.[a-z0-9.-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "derived_from",
+          "deterministic",
+          "disposition",
+          "entity",
+          "feedback",
+          "id",
+          "necessity",
+          "owner_hat",
+          "parallel_assumption",
+          "review_trigger",
+          "statement",
+          "sufficiency_group"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "job": {
+      "pattern": "^[a-z][a-z0-9-]+$",
+      "type": "string"
+    },
+    "questions_for_authority": {
+      "description": "If the Sketch and anchors conflict or leave the permitted derivation ambiguous, put exactly one precise question here and leave the affected elements out.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "semantic-model/v2"
+    },
+    "sufficiency_groups": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage_claim": {
+            "description": "Why these members together cover the parent clauses for this job.",
+            "minLength": 20,
+            "type": "string"
+          },
+          "gap": {
+            "description": "What the clauses require that these members do not cover, or 'none'. Name the L1 hole if the gap is a hole.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^sg\\.[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "members": {
+            "description": "Element ids: type.<id>, logical.<entity>, logical.<entity>.<attr>, handoff.<from>-><to>, inv.<id>",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "all_required",
+              "alternatives",
+              "conditional"
+            ]
+          },
+          "parent_clauses": {
+            "items": {
+              "pattern": "^L1\\.[a-z0-9-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "parent_clauses",
+          "members",
+          "mode",
+          "coverage_claim",
+          "gap"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "types": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_from": {
+            "items": {
+              "pattern": "^L1\\.[a-z0-9-]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "disposition": {
+            "description": "Developers write candidate. Only a reviewer promotes to selected, outside this file.",
+            "enum": [
+              "candidate",
+              "rejected",
+              "deferred"
+            ]
+          },
+          "feedback": {
+            "description": "Invariant ids, gate names, or 'sketch-review' that check this element.",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "history_role": {
+            "enum": [
+              "none",
+              "status_observation",
+              "effective_interval"
+            ]
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9_]+$",
+            "type": "string"
+          },
+          "mutation_role": {
+            "enum": [
+              "identity",
+              "per_statement",
+              "frozen_from_first_encounter",
+              "mutable",
+              "none"
+            ]
+          },
+          "necessity": {
+            "description": "Why this element is indispensable to the clauses it cites. Must follow from the clause text, not from data shape or convention.",
+            "minLength": 20,
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "owner_hat": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "parallel_assumption": {
+            "description": "Why this derivation is credible under current conditions; the condition whose failure should trigger review.",
+            "minLength": 10,
+            "type": "string"
+          },
+          "physical_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "rejected_because": {
+            "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
+            "type": "string"
+          },
+          "review_trigger": {
+            "minLength": 5,
+            "type": "string"
+          },
+          "semantic_kind": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "sufficiency_group": {
+            "pattern": "^sg\\.[a-z0-9.-]+$",
+            "type": "string"
+          },
+          "time_role": {
+            "enum": [
+              "none",
+              "event",
+              "effective",
+              "load"
+            ]
+          },
+          "unit": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "derived_from",
+          "disposition",
+          "feedback",
+          "history_role",
+          "id",
+          "mutation_role",
+          "necessity",
+          "owner_hat",
+          "parallel_assumption",
+          "physical_type",
+          "review_trigger",
+          "semantic_kind",
+          "sufficiency_group",
+          "time_role",
+          "unit"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "upstream_jobs": {
+      "description": "Jobs whose entities this model may consume through handoffs. Order is ownership-history -> trade-lifecycle -> positions.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "derived_from_sketch",
+    "entities",
+    "handoffs",
+    "holes",
+    "invariants",
+    "job",
+    "schema_version",
+    "sufficiency_groups",
+    "types"
+  ],
+  "title": "L2 semantic model v2 (S&T steps compiled from the L1 intent Sketch)",
+  "type": "object"
+}
