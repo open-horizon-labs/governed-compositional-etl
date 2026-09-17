@@ -6,8 +6,8 @@
   ],
   "relations": [
     {
-      "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy",
-      "relation": "contradiction",
+      "note": "same meaning; roles differ by the consuming entity's lifecycle (statement value, frozen copy, aggregate key)",
+      "relation": "overlap",
       "semantic_kind": "statement_effective_time",
       "uses": [
         [
@@ -18,6 +18,11 @@
         [
           "trade-lifecycle",
           "trade_owning_account_effective_from",
+          "frozen_from_first_encounter"
+        ],
+        [
+          "trade-lifecycle",
+          "trade_owning_customer_effective_from",
           "frozen_from_first_encounter"
         ],
         [
@@ -33,8 +38,8 @@
       ]
     },
     {
-      "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy",
-      "relation": "contradiction",
+      "note": "same meaning; roles differ by the consuming entity's lifecycle (statement value, frozen copy, aggregate key)",
+      "relation": "overlap",
       "semantic_kind": "account_owner_identity_reference",
       "uses": [
         [
@@ -60,8 +65,8 @@
       ]
     },
     {
-      "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy",
-      "relation": "contradiction",
+      "note": "same meaning; roles differ by the consuming entity's lifecycle (statement value, frozen copy, aggregate key)",
+      "relation": "overlap",
       "semantic_kind": "trade_owning_account_identity_reference",
       "uses": [
         [
@@ -90,6 +95,12 @@
     {
       "from_job": "ownership-history",
       "handoff": "logical.account.owning_customer_number->logical.trade.owning_customer_number",
+      "relation": "dependency",
+      "to_job": "trade-lifecycle"
+    },
+    {
+      "from_job": "ownership-history",
+      "handoff": "logical.customer.effective_from->logical.trade.owning_customer_effective_from",
       "relation": "dependency",
       "to_job": "trade-lifecycle"
     },
@@ -174,10 +185,10 @@
   ],
   "schema_version": "l2-weave/v1",
   "summary": {
-    "contradiction": 3,
-    "dependency": 5,
+    "contradiction": 0,
+    "dependency": 6,
     "gap": 0,
     "named-gap": 10,
-    "overlap": 0
+    "overlap": 3
   }
 }
