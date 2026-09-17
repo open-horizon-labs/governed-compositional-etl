@@ -311,7 +311,7 @@ class L3GateTests(unittest.TestCase):
             mpath = l3_dir / target / job / "manifest.json"
             m = json.loads(mpath.read_text()); m["derived_from_model"]["review_sha256"] = "0" * 64
             current = {gid: info["fingerprint"] for gid, info in L3.L2.fingerprints(job, selected=True).items()}
-            m["group_fingerprints"] = {gid: current[gid] for gid in m["group_fingerprints"]}
+            m["group_fingerprints"] = dict(current)  # every group the selection knows, as a fresh stamp would record
             groups = list(m["group_fingerprints"]); moved = groups[0]
             m["group_fingerprints"][moved] = "1" * 64
             mpath.write_text(json.dumps(m))
