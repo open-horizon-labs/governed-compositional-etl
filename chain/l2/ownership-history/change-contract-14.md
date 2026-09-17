@@ -1,0 +1,8 @@
+# Change contract, cycle 14: L1 -> L2, job ownership-history (finish answering the closed-account question)
+
+- **Exact active change authority:** `review-13.md`. The new invariant and the structural edits are accepted; two things are unfinished.
+- **Authorized corrections:**
+  1. `sg.statement-content.coverage_claim`: it now claims `L1.closed-account-activity` as a parent and says nothing a reader can check against that clause. Extend it to say which part this job covers (no trade creates a statement, checkable through `inv.account_statement_never_created_by_activity`), that closing unwinds nothing already attributed, and that the post-closure trade report falls to `job:trade-lifecycle` under the same clause. The other part is covered by another job, not deferred, so the gap does not change.
+  2. Drop the retired condition from two `review_trigger` fields: `logical.account.status` and the `action_type -> logical.account.status` handoff both still end by treating activity after a closing statement, with no reopening action recorded, as a reason to reassess. The business settled that: it is expected, it is reported by trade-lifecycle, and it never reopens an account. Remove those clauses, or replace them with a trigger on the clause itself (the business amends `L1.closed-account-activity`, or states that a recorded action revises a closure).
+  3. `inv.account_statement_never_created_by_activity`: half a sentence tying the `raw.account_cdc` producer to its deferred handoffs, since its standing depends on how `L1.hole.change-effective-time` resolves.
+- **Acceptance:** gate ok or question with zero problems; diff confined to those fields.

@@ -28,7 +28,18 @@
       "element_states_the_outcome": 0.71,
       "element_states_only_the_rule": 0.15,
       "verdict": "withdrawn: needs derivation, and Jev reads rather than derives. The question belongs to a runnable counterexample."
+    },
+    "treats_a_settled_question_as_open": {
+      "separation": 0.34,
+      "stale_sibling": 0.76,
+      "control": 0.42,
+      "without_the_settled_text": {
+        "stale": 0.73,
+        "control": 0.72,
+        "separation": 0.01
+      },
+      "verdict": "usable once the settled question is in the state; useless without it. Added after a capable reviewer found two review triggers still firing on a question the business had answered, and observed that a screen comparing a changed field against the unchanged fields of the same element would have caught it."
     }
   },
-  "rule_learned": "Ask the selector what a text says. Ask the counterexample what the code does. Ask a capable model what a rule implies."
+  "rule_learned": "Ask the selector what a text says. Ask the counterexample what the code does. Ask a capable model what a rule implies. And put the discriminating fact in the state: every selector that failed here failed because it had to infer which thing to compare against."
 }

@@ -146,6 +146,27 @@ def restates_or_adds(clause_texts: dict[str, str], element: dict) -> dict:
 # the selector what a text says; ask the counterexample what the code does; ask a capable model what a rule implies.
 
 
+def treats_a_settled_question_as_open(settled_question: str, field_name: str, field_text: str) -> dict:
+    """Suggested by a capable reviewer that caught what the screen missed: when a business answers a question, one field
+    of an element is updated to drop it and a sibling field is left still treating it as open. A diff-scoped screen cannot
+    see a field that did not change, but it can read every field of a changed element against what was just settled.
+
+    The settled question must be IN the state. Asked without it ("does this sibling still treat the retired condition as
+    open") the selector scored 0.73 on the real case and 0.72 on a control; given the settled text it scores 0.76 and 0.42.
+    """
+    state = {"settled_question": settled_question, "field": {"name": field_name, "text": field_text}}
+    try:
+        from typesafe_sdk import Noul
+        q = {"treats_as_open": Noul(instructions="The settled_question has been answered by the business and is no longer open. Does the text in field still treat that same question as a reason to reassess, revisit, or flag for review?")}
+    except ImportError:
+        return {"verdict": "not-run"}
+    result = _call("treats_a_settled_question_as_open", state, q)
+    if result["verdict"] != "ran":
+        return result
+    p_open = result["answers"]["treats_as_open"]["noul"]
+    return {**result, "field": field_name, "p_treats_as_open": p_open, "confidence_band": _band(p_open), "flag": p_open >= 0.5}
+
+
 def within_contract(contract_text: str, changed: list[str]) -> dict:
     """Did the Developer stay inside what the change contract enumerated? A cheap screen before a capable reviewer reads
     a diff that turns out to be in scope, and a cheap catch when it is not."""

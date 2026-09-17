@@ -407,6 +407,10 @@
             "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
             "type": "string"
           },
+          "reported_because_clause": {
+            "description": "the clause that makes this a report rather than a prevention; required when reports is true, and must be one of this element's derived_from clauses",
+            "type": "string"
+          },
           "reports": {
             "description": "true when a violation is a finding the chain hands the business rather than a defect in the projection. A reported invariant still needs an audit and still must be deterministic; its rows are surfaced, not failed.",
             "type": "boolean"

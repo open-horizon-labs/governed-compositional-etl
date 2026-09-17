@@ -1,0 +1,9 @@
+# Change contract, cycle 13: L1 -> L2, job ownership-history (a closed account keeps what it held)
+
+- **Exact active change authority:** the business answered `L1.hole.closed-account-activity` and the Sketch gained clause `L1.closed-account-activity`, which this job now lists: an account recorded as closed keeps everything it already held, closing it does not move or unwind any trade or holding already attributed to it, a trade placed after the closing statement is reported for review, and activity never reopens an account because no trade creates a statement. `chain/ce/accepted/ce.l1.closed-account-activity.md`. Cache: `sg.statement-content` stale (Jev 0.31, medium, review; adjudicated invalidate). The weave shows the clause uncovered until this job and trade-lifecycle cover it.
+- **Authorized changes:**
+  1. Add `L1.closed-account-activity` to `sg.statement-content.parent_clauses` and remove the answered hole from that group's `gap` and from any element that defers to it.
+  2. Add one deterministic invariant, `inv.account_statement_never_created_by_activity` (sg.statement-content): every account statement is produced by an anchored customer management action or a labeled constructed scenario row, and never by a trade or a holding. This is the checkable form of "activity never reopens an account: no trade creates a statement". Cite the new clause and whatever identity and history clauses it rests on.
+  3. Say, in the `parallel_assumption` of the account status handoff, that a closing statement closes the account and unwinds nothing already attributed to it; the trade side of that rule is trade-lifecycle's.
+- **Do not:** decide whether the closure or a later trade is wrong; that is the business's and the clause says so. Do not add anything that re-attributes or unwinds.
+- **Acceptance:** `.venv/bin/python scripts/chain_l2.py check ownership-history` ok or question with zero problems; diff confined to the elements above.

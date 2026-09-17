@@ -107,6 +107,15 @@ def check(job: str, l1: dict | None = None) -> dict:
             texts = " ".join(l1["clauses"].get(c, "") for c in t["derived_from"]).lower()
             if not any(k in texts for k in ("do not move", "does not change", "leave", "never re-attributed", "as first recorded", "as that trade's ownership was recorded")):
                 problems.append(f"type {t['id']} is frozen but no cited clause says the value does not change after first recording")
+    for inv in doc.get("invariants", []):
+        # a report relaxes both what a run counts as failure and what the mutation harness accepts as evidence of
+        # protection, so it names the clause that authorises it, and that clause must be one this element cites
+        if inv.get("reports"):
+            because = inv.get("reported_because_clause")
+            if not because:
+                problems.append(f"invariant {inv['id']} is marked reports but names no reported_because_clause")
+            elif because not in inv.get("derived_from", []):
+                problems.append(f"invariant {inv['id']} reports because of {because}, which is not among its derived_from clauses")
     entities = {e["id"]: e for e in doc.get("entities", [])}
     for e in doc.get("entities", []):
         cites(e, f"entity {e['id']}")

@@ -139,11 +139,6 @@
       "to_job": "positions"
     },
     {
-      "clause": "L1.closed-account-activity",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
-    },
-    {
       "gap": "L1.hole.change-effective-time",
       "group": "sg.identity",
       "job": "ownership-history",
@@ -168,7 +163,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved.",
+      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved.",
       "group": "sg.statement-content",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -186,7 +181,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"
@@ -226,7 +221,7 @@
   "summary": {
     "contradiction": 0,
     "dependency": 7,
-    "gap": 1,
+    "gap": 0,
     "named-gap": 13,
     "overlap": 3
   }

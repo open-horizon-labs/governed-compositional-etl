@@ -55,8 +55,23 @@ def relevant_holes(model: dict, element_id: str, holes: dict) -> list[str]:
     return []
 
 
+def settled_this_cycle(l1: dict) -> dict:
+    """What the business just settled: holes gone from L1 since the manifest was baselined, and clauses whose text moved.
+    A field left treating one of these as open is the defect a diff-scoped screen is blind to."""
+    manifest = ROOT / "chain/manifest.json"
+    if not manifest.exists():
+        return {}
+    previous = json.loads(manifest.read_text()).get("l1", {})
+    settled = {h: t for h, t in (previous.get("holes") or {}).items() if h not in l1["holes"]}
+    for c, t in (previous.get("clauses") or {}).items():
+        if c in l1["clauses"] and l1["clauses"][c] != t:
+            settled[c] = f"{t}\n\nThis has since been amended to: {l1['clauses'][c]}"
+    return settled
+
+
 def screen(job: str, contract: Path | None = None) -> dict:
     l1 = L2.parse_l1()
+    settled = settled_this_cycle(l1)
     delta = changed_elements(job)
     working = delta["working"]
     by_id = {e["id"]: e for e in working.get("invariants", [])}
@@ -86,13 +101,20 @@ def screen(job: str, contract: Path | None = None) -> dict:
         # mechanical, not judged: an element inside a group a hole bounds, whose own text never names that hole, is
         # where an unauthorized answer has historically hidden. Whether it actually answers the question is for a
         # runnable counterexample and a capable reader, not for a selector that reads rather than derives.
+        for question, text in settled.items():
+            for field in ("statement", "necessity", "parallel_assumption", "review_trigger"):
+                if not element.get(field):
+                    continue
+                r = JEV.treats_a_settled_question_as_open(text, field, element[field])
+                if r.get("verdict") == "ran" and r["flag"]:
+                    entry.setdefault("still_treats_settled_questions_as_open", []).append({"question": question, "field": field, "p": round(r["p_treats_as_open"], 2)})
         bounding = relevant_holes(working, eid, holes)
         silent = [h for h in bounding if h.replace("L1.hole.", "").replace("-", "_") not in json.dumps(element)]
         if silent:
             entry["bounded_by_holes_it_never_names"] = silent
         findings.append(entry)
 
-    findings.sort(key=lambda f: (-len(f.get("bounded_by_holes_it_never_names", [])), -f.get("p_adds_a_decision", 0)))
+    findings.sort(key=lambda f: (-len(f.get("still_treats_settled_questions_as_open", [])), -len(f.get("bounded_by_holes_it_never_names", [])), -f.get("p_adds_a_decision", 0)))
     out = {"job": job, "added": delta["added"], "removed": delta["removed"], "changed": delta["changed"], "findings": findings}
 
     if contract and contract.exists():

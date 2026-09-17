@@ -85,32 +85,10 @@ A handoff inside one job may land on a type with a different id when the two typ
 
 ## An invariant that reports rather than holds
 
-Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
+Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true` and name the clause that makes it a report in `reported_because_clause`, which must be one of the element's own `derived_from` clauses; the gate rejects the flag without it.
 
-A reported invariant is deterministic like any other, needs an audit like any other, and its rows are named like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
+The test is whether the rows mean the compiled thing is wrong. If a projection that made the rows disappear would be the defect, it is a report. If the rows mean the projection is wrong, it is a must-hold and the projection is defective. Do not use the flag to excuse a projection you cannot make pass.
 
-Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
+The flag relaxes two things, not one, and you are accountable for both. Its rows are surfaced as findings rather than counted as failures. And the mutation harness stops using it as evidence that audits protect anything, because an invariant that already fires cannot demonstrate protection. So a reported invariant carries its weight only through the counterexample that names the rows it is expected to report; write one.
 
-## An invariant that reports rather than holds
-
-Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
-
-A reported invariant is deterministic like any other, needs an audit like any other, and names its rows like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
-
-Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
-
-## An invariant that reports rather than holds
-
-Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
-
-A reported invariant is deterministic like any other, needs an audit like any other, and names its rows like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
-
-Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
-
-## An invariant that reports rather than holds
-
-Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
-
-A reported invariant is deterministic like any other, needs an audit like any other, and names its rows like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
-
-Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
+A reported invariant is deterministic like any other and needs an audit like any other. Say in `parallel_assumption` what it does when its condition cannot be evaluated, because silence is the default and an absent input is a separate question, not a quiet pass.
