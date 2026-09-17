@@ -10,6 +10,7 @@
         "logical.trade.owning_customer_number",
         "logical.trade.owning_customer_effective_from",
         "logical.trade.first_seen_late",
+        "logical.trade.order_type",
         "logical.trade.status",
         "logical.trade.executed_price",
         "logical.trade.fees",
@@ -36,6 +37,7 @@
         "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
         "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
         "handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from",
+        "handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type",
         "handoff.raw.trade_cdc.t_st_id->logical.trade.status",
         "handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price",
         "handoff.raw.trade_cdc.t_chrg->logical.trade.fees",
@@ -98,7 +100,7 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "fe25c77e5000a970f46f4d42b41818ff0f1bd110f39d294a56fa5dcb4051e750"
+    "review_sha256": "9330f3d22bdfc1120c4627deff8c0ed5e275fdb88be2c7202d108c7b34c631b7"
   },
   "group_fingerprints": {
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",

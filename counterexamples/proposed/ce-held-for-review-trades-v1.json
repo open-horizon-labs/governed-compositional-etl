@@ -1,0 +1,99 @@
+{
+  "adjacent_not_authorized": [
+    "what the brokerage does with a held record",
+    "the answer to L1.hole.market-order-seen-pending"
+  ],
+  "approved_or_rejected_by": "L1.unknown-codes approved; the hole open",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "After trade-lifecycle recompiles under L1.unknown-codes and the new hole, simulate on either engine fires exactly one audit with two rows naming 900004 and 900005, and the two engines agree.",
+  "expected": {
+    "after_the_sketch_change": "both engines: exactly the held-for-review audit fires, naming 900004 (market order seen pending) and 900005 (unknown order type); nothing is derived from either.",
+    "before_the_sketch_change": "both engines: 900004 first_seen_late false, 900005 first_seen_late NULL, no audit fires."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "trade_cdc": [
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed market buy first reported pending: the hole's case.",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-03 10:00:00",
+          "t_exec_name": "constructed",
+          "t_id": 900004,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "PNDG",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TMB"
+        },
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed trade with an order type outside the vocabulary: L1.unknown-codes' case.",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-03 10:01:00",
+          "t_exec_name": "constructed",
+          "t_id": 900005,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "SBMT",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TXX"
+        }
+      ],
+      "trade_history": [
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed.",
+          "th_dts": "2010-03-03 10:00:00",
+          "th_st_id": "PNDG",
+          "th_t_id": 900004
+        },
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed.",
+          "th_dts": "2010-03-03 10:01:00",
+          "th_st_id": "SBMT",
+          "th_t_id": 900005
+        }
+      ]
+    },
+    "raw_anchor": "oracle/fixtures/public/chain-fixture-v1.json"
+  },
+  "id": "ce.l1.held-for-review-trades",
+  "labels": [
+    "constructed",
+    "L1",
+    "trade-lifecycle",
+    "unknown-codes",
+    "market-order-seen-pending"
+  ],
+  "proposal": [
+    "chain/ce/accepted/ce.l1.unknown-codes-held.md",
+    "chain/ce/proposed/ce.l1.market-order-seen-pending.md"
+  ],
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "ce-document/v1",
+  "status": "proposed",
+  "tempting_wrong_repair": [
+    "an ELSE branch",
+    "dropping the report",
+    "rank arithmetic for a pending market order"
+  ],
+  "why_constructed": "Two trades the Sketch could not place until L1.unknown-codes and L1.hole.market-order-seen-pending existed: a market order first reported pending, and a trade with an order type outside the vocabulary. Before, both engines wrote a value and stayed silent."
+}

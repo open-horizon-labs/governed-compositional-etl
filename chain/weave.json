@@ -139,6 +139,16 @@
       "to_job": "positions"
     },
     {
+      "clause": "L1.unknown-codes",
+      "note": "no job's sufficiency group covers this clause",
+      "relation": "gap"
+    },
+    {
+      "hole": "L1.hole.market-order-seen-pending",
+      "note": "no job carries this hole; either it touches no job or a job filled it silently",
+      "relation": "gap"
+    },
+    {
       "gap": "L1.hole.change-effective-time",
       "group": "sg.identity",
       "job": "ownership-history",
@@ -215,7 +225,7 @@
   "summary": {
     "contradiction": 0,
     "dependency": 7,
-    "gap": 0,
+    "gap": 2,
     "named-gap": 12,
     "overlap": 3
   }

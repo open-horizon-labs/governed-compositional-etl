@@ -1,4 +1,4 @@
-# Review 5 (sketch reviewer, scoped): trade-lifecycle on duckdb-sqlmesh, L3 cycle 5 (verdict: fail, routed to the Sketch)
+# Review 5 (sketch reviewer, scoped): trade-lifecycle on duckdb-native, L3 cycle 5 (verdict: fail, routed to the Sketch)
 
 Scope: the cycle-5 re-projection under the amended `L1.placement-moment`: order_type column, the first-seen-late derivation over the order type's first lifecycle event, the restated audit. Evidence: check ok (8 audits); run ok; two-phase ok; mutate zero unprotected; the market-order counterexample yields 900002 not late and 900003 late; cross-engine compare identical.
 

@@ -10,12 +10,12 @@
 --   logical.trade.trade_number, logical.trade.owning_account_number, logical.trade.placed_at,
 --   logical.trade.owning_account_effective_from, logical.trade.owning_customer_number,
 --   logical.trade.owning_customer_effective_from, logical.trade.first_seen_late,
---   logical.trade.status, logical.trade.executed_price, logical.trade.fees,
---   logical.trade.commission, logical.trade.tax, logical.trade.quantity,
+--   logical.trade.order_type, logical.trade.status, logical.trade.executed_price,
+--   logical.trade.fees, logical.trade.commission, logical.trade.tax, logical.trade.quantity,
 --   type.trade_number, type.trade_owning_account_reference, type.trade_placed_at,
 --   type.trade_owning_account_effective_from, type.trade_owning_customer_reference,
 --   type.trade_owning_customer_effective_from, type.trade_first_seen_late,
---   type.trade_status, type.trade_executed_price, type.trade_fees,
+--   type.trade_order_type, type.trade_status, type.trade_executed_price, type.trade_fees,
 --   type.trade_commission, type.trade_tax, type.trade_quantity,
 --   handoff.raw.trade_cdc.t_id->logical.trade.trade_number,
 --   handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number,
@@ -24,6 +24,7 @@
 --   handoff.logical.account.effective_from->logical.trade.owning_account_effective_from,
 --   handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number,
 --   handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from,
+--   handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type,
 --   handoff.raw.trade_cdc.t_st_id->logical.trade.status,
 --   handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price,
 --   handoff.raw.trade_cdc.t_chrg->logical.trade.fees,
@@ -36,17 +37,18 @@
 -- Strategy: strategy_for_incremental_by_identity (native MERGE INTO). Create
 -- governed.trade if absent; MERGE a computed source over the whole feed;
 -- WHEN MATCHED UPDATE SET touches only the six mutable outcome columns; the
--- six frozen columns (owning_account_number, placed_at,
+-- seven frozen columns (owning_account_number, placed_at,
 -- owning_account_effective_from, owning_customer_number,
--- owning_customer_effective_from, first_seen_late) are written only on
--- INSERT, from the trade's first-encountered report.
+-- owning_customer_effective_from, first_seen_late, order_type) are written
+-- only on INSERT, from the trade's first-encountered report.
 --
 -- selector first_encounter_only, across both anchored report sources
 -- (report_order): placed_at <- the earliest raw.trade_history row's th_dts
 -- when any exist for the trade (history precedes all raw.trade_cdc rows),
--- else the earliest raw.trade_cdc row's t_dts. owning_account_number <- t_ca_id
--- from the trade's earliest raw.trade_cdc row specifically (raw.trade_history
--- carries no account field, regardless of which source supplies placed_at).
+-- else the earliest raw.trade_cdc row's t_dts. owning_account_number and
+-- order_type <- t_ca_id / t_tt_id from the trade's earliest raw.trade_cdc row
+-- specifically (raw.trade_history carries no account or order-type field,
+-- regardless of which source supplies placed_at).
 -- selector as_of_event_time: owning_account_effective_from <- the
 -- governed.account statement of owning_account_number whose effective_from is
 -- latest at or before placed_at.
@@ -55,9 +57,15 @@
 -- selector as_of_event_time: owning_customer_effective_from <- the
 -- governed.customer statement of owning_customer_number whose effective_from
 -- is latest at or before placed_at.
--- first_seen_late (computed_within_entity): true when the first-encountered
--- report (same one placed_at is drawn from, across both sources) carries a
--- status (th_st_id or t_st_id) other than PNDG.
+-- first_seen_late (computed_within_entity, L1.placement-moment amended):
+-- true when the first-encountered report (same one placed_at is drawn from,
+-- across both sources) carries a status later, in trade_code_meanings.status_order
+-- (PNDG, SBMT, CMPT, with terminal CNCL treated as later than any of them),
+-- than order_type's first lifecycle event -- PNDG for a limit order (TLB,
+-- TLS), SBMT for a market order (TMB, TMS), since an order sent straight to
+-- market has no pending stage; false when it carries exactly that event. A
+-- market order first reported PNDG, and an order_type outside the anchored
+-- four codes, are undefined by this rule (review triggers, not decided here).
 -- selector latest_change (report_order descending, cdc_flag I or U only, per
 -- inv.trade_outcome_updates_in_place; D rows excluded, provisional pending
 -- L1.hole.deletions): status, executed_price, fees, commission, tax, quantity
@@ -71,6 +79,7 @@ CREATE TABLE IF NOT EXISTS governed.trade (
     owning_customer_number BIGINT,
     owning_customer_effective_from TIMESTAMP,
     first_seen_late BOOLEAN,
+    order_type VARCHAR,
     status VARCHAR,
     executed_price DECIMAL(8,2),
     fees DECIMAL(10,2),
@@ -82,7 +91,7 @@ CREATE TABLE IF NOT EXISTS governed.trade (
 MERGE INTO governed.trade AS tgt
 USING (
     WITH first_cdc_report AS (
-        SELECT t_id, t_dts, t_ca_id, t_st_id
+        SELECT t_id, t_dts, t_ca_id, t_st_id, t_tt_id
         FROM raw.trade_cdc
         QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date, cdc_dsn) = 1
     ),
@@ -94,11 +103,14 @@ USING (
     -- The trade's earliest held report, across both anchored sources: its
     -- earliest raw.trade_history row when one exists (history precedes every
     -- raw.trade_cdc row, per report_order), else its earliest raw.trade_cdc row.
+    -- order_type always comes from the earliest raw.trade_cdc row specifically,
+    -- since raw.trade_history carries no order-type field.
     first_report AS (
         SELECT
             fc.t_id AS trade_number,
             COALESCE(fh.th_dts, fc.t_dts) AS placed_at,
             fc.t_ca_id AS owning_account_number,
+            fc.t_tt_id AS order_type,
             COALESCE(fh.th_st_id, fc.t_st_id) AS first_status
         FROM first_cdc_report fc
         LEFT JOIN first_history_report fh ON fh.th_t_id = fc.t_id
@@ -138,7 +150,17 @@ USING (
         ap.owning_account_effective_from,
         ap.owning_customer_number,
         cp.owning_customer_effective_from,
-        (fr.first_status <> 'PNDG') AS first_seen_late,
+        (
+            CASE fr.first_status
+                WHEN 'PNDG' THEN 0 WHEN 'SBMT' THEN 1 WHEN 'CMPT' THEN 2 WHEN 'CNCL' THEN 3
+            END
+            >
+            CASE fr.order_type
+                WHEN 'TLB' THEN 0 WHEN 'TLS' THEN 0
+                WHEN 'TMB' THEN 1 WHEN 'TMS' THEN 1
+            END
+        ) AS first_seen_late,
+        fr.order_type,
         lo.t_st_id AS status,
         lo.t_trade_price AS executed_price,
         lo.t_chrg AS fees,
@@ -161,9 +183,9 @@ WHEN MATCHED THEN UPDATE SET
 WHEN NOT MATCHED THEN INSERT (
     trade_number, owning_account_number, placed_at, owning_account_effective_from,
     owning_customer_number, owning_customer_effective_from, first_seen_late,
-    status, executed_price, fees, commission, tax, quantity
+    order_type, status, executed_price, fees, commission, tax, quantity
 ) VALUES (
     src.trade_number, src.owning_account_number, src.placed_at, src.owning_account_effective_from,
     src.owning_customer_number, src.owning_customer_effective_from, src.first_seen_late,
-    src.status, src.executed_price, src.fees, src.commission, src.tax, src.quantity
+    src.order_type, src.status, src.executed_price, src.fees, src.commission, src.tax, src.quantity
 );

@@ -16,11 +16,11 @@ Each clause has a stable id and is hashed on its own, so changing one clause inv
 
 Each job compiles to its own semantic model. A job lists the clauses it needs.
 
-- **job:ownership-history** — Know how any customer or account stood at any moment, and who owned what. Clauses: L1.identity, L1.history, L1.as-of, L1.current-version, L1.owner-standing, L1.statement-content, L1.omitted-facts-stand, L1.constructed-scenarios
+- **job:ownership-history** — Know how any customer or account stood at any moment, and who owned what. Clauses: L1.identity, L1.history, L1.as-of, L1.current-version, L1.owner-standing, L1.statement-content, L1.omitted-facts-stand, L1.unknown-codes, L1.constructed-scenarios
   - feedback: one current statement per customer and per account; statements of one thing do not overlap; any as-of question has exactly one answer with the standing facts of L1.statement-content; an account's as-of answer carries its customer's as-of answer
-- **job:trade-lifecycle** — Know each trade's outcome and who owned it when it happened. Clauses: L1.identity, L1.as-of, L1.attribution-at-placement, L1.placement-moment, L1.lifecycle-mutates-outcome, L1.constructed-scenarios
+- **job:trade-lifecycle** — Know each trade's outcome and who owned it when it happened. Clauses: L1.identity, L1.as-of, L1.attribution-at-placement, L1.placement-moment, L1.lifecycle-mutates-outcome, L1.unknown-codes, L1.constructed-scenarios
   - feedback: a later report of a trade changes its outcome fields and leaves its recorded ownership byte-identical; ownership equals the account's as-of statement at placement, not the current one; placement is the earliest held report's own time
-- **job:positions** — Know what each account and customer holds, and how it got there. Clauses: L1.identity, L1.attribution-at-placement, L1.holdings-follow-trade, L1.no-phantom-positions, L1.constructed-scenarios
+- **job:positions** — Know what each account and customer holds, and how it got there. Clauses: L1.identity, L1.attribution-at-placement, L1.holdings-follow-trade, L1.no-phantom-positions, L1.unknown-codes, L1.constructed-scenarios
   - feedback: every holding change carries the ownership recorded on its causing trade; no statement of an account or customer sums below zero
 
 ## Clauses
@@ -48,6 +48,7 @@ Each job compiles to its own semantic model. A job lists the clauses it needs.
 
 ### Evidence discipline
 
+- **L1.unknown-codes** — The brokerage's records speak in a fixed vocabulary of codes (statuses, order types, change flags). A report carrying a code that vocabulary does not name is held for review and is not interpreted: no rule below may read a meaning into it, default it, or silently drop the report. Every job reports such a record as a violation, naming the record and the code.
 - **L1.constructed-scenarios** — Any scenario built to test these rules, rather than received from the brokerage's records, is labeled as constructed wherever it appears and is never mixed into the received records. A constructed scenario changes something the received records already know; it never introduces a customer, account, or trade the brokerage does not have. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)
 
 ## Holes
@@ -58,6 +59,7 @@ Each job compiles to its own semantic model. A job lists the clauses it needs.
 - **L1.hole.change-effective-time** — Incremental change files carry no time of their own. Does a change in such a file take effect at the file's batch date, or at some other moment?
 - **L1.hole.deletions** — Incremental files can mark a record deleted. What does deleting a trade or account mean for history, ownership, and holdings?
 - **L1.hole.securities-and-brokers** — Securities, companies, and brokers are named in the records but not yet part of any job. When they are, the attribution rule must be restated for them.
+- **L1.hole.market-order-seen-pending** — `L1.placement-moment` says an order sent straight to market has no pending stage. What does it mean when a market order's earliest held report is pending: a late first encounter, a mis-typed order, or a record error? Until answered, no job may decide whether such a trade is first seen late; it is held for review and reported like an unknown code.
 - **L1.hole.batch-identity** — Does a report need to know which incremental file first delivered a fact?
 
 ## Anchors (fixed, not policy)
@@ -70,4 +72,4 @@ A reviewer exercises a compiled chain by loading received records and any labele
 
 ## Validation obligations
 
-Deterministic: one current statement per customer and account; statements do not overlap; a trade's recorded ownership is unchanged by later reports; a holding change carries its trade's recorded ownership; no negative position per statement. Judgment: whether the compiled semantic model derives only what these clauses entail, leaves every hole open, and names the clause behind each element.
+Deterministic: one current statement per customer and account; statements do not overlap; no persisted fact was derived from an unknown code; a trade's recorded ownership is unchanged by later reports; a holding change carries its trade's recorded ownership; no negative position per statement. Judgment: whether the compiled semantic model derives only what these clauses entail, leaves every hole open, and names the clause behind each element.

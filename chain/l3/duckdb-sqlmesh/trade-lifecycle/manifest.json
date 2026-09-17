@@ -10,6 +10,7 @@
         "logical.trade.owning_customer_number",
         "logical.trade.owning_customer_effective_from",
         "logical.trade.first_seen_late",
+        "logical.trade.order_type",
         "logical.trade.status",
         "logical.trade.executed_price",
         "logical.trade.fees",
@@ -20,6 +21,7 @@
         "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number",
         "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at",
         "handoff.raw.trade_history.th_dts->logical.trade.placed_at",
+        "handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type",
         "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
         "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
         "handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from",
@@ -38,7 +40,7 @@
         "governed.account",
         "governed.customer"
       ],
-      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key trade_number; frozen_columns (owning_account_number, placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from, first_seen_late) computed from each trade's first report and written only on insert; mutable_columns (status, executed_price, fees, commission, tax, quantity) computed from the latest I- or U-flagged raw.trade_cdc report and refreshed on match. placed_at (and the status used for first_seen_late) prefer the trade's earliest raw.trade_history row where one exists, else the earliest raw.trade_cdc row by report_order; owning_account_number is always the earliest raw.trade_cdc row's t_ca_id (raw.trade_history carries no account). owning_account_effective_from/owning_customer_number resolved via as_of_event_time against governed.account at placed_at; owning_customer_effective_from resolved via as_of_event_time against governed.customer, for the customer named by that pinned account statement, at placed_at."
+      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key trade_number; frozen_columns (owning_account_number, placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from, first_seen_late, order_type) computed from each trade's first report and written only on insert; mutable_columns (status, executed_price, fees, commission, tax, quantity) computed from the latest I- or U-flagged raw.trade_cdc report and refreshed on match. placed_at (and the status used for first_seen_late) prefer the trade's earliest raw.trade_history row where one exists, else the earliest raw.trade_cdc row by report_order; owning_account_number and order_type are always the earliest raw.trade_cdc row's t_ca_id and t_tt_id (raw.trade_history carries no account or order-type field). first_seen_late compares the first-encountered report's status against order_type's own first lifecycle event in trade_code_meanings.status_order (PNDG for a limit order TLB/TLS, SBMT for a market order TMB/TMS), undefined (NULL) for an order_type outside those four codes. owning_account_effective_from/owning_customer_number resolved via as_of_event_time against governed.account at placed_at; owning_customer_effective_from resolved via as_of_event_time against governed.customer, for the customer named by that pinned account statement, at placed_at."
     }
   ],
   "audits": [
@@ -85,7 +87,7 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "fe25c77e5000a970f46f4d42b41818ff0f1bd110f39d294a56fa5dcb4051e750"
+    "review_sha256": "9330f3d22bdfc1120c4627deff8c0ed5e275fdb88be2c7202d108c7b34c631b7"
   },
   "group_fingerprints": {
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",

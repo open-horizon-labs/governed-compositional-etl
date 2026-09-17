@@ -5,7 +5,7 @@ MODEL (
     materialization_properties (
       'unique_key' = 'trade_number',
       'mutable_columns' = 'status,executed_price,fees,commission,tax,quantity',
-      'frozen_columns' = 'owning_account_number,placed_at,owning_account_effective_from,owning_customer_number,owning_customer_effective_from,first_seen_late'
+      'frozen_columns' = 'owning_account_number,placed_at,owning_account_effective_from,owning_customer_number,owning_customer_effective_from,first_seen_late,order_type'
     )
   ),
   dialect duckdb,
@@ -17,6 +17,7 @@ MODEL (
     owning_customer_number BIGINT,
     owning_customer_effective_from TIMESTAMP,
     first_seen_late BOOLEAN,
+    order_type VARCHAR,
     status VARCHAR,
     executed_price DECIMAL(8, 2),
     fees DECIMAL(10, 2),
@@ -51,6 +52,7 @@ WITH first_cdc_report AS (
     t_id AS trade_number,
     t_dts AS placed_at,
     t_ca_id AS owning_account_number,
+    t_tt_id AS order_type,
     t_st_id AS status_at_first_report
   FROM raw.trade_cdc
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date ASC, cdc_dsn ASC) = 1
@@ -67,15 +69,34 @@ first_history_report AS (
 ),
 -- handoff.raw.trade_history.th_dts->logical.trade.placed_at (preferred where a history row
 -- exists) and handoff.raw.trade_cdc.t_dts->logical.trade.placed_at (otherwise), both selector
--- first_encounter_only. logical.trade.first_seen_late (computed_within_entity) compares that
--- same first report's own status against the anchored status_order (PNDG is the lifecycle's
--- first status).
+-- first_encounter_only. handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type, selector
+-- first_encounter_only: raw.trade_history carries no order-type field, so order_type is always
+-- the first-encountered raw.trade_cdc row's t_tt_id, mirroring owning_account_number.
+-- logical.trade.first_seen_late (computed_within_entity) compares that same first report's own
+-- status against the anchored status_order (PNDG, SBMT, CMPT, with CNCL terminal and later than
+-- any of them), ranked relative to order_type's own first lifecycle event -- PNDG for a limit
+-- order (TLB, TLS), SBMT for a market order (TMB, TMS) sent straight to market and so never
+-- pending. An order_type outside the anchored four leaves that first lifecycle event, and so
+-- first_seen_late, undefined (NULL) rather than defaulted.
 first_report AS (
   SELECT
     c.trade_number,
     c.owning_account_number,
+    c.order_type,
     COALESCE(h.placed_at, c.placed_at) AS placed_at,
-    COALESCE(h.status_at_first_report, c.status_at_first_report) <> 'PNDG' AS first_seen_late
+    (CASE COALESCE(h.status_at_first_report, c.status_at_first_report)
+       WHEN 'PNDG' THEN 0
+       WHEN 'SBMT' THEN 1
+       WHEN 'CMPT' THEN 2
+       WHEN 'CNCL' THEN 3
+     END)
+    >
+    (CASE c.order_type
+       WHEN 'TLB' THEN 0
+       WHEN 'TLS' THEN 0
+       WHEN 'TMB' THEN 1
+       WHEN 'TMS' THEN 1
+     END) AS first_seen_late
   FROM first_cdc_report AS c
   LEFT JOIN first_history_report AS h ON h.trade_number = c.trade_number
 ),
@@ -134,6 +155,7 @@ SELECT
   aa.owning_customer_number,
   ca.owning_customer_effective_from,
   f.first_seen_late,
+  f.order_type,
   m.status,
   m.executed_price,
   m.fees,
