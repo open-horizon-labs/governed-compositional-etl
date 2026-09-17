@@ -1,7 +1,5 @@
 {
-  "changed_clauses": [
-    "L1.unknown-codes"
-  ],
+  "changed_clauses": [],
   "jobs": {
     "ownership-history": {
       "elements": {
@@ -405,14 +403,13 @@
           ]
         },
         "sg.unknown-codes": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "inv.unknown_codes_held is the direct and complete check, for this job, of L1.unknown-codes' requirement that an unnamed code be held for review and reported rather than interpreted, defaulted, or dropped: it covers the one coded field this job reads from a currently-projectable candidate source with an anchored vocabulary (raw.customer_mgmt_action.action_type).",
           "derived_from": [
             "L1.unknown-codes"
           ],
           "fingerprint": "8fbe2c75680a53a653ac2db40563b581e775fbf80a6dda24b7ca7d328b45f5c5",
           "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred. Listed under hole.change_effective_time.blocks even though it has no deferred member, because that hole's resolution (whether an incremental change file's own status value takes effect at all) bears on whether the deferred c_st_id/ca_st_id handoffs this gap names ever become this group's members.",
-          "jev": null,
           "justifications": {
             "inv.unknown_codes_held": {
               "necessity": "L1.unknown-codes requires that a report carrying a code the brokerage's fixed vocabulary does not name is held for review and never interpreted, defaulted, or dropped, and that every job report such a record as a violation naming the record and the code. This job consumes raw.customer_mgmt_action rows, whose action_type it reads to populate customer and account status, and ce.account_changes rows, whose status_id it reads directly with no anchored vocabulary at all; this invariant is the direct, deterministic check that both are reported rather than silently interpreted, defaulted, or dropped.",
@@ -421,17 +418,12 @@
           },
           "members": [
             "inv.unknown_codes_held"
-          ],
-          "touched_clauses": [
-            "L1.unknown-codes"
           ]
         }
       },
-      "l3_reprojection_required": true,
+      "l3_reprojection_required": false,
       "selected_model_sha256": "93ad098e0c9231e37c24efae1404c695b7e5d3713bd5e72d1c82c3f91bbf7572",
-      "stale": [
-        "sg.unknown-codes"
-      ],
+      "stale": [],
       "status": "ok"
     },
     "positions": {
@@ -761,14 +753,13 @@
           ]
         },
         "sg.unknown-codes": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "L1.unknown-codes requires every job to report, held for review and never interpreted, defaulted, or dropped, a record carrying a code its vocabulary does not name. This job reads exactly one anchored coded field: raw.holding_history's cdc_flag (sources-v1.json's trade_code_meanings.cdc_flag names I, U, and D; historical rows carry no cdc_flag at all, per the same anchor). inv.unknown_codes_held is that report, over every raw.holding_history row this job consumes. No other coded field is read here: this job's own handoffs and derivations draw only from raw.holding_history and from trade-lifecycle's already-resolved logical.trade attributes, never from raw.account_cdc, raw.customer_cdc, raw.customer_mgmt_action, or raw.trade_cdc/raw.trade_history directly.",
           "derived_from": [
             "L1.unknown-codes"
           ],
           "fingerprint": "6bc24e998156b74d82d6adc56068978d1862b95d18d6f98beb6e8fe55e7e112e",
           "gap": "none",
-          "jev": null,
           "justifications": {
             "inv.unknown_codes_held": {
               "necessity": "L1.unknown-codes requires a report carrying a code the vocabulary does not name to be held for review, never interpreted, defaulted, or dropped, and requires every job to report it as a violation naming the record and the code. raw.holding_history's cdc_flag is the only anchored coded field this job reads (sources-v1.json's trade_code_meanings.cdc_flag names I, U, and D; the same anchor's entity description and report_order.applies_to state that historical rows carry no cdc columns at all). This invariant is exactly the report the clause requires: every consumed row's cdc_flag is one of the anchored values, or null on a historical row, or the row and its code are reported.",
@@ -777,17 +768,12 @@
           },
           "members": [
             "inv.unknown_codes_held"
-          ],
-          "touched_clauses": [
-            "L1.unknown-codes"
           ]
         }
       },
-      "l3_reprojection_required": true,
+      "l3_reprojection_required": false,
       "selected_model_sha256": "e3d5796935ac35f2030ec53f8037ce54b2ba04458db0108f57ee58227bf27df4",
-      "stale": [
-        "sg.unknown-codes"
-      ],
+      "stale": [],
       "status": "ok"
     },
     "trade-lifecycle": {

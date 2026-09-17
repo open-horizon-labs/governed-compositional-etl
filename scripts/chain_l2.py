@@ -448,6 +448,15 @@ def adjudication_for(group_id: str, clauses: list[str]) -> str | None:
     return verdict
 
 
+def stamped_everywhere(job: str, group_id: str, fingerprint: str) -> bool:
+    """True when every engine target's projection of the job carries this group fingerprint in its accepted manifest."""
+    targets = [d for d in (ROOT / "chain/l3").iterdir() if d.is_dir()]
+    manifests = [t / job / "manifest.json" for t in targets if (t / job / "manifest.json").exists()]
+    if not manifests:
+        return False
+    return all(json.loads(m.read_text()).get("group_fingerprints", {}).get(group_id) == fingerprint for m in manifests)
+
+
 def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
     """Recompute fingerprints and report the stale set. Hash-unchanged never re-projects. Hash-changed asks Jev."""
     l1 = parse_l1()
@@ -479,7 +488,8 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
                     decision = "stale" if adjudicated == "invalidate" else ("hit-by-adjudication" if adjudicated == "keep" else "review")
                     elements[eid] = {**info, "cache": decision, "touched_clauses": touched_before, "jev": prev.get(eid, {}).get("jev")}
                     continue
-                if prior in ("stale", "stale-new") and selected_sha == prev_selected_sha:
+                if prior in ("stale", "stale-new") and selected_sha == prev_selected_sha and not stamped_everywhere(job, eid, info["fingerprint"]):
+                    # stale persists until the job is re-selected or every engine target has stamped this fingerprint
                     elements[eid] = {**info, "cache": prior, "touched_clauses": touched_before, "jev": prev.get(eid, {}).get("jev")}
                     continue
                 elements[eid] = {**info, "cache": "hit"}

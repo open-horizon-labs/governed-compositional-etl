@@ -1,6 +1,6 @@
 {
   "job": "positions",
-  "manifest_sha256": "b9333be727b05a7f1c23a0905539e2d86bb3e0c1db6837a9fd5e0e8d825f2b99",
+  "manifest_sha256": "bc0cacac0a851fe26450b1cfd473faf9cf3ba8e081cf81329c0659400853aab4",
   "notes": "see review-1..4",
   "rejected_artifacts": [],
   "reviewer": "coordinator, bookkeeping review 4 (unknown-codes audit)",

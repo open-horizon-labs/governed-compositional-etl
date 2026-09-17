@@ -159,7 +159,8 @@
     "sg.history-asof": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
     "sg.identity": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
     "sg.owner-standing": "7718f313b24aded61e77ebeffaf7ec1b736e434f25b43a0f47ee1fec9eab5364",
-    "sg.statement-content": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95"
+    "sg.statement-content": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95",
+    "sg.unknown-codes": "8fbe2c75680a53a653ac2db40563b581e775fbf80a6dda24b7ca7d328b45f5c5"
   },
   "job": "ownership-history",
   "questions_for_authority": [],

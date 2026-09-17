@@ -125,7 +125,9 @@ def stamp(target: str, job: str) -> dict:
     model, review = load_job(job)
     base = L3_DIR / target / job
     manifest = json.loads((base / "manifest.json").read_text())
-    derived = groups_of(model, [d for a in manifest["artifacts"] for d in a["derived_from"]])
+    # a projection derives from the groups its artifacts cite and from the groups whose invariants its audits check;
+    # a group with only an invariant member (like sg.unknown-codes) reaches L3 through an audit alone
+    derived = groups_of(model, [d for a in manifest["artifacts"] for d in a["derived_from"]] + [a["invariant"] for a in manifest.get("audits", [])])
     current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items() if gid in derived}
     manifest["group_fingerprints"] = current
     manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]
@@ -157,7 +159,7 @@ def check(target: str, job: str) -> dict:
     if manifest.get("derived_from_model", {}).get("review_sha256") != review["model_sha256"]:
         stamped = manifest.get("group_fingerprints") or {}
         current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items()}
-        derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]])
+        derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]] + [a["invariant"] for a in manifest.get("audits", [])])
         # a group whose fingerprint moved only because a clause was reworded is still valid when the chain manifest
         # records Jev's keep (cache "hit-by-jev") or an adjudicated keep for that group; a moved fingerprint under
         # "stale" or an unadjudicated "review" is not
