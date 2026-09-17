@@ -1,10 +1,12 @@
 {
   "job": "ownership-history",
-  "manifest_sha256": "8f1ac53c78744d6f725fc8ed7eef0f8f1b74b77b618214bcaa3a8546aeed9be4",
-  "notes": "see review-1.md and review-2.md",
-  "rejected_artifacts": [],
-  "reviewer": "coordinator after opus review-1 prescribed the repair",
+  "manifest_sha256": "a728355590ddd674da291fb0835913a02968d0fcc9680166a4d823e84bfbb7d7",
+  "notes": "see review-1..3",
+  "rejected_artifacts": [
+    "audits/inv.account_status_matches_producing_source.sql"
+  ],
+  "reviewer": "Opus sketch reviewer, scoped review 3 (cycle-3 audits)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
-  "verdict": "pass"
+  "verdict": "fail"
 }

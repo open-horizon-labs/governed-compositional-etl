@@ -189,7 +189,9 @@ class L3ProjectionTests(unittest.TestCase):
         self.assertEqual(check["status"], "ok", check.get("problems"))
         report = L3.run("duckdb-native", "ownership-history", database=ROOT / "build/test-chain-l3.duckdb")
         self.assertTrue(report["ok"], report["audits"])
-        self.assertEqual(len(report["audits"]), 11)
+        model, review = L3.load_job(JOB)
+        expected = {i["id"] for i in model["invariants"] if i["deterministic"] and i["id"] in review["selected_element_ids"]}
+        self.assertEqual(set(report["audits"]), expected)
         account = report["samples"]["governed.account"]
         cols = account["columns"]
         rows_428 = [dict(zip(cols, r)) for r in account["rows"] if r[0] == "428"]

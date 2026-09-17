@@ -1,0 +1,104 @@
+{
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-sqlmesh",
+  "job": "positions",
+  "derived_from_model": {
+    "path": "chain/l2/positions/semantic-model.json",
+    "review_sha256": "daa522342a062dc26c3e368fb639edb4b791db1ffdf662343fb060d9e9e784e5"
+  },
+  "artifacts": [
+    {
+      "entity": "logical.holding_change",
+      "file": "models/holding_change.sql",
+      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key (original_trade_number, current_trade_number); frozen_columns (owning_account_number, owning_account_effective_from, owning_customer_number, owning_customer_effective_from) copied from trade-lifecycle's governed.trade for the pair's current_trade_number and written only on insert; mutable_columns (before_qty, after_qty, quantity_change) computed from the latest I- or U-flagged raw.holding_history report of the pair and refreshed on match.",
+      "derived_from": [
+        "logical.holding_change",
+        "logical.holding_change.original_trade_number",
+        "logical.holding_change.current_trade_number",
+        "logical.holding_change.owning_account_number",
+        "logical.holding_change.owning_account_effective_from",
+        "logical.holding_change.owning_customer_number",
+        "logical.holding_change.owning_customer_effective_from",
+        "logical.holding_change.before_qty",
+        "logical.holding_change.after_qty",
+        "logical.holding_change.quantity_change",
+        "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number",
+        "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number",
+        "handoff.raw.holding_history.hh_before_qty->logical.holding_change.before_qty",
+        "handoff.raw.holding_history.hh_after_qty->logical.holding_change.after_qty",
+        "handoff.logical.trade.owning_account_number->logical.holding_change.owning_account_number",
+        "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from",
+        "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
+        "handoff.logical.trade.owning_customer_effective_from->logical.holding_change.owning_customer_effective_from"
+      ],
+      "reads": [
+        "raw.holding_history",
+        "governed.trade"
+      ],
+      "note": "inv.holding_change_not_constructed (selected in review.json) is deterministic: false and has no SQL audit here, mirroring trade-lifecycle's own treatment of its analogous inv.trade_not_constructed: sources-v1.json anchors no ce.* source for holding changes, so there is nothing this job's SQL could check for an unlabeled constructed fact."
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "models/account_position.sql",
+      "strategy": "aggregate, rebuilt FULL: account_number/account_effective_from computed_within_entity, read off each group's own owning_account_number/owning_account_effective_from; net_quantity is the sum of quantity_change across every holding_change sharing that key.",
+      "derived_from": [
+        "logical.account_position",
+        "logical.account_position.account_number",
+        "logical.account_position.account_effective_from",
+        "logical.account_position.net_quantity",
+        "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity"
+      ],
+      "reads": [
+        "governed.holding_change"
+      ]
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "models/customer_position.sql",
+      "strategy": "aggregate, rebuilt FULL: customer_number/customer_effective_from computed_within_entity, read off each group's own owning_customer_number/owning_customer_effective_from; net_quantity is the sum of quantity_change across every holding_change sharing that key.",
+      "derived_from": [
+        "logical.customer_position",
+        "logical.customer_position.customer_number",
+        "logical.customer_position.customer_effective_from",
+        "logical.customer_position.net_quantity",
+        "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity"
+      ],
+      "reads": [
+        "governed.holding_change"
+      ]
+    }
+  ],
+  "audits": [
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_change_ownership_frozen.sql",
+      "invariant": "inv.holding_change_ownership_frozen"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_quantity_updates_in_place.sql",
+      "invariant": "inv.holding_quantity_updates_in_place"
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "audits/inv.account_position_not_negative.sql",
+      "invariant": "inv.account_position_not_negative"
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "audits/inv.account_position_key_matches_holding_change.sql",
+      "invariant": "inv.account_position_key_matches_holding_change"
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "audits/inv.customer_position_not_negative.sql",
+      "invariant": "inv.customer_position_not_negative"
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "audits/inv.customer_position_key_matches_holding_change.sql",
+      "invariant": "inv.customer_position_key_matches_holding_change"
+    }
+  ],
+  "questions_for_authority": []
+}

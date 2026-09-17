@@ -78,6 +78,32 @@ def is_sqlmesh(profile: dict) -> bool:
     return str(profile.get("orchestrator", "")).startswith("sqlmesh")
 
 
+def materialization_problems(sql: str, roles: dict[str, str]) -> list[str]:
+    """On SQLMesh targets a governed_merge model declares its write surface in MODEL header properties.
+    unique_key must be the entity's identity columns; mutable_columns may name only mutable attributes;
+    frozen_columns may name only frozen_from_first_encounter attributes. Mirrors the native MERGE guard."""
+    text = sql.lstrip()
+    if not text.startswith("MODEL"):
+        return []
+    header = text[: text.find(");") + 2] if ");" in text else text
+    if "governed_merge" not in header:
+        return []
+    props = {k: {c.strip() for c in v.split(",") if c.strip()} for k, v in re.findall(r"'(unique_key|mutable_columns|frozen_columns)'\s*=\s*'([^']*)'", header)}
+    by_role = {}
+    for col, role in roles.items():
+        by_role.setdefault(role, set()).add(col)
+    out = []
+    if props.get("unique_key", set()) != by_role.get("identity", set()):
+        out.append(f"declares unique_key {sorted(props.get('unique_key', set()))} but the entity's identity columns are {sorted(by_role.get('identity', set()))}")
+    stray_mutable = sorted(props.get("mutable_columns", set()) - by_role.get("mutable", set()))
+    if stray_mutable:
+        out.append(f"declares mutable_columns {stray_mutable} whose L2 mutation role is not mutable")
+    stray_frozen = sorted(props.get("frozen_columns", set()) - by_role.get("frozen_from_first_encounter", set()))
+    if stray_frozen:
+        out.append(f"declares frozen_columns {stray_frozen} whose L2 mutation role is not frozen_from_first_encounter")
+    return out
+
+
 def body_of(sql: str, sqlmesh_target: bool) -> str:
     """For SQLMesh targets, strip the MODEL (...) or AUDIT (...) header and resolve @this_model for parsing."""
     if not sqlmesh_target:
@@ -183,6 +209,9 @@ def check(target: str, job: str) -> dict:
             verdict = GUARD.guard_statement(s, roles, art["entity"].split(".")[-1])
             if not verdict.ok:
                 problems.append(f"artifact {art['file']} writes protected columns: {json.dumps(verdict.attempted_writes)}")
+        if sqlmesh_target:
+            # the write surface of a governed_merge model lives in its header, which the SQL guard never sees
+            problems.extend(f"artifact {art['file']} {p}" for p in materialization_problems(sql, roles))
         # tempting wrong resolution: joining an upstream versioned entity on is_current when the model's selector is as-of
         as_of_sources = {h["from"].rsplit(".", 1)[0] for h in model["handoffs"] if h.get("selector") == "as_of_event_time" and h["from"].startswith("logical.")}
         for s in statements:
@@ -382,7 +411,9 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
 def mutate(target: str, job: str, database: Path | None = None) -> dict:
     """Audit sensitivity on native targets: corrupt one protected value at a time on a scratch copy and require an audit to fire.
     Mutations: for every frozen_from_first_encounter or per_statement attribute, null one row's value and, where two
-    distinct values exist, swap one row's value for another row's. Reports mutations no audit catches as unprotected."""
+    distinct values exist, swap one row's value for another row's; for every attribute derived within the entity, swap and
+    perturb (a different value of the same type); for every other non-nullable, non-identity attribute, null.
+    Reports mutations no audit catches as unprotected."""
     import shutil
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
     sqlmesh_target = is_sqlmesh(profile)
@@ -416,9 +447,15 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
         ids = entity["identifiers"]
         for attr in entity["attributes"]:
             role = types.get(attr["semantic_type"])
-            if role not in ("frozen_from_first_encounter", "per_statement"):
+            if role in ("frozen_from_first_encounter", "per_statement"):
+                kinds, klass = ("null", "swap"), "protected-role"
+            elif (attr.get("derivation") or {}).get("kind") == "computed_within_entity":
+                kinds, klass = ("swap", "perturb"), "derived"
+            elif attr.get("nullable") is False and role != "identity":
+                kinds, klass = ("null",), "non-nullable"
+            else:
                 continue
-            for kind in ("null", "swap"):
+            for kind in kinds:
                 if scratch.exists():
                     scratch.unlink()
                 shutil.copy(database, scratch)
@@ -433,6 +470,14 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
                     where = " AND ".join(f"{c} = ?" for c in ids)
                     if kind == "null":
                         con.execute(f"UPDATE {target_table} SET {attr['name']} = NULL WHERE {where}", list(target_row[:-1]))
+                    elif kind == "perturb":
+                        col_type = con.execute(f"SELECT typeof({attr['name']}) FROM {target_table} WHERE {attr['name']} IS NOT NULL LIMIT 1").fetchone()
+                        if not col_type:
+                            continue
+                        t = col_type[0].upper()
+                        expr = (f"NOT {attr['name']}" if t == "BOOLEAN" else f"{attr['name']} + INTERVAL 1 DAY" if t.startswith(("TIMESTAMP", "DATE"))
+                                else f"{attr['name']} || 'x'" if t.startswith(("VARCHAR", "STRING")) else f"{attr['name']} + 1")
+                        con.execute(f"UPDATE {target_table} SET {attr['name']} = {expr} WHERE {where}", list(target_row[:-1]))
                     else:
                         others = [r[-1] for r in rows if r[-1] != target_row[-1] and r[-1] is not None]
                         if not others:
@@ -441,7 +486,7 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
                     fired = [inv for inv, sql in audits if con.execute(sql).fetchall()]
                 finally:
                     con.close()
-                results.append({"entity": entity["id"], "attribute": attr["name"], "role": role, "mutation": kind, "fired": fired, "protected": bool(fired)})
+                results.append({"entity": entity["id"], "attribute": attr["name"], "role": role, "class": klass, "mutation": kind, "fired": fired, "protected": bool(fired)})
     unprotected = [r for r in results if not r["protected"]]
     return {"target": target, "job": job, "mutations": len(results), "unprotected": unprotected, "results": results}
 

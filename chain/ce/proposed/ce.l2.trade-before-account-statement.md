@@ -1,0 +1,14 @@
+### CE: ce.l2.trade-before-account-statement
+
+- Status: proposed (constructed, labeled; the fixture row below is not TPC-DI data)
+- Level: L2 trade-lifecycle, observed at L3 review of positions on duckdb-sqlmesh (cycle 1), reading both engines' trade projections side by side
+- Input and simulation context: a trade report for account 428 whose placed_at precedes the account's first statement (account 428's first statement is NEW at 2007-12-29 14:22:12). Constructed row: trade 900001, PNDG at 2007-06-01 10:00:00, account 428, quantity 100, historical load. Under `L1.attribution-at-placement` the trade's ownership pins the account statement in force at placement; none exists.
+- Projection output: duckdb-native keeps trade 900001 with null owning_account_effective_from, owning_customer_number and owning_customer_effective_from (four `nullable: false` attributes hold nulls); duckdb-sqlmesh drops trade 900001 entirely, outcome included. Cross-engine compare would report the difference only if the fixture carried the row; the current fixture does not.
+- Corrected output or behavior: the trade is neither dropped nor persisted with gaps; the run reports a violation naming the trade, and the business decides (a pre-history statement for the account, a rule that such trades pin the first statement, or rejection of the report).
+- Classification: L2 gap. The model records the case as a review trigger on four attributes but as no invariant, so each engine's Developer resolved it by the join shape that came naturally.
+- Proposed generalized change: trade-lifecycle cycle 8 adds `inv.trade_ownership_pin_present` and `inv.every_received_trade_persisted`; once selected, both engines' L3 gates demand audits that make this row a violation. The L1 Sketch needs no change: `L1.hole.change-effective-time` already bounds the case.
+- Adjacent behavior not authorized: deciding which statement such a trade should pin; changing how positions treat it (positions already drop a change whose pin does not resolve, by stated rule).
+- Tempting wrong repair: pinning the account's earliest statement (invents a fact the statements do not carry) or treating the trade as constructed (it is a received report; `inv.trade_not_constructed` forbids the label).
+- Deterministic assertion: after cycle 8, running the fixture plus this row on either engine yields exactly one violation of `inv.trade_ownership_pin_present` or `inv.every_received_trade_persisted` naming trade 900001, and the two engines agree.
+- Proposed by: sketch reviewer (Opus), positions L3 review on duckdb-sqlmesh; filed by coordinator.
+- Approved or rejected by: pending, business authority for the disposition; the invariants need only the L2 review.

@@ -117,19 +117,44 @@
       "entity": "logical.account",
       "file": "audits/inv.account_statement_has_content.sql",
       "invariant": "inv.account_statement_has_content"
+    },
+    {
+      "entity": "logical.customer",
+      "file": "audits/inv.customer_status_matches_producing_source.sql",
+      "invariant": "inv.customer_status_matches_producing_source"
+    },
+    {
+      "entity": "logical.customer",
+      "file": "audits/inv.customer_tier_matches_producing_source.sql",
+      "invariant": "inv.customer_tier_matches_producing_source"
+    },
+    {
+      "entity": "logical.account",
+      "file": "audits/inv.account_status_matches_producing_source.sql",
+      "invariant": "inv.account_status_matches_producing_source"
+    },
+    {
+      "entity": "logical.account",
+      "file": "audits/inv.account_tax_treatment_matches_producing_source.sql",
+      "invariant": "inv.account_tax_treatment_matches_producing_source"
+    },
+    {
+      "entity": "logical.account",
+      "file": "audits/inv.account_owner_matches_producing_source.sql",
+      "invariant": "inv.account_owner_matches_producing_source"
     }
   ],
   "derived_from_model": {
-    "path": "chain/l2/ownership-history/semantic-model.json",
-    "review_sha256": "bf7b63a4dfa6d73b1616bece8cf6dac5c9df6d47dfaac098c7532ad5d93e4cd2"
+    "path": "chain/l2/ownership-history/selected-model.json",
+    "review_sha256": "12961d03caa20257bd2a2980d08f688fc8985a80d435c776c803d42467a8dddf"
   },
   "group_fingerprints": {
     "sg.constructed-scenarios": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
     "sg.current-version": "9b10389debc3ca53e0141d93de60c709c5174419f3ccbf1a85672a5df796af6c",
     "sg.history-asof": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
     "sg.identity": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
-    "sg.owner-standing": "6e51664dde65dad88657828b65aeca4ab1249082b1b2354bba36df55fb29c48c",
-    "sg.statement-content": "bc07b10cbb9aed9d0ce1043004c3b2b17a013cce14e205e14557e97e4256a098"
+    "sg.owner-standing": "7718f313b24aded61e77ebeffaf7ec1b736e434f25b43a0f47ee1fec9eab5364",
+    "sg.statement-content": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95"
   },
   "job": "ownership-history",
   "questions_for_authority": [],

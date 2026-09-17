@@ -1,0 +1,116 @@
+{
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-native",
+  "job": "positions",
+  "derived_from_model": {
+    "path": "chain/l2/positions/semantic-model.json",
+    "review_sha256": "daa522342a062dc26c3e368fb639edb4b791db1ffdf662343fb060d9e9e784e5"
+  },
+  "artifacts": [
+    {
+      "entity": "logical.holding_change",
+      "file": "holding_change.sql",
+      "strategy": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT",
+      "derived_from": [
+        "logical.holding_change",
+        "logical.holding_change.original_trade_number",
+        "logical.holding_change.current_trade_number",
+        "logical.holding_change.owning_account_number",
+        "logical.holding_change.owning_account_effective_from",
+        "logical.holding_change.owning_customer_number",
+        "logical.holding_change.owning_customer_effective_from",
+        "logical.holding_change.before_qty",
+        "logical.holding_change.after_qty",
+        "logical.holding_change.quantity_change",
+        "type.trade_reference",
+        "type.holding_owning_account_reference",
+        "type.holding_owning_account_effective_from",
+        "type.holding_owning_customer_reference",
+        "type.holding_owning_customer_effective_from",
+        "type.holding_quantity",
+        "type.holding_quantity_change",
+        "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number",
+        "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number",
+        "handoff.raw.holding_history.hh_before_qty->logical.holding_change.before_qty",
+        "handoff.raw.holding_history.hh_after_qty->logical.holding_change.after_qty",
+        "handoff.logical.trade.owning_account_number->logical.holding_change.owning_account_number",
+        "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from",
+        "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
+        "handoff.logical.trade.owning_customer_effective_from->logical.holding_change.owning_customer_effective_from"
+      ],
+      "reads": [
+        "raw.holding_history",
+        "governed.trade"
+      ]
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "account_position.sql",
+      "strategy": "CREATE OR REPLACE TABLE AS",
+      "derived_from": [
+        "logical.account_position",
+        "logical.account_position.account_number",
+        "logical.account_position.account_effective_from",
+        "logical.account_position.net_quantity",
+        "type.account_position_account_key",
+        "type.account_position_effective_from_key",
+        "type.holding_quantity_change",
+        "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity"
+      ],
+      "reads": [
+        "governed.holding_change"
+      ]
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "customer_position.sql",
+      "strategy": "CREATE OR REPLACE TABLE AS",
+      "derived_from": [
+        "logical.customer_position",
+        "logical.customer_position.customer_number",
+        "logical.customer_position.customer_effective_from",
+        "logical.customer_position.net_quantity",
+        "type.customer_position_key",
+        "type.customer_position_effective_from_key",
+        "type.holding_quantity_change",
+        "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity"
+      ],
+      "reads": [
+        "governed.holding_change"
+      ]
+    }
+  ],
+  "audits": [
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_change_ownership_frozen.sql",
+      "invariant": "inv.holding_change_ownership_frozen"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_quantity_updates_in_place.sql",
+      "invariant": "inv.holding_quantity_updates_in_place"
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "audits/inv.account_position_not_negative.sql",
+      "invariant": "inv.account_position_not_negative"
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "audits/inv.customer_position_not_negative.sql",
+      "invariant": "inv.customer_position_not_negative"
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "audits/inv.account_position_key_matches_holding_change.sql",
+      "invariant": "inv.account_position_key_matches_holding_change"
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "audits/inv.customer_position_key_matches_holding_change.sql",
+      "invariant": "inv.customer_position_key_matches_holding_change"
+    }
+  ],
+  "questions_for_authority": []
+}

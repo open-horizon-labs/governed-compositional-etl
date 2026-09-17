@@ -1,0 +1,13 @@
+{
+  "job": "positions",
+  "manifest_sha256": "4964d8e47e8711538616927bacd01f2f054c8d558467017e5b0ad2bfc1c3894d",
+  "notes": "see review-1.md",
+  "rejected_artifacts": [
+    "audits/inv.account_position_not_negative.sql",
+    "audits/inv.customer_position_not_negative.sql"
+  ],
+  "reviewer": "Opus sketch reviewer, scoped projection review 1",
+  "schema_version": "l3-review/v1",
+  "target": "duckdb-sqlmesh",
+  "verdict": "fail"
+}

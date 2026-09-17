@@ -21,6 +21,6 @@ Failure class: none. Rejected element ids: none.
 
 ## Notes for the L3 Developers (both targets)
 
-- Audits must not be circular. Account status and tax audits join the producing action by `(owning_customer_number, effective_from)` against `(c_id, action_ts)`; the owner audit joins by `(account_number, effective_from)` against `(ca_id, action_ts)`, which is unique in practice though not a declared identifier of `raw.customer_mgmt_action`.
+- Audits must not be circular. Customer audits join the producing action by `(customer_number, effective_from)` against `(c_id, action_ts)`, the declared identifier. Account audits (status, tax, owner) join by `(account_number, effective_from)` against `(ca_id, action_ts)`, which is unique in practice though not a declared identifier of `raw.customer_mgmt_action`; joining account audits through the owning customer would multiply rows for a customer holding more than one account. (Corrected after the L3 review of cycle 3 on duckdb-native found the first wording wrong; the L3 contracts had the right join.)
 - Carry-forward arms are best recomputed from the anchored source rather than from the projected column; either implementation is swap-sensitive.
 - Asymmetry faithful to the contract: the customer status invariant states the CDC-undeferred case in its `statement`; the account status invariant leaves the deferred case to `parallel_assumption`.

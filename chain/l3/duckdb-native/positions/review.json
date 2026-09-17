@@ -1,0 +1,13 @@
+{
+  "job": "positions",
+  "manifest_sha256": "1f7513bb857d36c898923d45b9759001cc51d3d07a0f74c0e9f7be3412b82ce7",
+  "notes": "see review-1.md",
+  "rejected_artifacts": [
+    "holding_change.sql",
+    "audits/inv.holding_quantity_updates_in_place.sql"
+  ],
+  "reviewer": "Opus sketch reviewer, scoped projection review 1",
+  "schema_version": "l3-review/v1",
+  "target": "duckdb-native",
+  "verdict": "fail"
+}
