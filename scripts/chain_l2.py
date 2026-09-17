@@ -368,6 +368,7 @@ def check(job: str, l1: dict | None = None) -> dict:
     # prior deferral to the now-closed L1.hole.deletions") or a live deferral ("what it means is L1.hole.deletions,
     # not decided here"), and telling those apart is reading, which is a reviewer's job and not this gate's.
     dangling: dict[str, list[str]] = {}
+    provenance: dict[str, set[str]] = {}
     def scan(o, path=""):
         if isinstance(o, dict):
             for k, v in o.items():
@@ -378,9 +379,28 @@ def check(job: str, l1: dict | None = None) -> dict:
         elif isinstance(o, str):
             for h in set(HOLE_REF.findall(o)) - carried:
                 dangling.setdefault(h, []).append(path)
+                # the sentence the reference sits in, and whether that sentence says the hole is closed
+                # Sentence boundaries only. A semicolon continues one thought, and provenance almost always reads
+                # "...left to L1.hole.X; that hole is now closed" -- splitting on the semicolon separates the
+                # reference from its own closure marker and reports honest provenance as a live deferral.
+                for sentence in re.split(r"(?<=[.!?])\s+", o):
+                    # Strip the hole id before looking for closure words, or a hole whose own NAME contains one
+                    # reads as provenance everywhere it appears. This chain really had L1.hole.closed-account-activity.
+                    if h in sentence and CLOSURE_WORDS.search(sentence.replace(h, " ")):
+                        provenance.setdefault(h, set()).add(path)
     scan({k: v for k, v in doc.items() if k != "holes"})
+    # Provenance that names the closure is worth keeping -- it tells the next reader why an element reads as it does
+    # -- so a question that can never be cleared is the wrong shape for it: a permanently raised question teaches
+    # everyone to skim past questions. A reference is treated as provenance when its own sentence says the hole
+    # closed. Only references that do not are reported, and a hole whose every reference is provenance is silent.
+    # This is a word test and so it can be fooled, by a live deferral in a sentence that happens to say "closed".
+    # That is an acceptable trade against noise a reviewer learns to ignore, and reviewers still read the prose.
     for h, where in sorted(dangling.items()):
-        questions.append(f"{len(where)} field(s) still name {h}, which this model does not carry: {', '.join(where[:6])}{' and more' if len(where) > 6 else ''}. Each is either provenance saying the hole closed, or a live deferral to a question that is no longer open -- and a stale necessity or parallel_assumption is read as normative and reinstates whatever the statement just fixed")
+        live = [w for w in where if w not in provenance.get(h, set())]
+        if not live:
+            continue
+        also = f" ({len(where) - len(live)} more name it as closed, which is provenance and fine)" if len(where) > len(live) else ""
+        questions.append(f"{len(live)} field(s) defer to {h}, which this model does not carry: {', '.join(live[:6])}{' and more' if len(live) > 6 else ''}.{also} A necessity or parallel_assumption is read as normative, so one still deferring to a closed question reinstates whatever the statement just fixed")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"job": job, "status": status, "problems": problems, "questions": questions, "holes_carried": sorted(carried),
             "groups": {g: {"parents": groups[g]["parent_clauses"], "gap": groups[g]["gap"]} for g in groups},
@@ -471,6 +491,8 @@ def select(job: str, review: dict) -> dict:
 
 
 HOLE_REF = re.compile(r"L1\.hole\.[a-z0-9-]+")
+# a sentence that says a hole closed is recording why an element reads as it does, not deferring to it
+CLOSURE_WORDS = re.compile(r"clos(?:ed|ing|es)|no longer|prior deferral|supersed|settles|answered|replac", re.I)
 
 
 def holes_named(gap: str) -> set[str]:

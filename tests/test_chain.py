@@ -522,6 +522,48 @@ class DanglingHoleReferenceTests(unittest.TestCase):
         self.assertTrue([q for q in r["questions"] if invented in q], r["questions"])
         self.assertFalse([p for p in r["problems"] if invented in p], "it must be a question, never a refusal")
 
+    def test_provenance_naming_the_closure_is_not_reported(self):
+        """A reference that says the hole closed records why an element reads as it does, and is worth keeping. A
+        question that can never be cleared is the wrong shape for it: a permanently raised question teaches everyone
+        to skim past questions. Note the semicolon -- provenance almost always reads '...left to the hole; that hole
+        is now closed', and splitting sentences on ';' separated the reference from its own closure marker and
+        reported honest provenance as a live deferral."""
+        import copy, json as _json, tempfile, shutil
+        path = ROOT / "chain/l2/positions/semantic-model.json"
+        if not path.exists():
+            self.skipTest("positions not compiled")
+        doc = _json.loads(path.read_text())
+        gone = "L1.hole.a-closed-hole"
+        for text, should_flag in (
+            (f"Before this clause this invariant left both directions to {gone}; that hole is now closed and the rule is stated directly.", False),
+            (f"What a D row means here is {gone}, not decided by this invariant.", True),
+            (f"Deferred to {gone}. The clause has since been answered elsewhere.", True),
+        ):
+            scratch = copy.deepcopy(doc)
+            scratch["invariants"][0]["necessity"] = text
+            with tempfile.TemporaryDirectory() as tmp:
+                l2 = Path(tmp) / "l2"
+                shutil.copytree(ROOT / "chain/l2", l2)
+                (l2 / "positions/semantic-model.json").write_text(_json.dumps(scratch))
+                saved = L2.L2_DIR
+                L2.L2_DIR = l2
+                try:
+                    r = L2.check("positions")
+                finally:
+                    L2.L2_DIR = saved
+            flagged = bool([q for q in r["questions"] if gone in q])
+            with self.subTest(text=text[:48]):
+                self.assertEqual(flagged, should_flag, f"flagged={flagged} for: {text}")
+
+    def test_the_live_chain_raises_no_dangling_hole_question(self):
+        """The standing state: every closed-hole reference left in the three models names its closure."""
+        for job in ("ownership-history", "trade-lifecycle", "positions"):
+            if not (ROOT / "chain/l2" / job / "semantic-model.json").exists():
+                continue
+            r = L2.check(job)
+            with self.subTest(job=job):
+                self.assertFalse([q for q in r["questions"] if "does not carry" in q], r["questions"])
+
     def test_a_carried_hole_is_not_reported(self):
         for job in ("ownership-history", "trade-lifecycle", "positions"):
             if not (ROOT / "chain/l2" / job / "semantic-model.json").exists():
