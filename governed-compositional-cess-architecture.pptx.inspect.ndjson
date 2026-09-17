@@ -1,0 +1,278 @@
+{"kind":"deck","id":"pr/9ngz88","name":"Deck"}
+{"kind":"layout","layoutId":"6f1dc4e9-60f1-48b9-8658-2589133756f7","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"2c417715-037f-4f1e-9026-143f8717f6e0","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/l0b1mf","slide":1,"title":"ARCHITECTURE DISCUSSION","textShapes":11}
+{"kind":"textbox","id":"sh/0ze1gb2t","slide":1,"name":"cover-eyebrow","text":"ARCHITECTURE DISCUSSION","textPreview":"ARCHITECTURE DISCUSSION","textChars":23,"textLines":1,"bbox":[58,44,420,26]}
+{"kind":"textbox","id":"sh/fy5k7618","slide":1,"name":"cover-title","text":"When valid warehouse stages disagree about meaning","textPreview":"When valid warehouse stages disagree about meaning","textChars":50,"textLines":1,"bbox":[58,112,600,190]}
+{"kind":"textbox","id":"sh/exwje1kn","slide":1,"name":"cover-subtitle","text":"A governed compositional CESS architecture for locating semantic responsibility, authorizing change, and proving downstream consequences.","textPreview":"A governed compositional CESS architecture for locating semantic responsibility, authorizing change, and proving downstream consequences.","textChars":137,"textLines":1,"bbox":[58,332,540,150]}
+{"kind":"shape","id":"sh/po72dgja","slide":1,"name":"cover-divider","bbox":[640,42,0.01,0.01]}
+{"kind":"shape","id":"sh/o3y1kb2p","slide":1,"name":"cover-actual","bbox":[704,132,500,122]}
+{"kind":"textbox","id":"sh/n2pkbq1k","slide":1,"name":"cover-actual-label","text":"SQL TIMESTAMP","textPreview":"SQL TIMESTAMP","textChars":13,"textLines":1,"bbox":[736,154,190,24]}
+{"kind":"textbox","id":"sh/21gjilkz","slide":1,"name":"cover-actual-value","text":"00:02:34","textPreview":"00:02:34","textChars":8,"textLines":1,"bbox":[736,187,260,55]}
+{"kind":"textbox","id":"sh/xs72h0jm","slide":1,"name":"cover-actual-type","text":"trade_record_timestamp","textPreview":"trade_record_timestamp","textChars":22,"textLines":1,"bbox":[990,193,190,38]}
+{"kind":"textbox","id":"sh/wrylov21","slide":1,"name":"cover-not-equal","text":"≠","textPreview":"≠","textChars":1,"textLines":1,"bbox":[900,282,100,80]}
+{"kind":"shape","id":"sh/2hcj6xc7","slide":1,"name":"cover-required","bbox":[704,382,500,122]}
+{"kind":"textbox","id":"sh/3il0f2ts","slide":1,"name":"cover-required-label","text":"SQL TIMESTAMP","textPreview":"SQL TIMESTAMP","textChars":13,"textLines":1,"bbox":[736,404,190,24]}
+{"kind":"textbox","id":"sh/o3u18nud","slide":1,"name":"cover-required-value","text":"00:01:13","textPreview":"00:01:13","textChars":8,"textLines":1,"bbox":[736,437,260,55]}
+{"kind":"textbox","id":"sh/p43ihsby","slide":1,"name":"cover-required-type","text":"trade_creation_timestamp","textPreview":"trade_creation_timestamp","textChars":24,"textLines":1,"bbox":[970,443,210,38]}
+{"kind":"textbox","id":"sh/q5cjaxcj","slide":1,"name":"cover-audience","text":"For Dave · data architecture peer review","textPreview":"For Dave · data architecture peer review","textChars":40,"textLines":1,"bbox":[58,642,500,24]}
+{"kind":"notes","id":"nt/l0b1mf","slide":1,"text":"Open with the tension: physical type agreement is not semantic compatibility.\n\n[Sources]\n- sketches/trade-dim-v1.md\n- evidence/issue-4/candidate-edge-adjudication-v1.json"}
+{"kind":"slide","id":"sl/ufllaj","slide":2,"title":"A pipeline can be locally green and globally wrong","textShapes":19}
+{"kind":"textbox","id":"sh/udkzuh4v","slide":2,"name":"title-2","text":"A pipeline can be locally green and globally wrong","textPreview":"A pipeline can be locally green and globally wrong","textChars":50,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/hgbi5wnm","slide":2,"name":"title-rule-2","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/wf2hwrm1","slide":2,"name":"footer-left-2","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/7a90zm5k","slide":2,"name":"footer-num-2","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"shape","id":"sh/m90zqh4z","slide":2,"name":"s2-a1","bbox":[285,293,98,0]}
+{"kind":"shape","id":"sh/9cbi1cnq","slide":2,"name":"s2-a2","bbox":[610,293,98,0]}
+{"kind":"shape","id":"sh/8bihs7m5","slide":2,"name":"s2-a3","bbox":[935,293,98,0]}
+{"kind":"shape","id":"sh/zm90v258","slide":2,"name":"s2-box-0","bbox":[60,210,245,170]}
+{"kind":"textbox","id":"sh/yl0zmx43","slide":2,"name":"s2-name-0","text":"Trade producer","textPreview":"Trade producer","textChars":14,"textLines":1,"bbox":[78,232,209,46]}
+{"kind":"textbox","id":"sh/kj25oz29","slide":2,"name":"s2-status-0","text":"PASS","textPreview":"PASS","textChars":4,"textLines":1,"bbox":[78,288,90,32]}
+{"kind":"textbox","id":"sh/5kbmx43u","slide":2,"name":"s2-desc-0","text":"T_DTS remains\ntrade_record_timestamp","textPreview":"T_DTS remains | trade_record_timestamp","textChars":36,"textLines":2,"bbox":[78,330,209,62]}
+{"kind":"shape","id":"sh/ihknmpk3","slide":2,"name":"s2-box-1","bbox":[385,210,245,170]}
+{"kind":"textbox","id":"sh/jit4vulo","slide":2,"name":"s2-name-1","text":"TradeHistory producer","textPreview":"TradeHistory producer","textChars":21,"textLines":1,"bbox":[403,232,209,46]}
+{"kind":"textbox","id":"sh/wf25kf2x","slide":2,"name":"s2-status-1","text":"PASS","textPreview":"PASS","textChars":4,"textLines":1,"bbox":[403,288,90,32]}
+{"kind":"textbox","id":"sh/xgbmtk3i","slide":2,"name":"s2-desc-1","text":"TH_DTS remains\nstatus_update_timestamp","textPreview":"TH_DTS remains | status_update_timestamp","textChars":38,"textLines":2,"bbox":[403,330,209,62]}
+{"kind":"shape","id":"sh/at0ni5k7","slide":2,"name":"s2-box-2","bbox":[710,210,245,170]}
+{"kind":"textbox","id":"sh/vut4rals","slide":2,"name":"s2-name-2","text":"DimTrade consumer","textPreview":"DimTrade consumer","textChars":17,"textLines":1,"bbox":[728,232,209,46]}
+{"kind":"textbox","id":"sh/gbm5wj2h","slide":2,"name":"s2-status-2","text":"PASS","textPreview":"PASS","textChars":4,"textLines":1,"bbox":[728,288,90,32]}
+{"kind":"textbox","id":"sh/hcv65o32","slide":2,"name":"s2-desc-2","text":"Copies an already typed\nlifecycle handoff","textPreview":"Copies an already typed | lifecycle handoff","textChars":41,"textLines":2,"bbox":[728,330,209,62]}
+{"kind":"shape","id":"sh/p8bmp4b6","slide":2,"name":"s2-box-3","bbox":[1035,210,245,170]}
+{"kind":"textbox","id":"sh/o7i5gjul","slide":2,"name":"s2-name-3","text":"Composed edge","textPreview":"Composed edge","textChars":13,"textLines":1,"bbox":[1053,232,209,46]}
+{"kind":"textbox","id":"sh/3694net0","slide":2,"name":"s2-status-3","text":"FAIL","textPreview":"FAIL","textChars":4,"textLines":1,"bbox":[1053,288,90,32]}
+{"kind":"textbox","id":"sh/250ne9cf","slide":2,"name":"s2-desc-3","text":"record_timestamp supplied as\ncreation_timestamp","textPreview":"record_timestamp supplied as | creation_timestamp","textChars":47,"textLines":2,"bbox":[1053,330,209,62]}
+{"kind":"shape","id":"sh/14rml4vu","slide":2,"name":"s2-bottom","bbox":[60,444,1220,156]}
+{"kind":"textbox","id":"sh/g3i5czu9","slide":2,"name":"s2-bottom-title","text":"The fault is not bad data or invalid SQL. It is a broken semantic handoff.","textPreview":"The fault is not bad data or invalid SQL. It is a broken semantic handoff.","textChars":74,"textLines":1,"bbox":[90,470,1090,46]}
+{"kind":"textbox","id":"sh/f294jud4","slide":2,"name":"s2-bottom-left","text":"Observed  00:02:34","textPreview":"Observed  00:02:34","textChars":18,"textLines":1,"bbox":[90,538,320,42]}
+{"kind":"textbox","id":"sh/e10napcj","slide":2,"name":"s2-bottom-mid","text":"TPC-DI 4.5.8.2","textPreview":"TPC-DI 4.5.8.2","textChars":14,"textLines":1,"bbox":[485,541,300,38]}
+{"kind":"textbox","id":"sh/t0rmhkvy","slide":2,"name":"s2-bottom-right","text":"Required  00:01:13","textPreview":"Required  00:01:13","textChars":18,"textLines":1,"bbox":[850,538,350,42]}
+{"kind":"notes","id":"nt/ufllaj","slide":2,"text":"[Sources]\n- evidence/issue-4/candidate-edge-adjudication-v1.json\n- contracts/edges/trade-history-to-dim-trade-v1.json\n- TPC-DI 1.1.0 clauses 4.5.8.1–4.5.8.2: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf"}
+{"kind":"slide","id":"sl/cu6reh","slide":3,"title":"Policy stays above the executable DAG","textShapes":25}
+{"kind":"textbox","id":"sh/l0z2143y","slide":3,"name":"title-3","text":"Policy stays above the executable DAG","textPreview":"Policy stays above the executable DAG","textChars":37,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/yxojqpkn","slide":3,"name":"title-rule-3","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/zyhkzul8","slide":3,"name":"footer-left-3","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/cv61oz2h","slide":3,"name":"footer-num-3","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"shape","id":"sh/xwf2xk32","slide":3,"name":"s3-down-1","bbox":[636,252,0,48]}
+{"kind":"shape","id":"sh/a9ojmpkb","slide":3,"name":"s3-down-2","bbox":[636,410,0,48]}
+{"kind":"shape","id":"sh/baxkvulw","slide":3,"name":"s3-loop","bbox":[220,535,880,0]}
+{"kind":"textbox","id":"sh/wral0j2l","slide":3,"name":"s3-band1-label","text":"GOVERNANCE PLANE","textPreview":"GOVERNANCE PLANE","textChars":16,"textLines":1,"bbox":[64,176,180,24]}
+{"kind":"shape","id":"sh/hsj29oj6","slide":3,"name":"s3-gov-band","bbox":[250,168,970,104]}
+{"kind":"textbox","id":"sh/d0zalora","slide":3,"name":"s3-gov-t-0","text":"Sketch","textPreview":"Sketch","textChars":6,"textLines":1,"bbox":[274,190,205,28]}
+{"kind":"textbox","id":"sh/czq9sjap","slide":3,"name":"s3-gov-d-0","text":"known rules + holes","textPreview":"known rules + holes","textChars":19,"textLines":1,"bbox":[274,225,205,24]}
+{"kind":"textbox","id":"sh/byhsjy94","slide":3,"name":"s3-gov-t-1","text":"Anchors","textPreview":"Anchors","textChars":7,"textLines":1,"bbox":[509,190,205,28]}
+{"kind":"textbox","id":"sh/qx8rqtsj","slide":3,"name":"s3-gov-d-1","text":"grain · identity · types","textPreview":"grain · identity · types","textChars":24,"textLines":1,"bbox":[509,225,205,24]}
+{"kind":"textbox","id":"sh/pwzahore","slide":3,"name":"s3-gov-t-2","text":"Authority","textPreview":"Authority","textChars":9,"textLines":1,"bbox":[744,190,205,28]}
+{"kind":"textbox","id":"sh/ov69ojat","slide":3,"name":"s3-gov-d-2","text":"allowed / forbidden change","textPreview":"allowed / forbidden change","textChars":26,"textLines":1,"bbox":[744,225,205,24]}
+{"kind":"textbox","id":"sh/3uxsfe98","slide":3,"name":"s3-gov-t-3","text":"CE archive + R","textPreview":"CE archive + R","textChars":14,"textLines":1,"bbox":[979,190,205,28]}
+{"kind":"textbox","id":"sh/2torm9sn","slide":3,"name":"s3-gov-d-3","text":"learning + curated protection","textPreview":"learning + curated protection","textChars":29,"textLines":1,"bbox":[979,225,205,24]}
+{"kind":"textbox","id":"sh/9sjat8ri","slide":3,"name":"s3-band2-label","text":"COMPILER","textPreview":"COMPILER","textChars":8,"textLines":1,"bbox":[64,330,180,24]}
+{"kind":"shape","id":"sh/8rat0nax","slide":3,"name":"s3-compiler","bbox":[410,308,452,102]}
+{"kind":"textbox","id":"sh/svidwry9","slide":3,"name":"s3-compiler-title","text":"Bounded semantic compiler","textPreview":"Bounded semantic compiler","textChars":25,"textLines":1,"bbox":[446,328,380,35]}
+{"kind":"textbox","id":"sh/twrupwzu","slide":3,"name":"s3-compiler-desc","text":"fail-closed profile · SQLGlot ASTs · exact lineage manifest","textPreview":"fail-closed profile · SQLGlot ASTs · exact lineage manifest","textChars":59,"textLines":1,"bbox":[446,370,380,25]}
+{"kind":"textbox","id":"sh/690vuhg3","slide":3,"name":"s3-band3-label","text":"EXECUTION PLANE","textPreview":"EXECUTION PLANE","textChars":15,"textLines":1,"bbox":[64,488,180,24]}
+{"kind":"shape","id":"sh/7a9cnmho","slide":3,"name":"s3-exec-band","bbox":[250,466,970,102]}
+{"kind":"textbox","id":"sh/k7ids7yx","slide":3,"name":"s3-exe-t-0","text":"SQLMesh","textPreview":"SQLMesh","textChars":7,"textLines":1,"bbox":[274,488,205,28]}
+{"kind":"textbox","id":"sh/58rulczi","slide":3,"name":"s3-exe-d-0","text":"models + executable DAG","textPreview":"models + executable DAG","textChars":23,"textLines":1,"bbox":[274,523,205,24]}
+{"kind":"textbox","id":"sh/i5gbqh07","slide":3,"name":"s3-exe-t-1","text":"Generated SQL","textPreview":"Generated SQL","textChars":13,"textLines":1,"bbox":[509,488,205,28]}
+{"kind":"textbox","id":"sh/j6pcj2hc","slide":3,"name":"s3-exe-d-1","text":"replaceable projection","textPreview":"replaceable projection","textChars":22,"textLines":1,"bbox":[509,523,205,24]}
+{"kind":"textbox","id":"sh/w3yto7i1","slide":3,"name":"s3-exe-t-2","text":"DuckDB","textPreview":"DuckDB","textChars":6,"textLines":1,"bbox":[744,488,205,28]}
+{"kind":"textbox","id":"sh/x47uhczm","slide":3,"name":"s3-exe-d-2","text":"materialized behavior","textPreview":"materialized behavior","textChars":21,"textLines":1,"bbox":[744,523,205,24]}
+{"kind":"textbox","id":"sh/zy5w7218","slide":3,"name":"s3-exe-t-3","text":"Audits","textPreview":"Audits","textChars":6,"textLines":1,"bbox":[979,488,205,28]}
+{"kind":"textbox","id":"sh/ydwvyxkn","slide":3,"name":"s3-exe-d-3","text":"deterministic evidence","textPreview":"deterministic evidence","textChars":22,"textLines":1,"bbox":[979,523,205,24]}
+{"kind":"textbox","id":"sh/l07e9sje","slide":3,"name":"s3-loop-label","text":"Simulation → approved-output gate + Sketch review → governed learning","textPreview":"Simulation → approved-output gate + Sketch review → governed learning","textChars":69,"textLines":1,"bbox":[300,586,760,36]}
+{"kind":"notes","id":"nt/cu6reh","slide":3,"text":"[Sources]\n- sketches/trade-dim-v1.md\n- docs/executable-projection.md\n- contracts/compiler-profile-trade-dim-v1.json\n- evidence/issue-5/sketch-review-v1.md"}
+{"kind":"slide","id":"sl/ewzh71","slide":4,"title":"Each artifact has one job—and one kind of authority","textShapes":19}
+{"kind":"textbox","id":"sh/cfu50zah","slide":4,"name":"title-4","text":"Each artifact has one job—and one kind of authority","textPreview":"Each artifact has one job—and one kind of authority","textChars":51,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/rel47utw","slide":4,"name":"title-rule-4","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/qdc3ypsr","slide":4,"name":"footer-left-4","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/pc3m5kb6","slide":4,"name":"footer-num-4","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"shape","id":"sh/4balwfal","slide":4,"name":"s4-col-0","bbox":[58,186,348,410]}
+{"kind":"textbox","id":"sh/3q143at0","slide":4,"name":"s4-head-0","text":"Governs meaning","textPreview":"Governs meaning","textChars":15,"textLines":1,"bbox":[84,214,296,40]}
+{"kind":"shape","id":"sh/2ps3u5sf","slide":4,"name":"s4-rule-0","bbox":[84,270,296,0.01]}
+{"kind":"shape","id":"sh/98nmhora","slide":4,"name":"s4-b-0-0-dot","bbox":[86,309,8,8]}
+{"kind":"textbox","id":"sh/87e58jap","slide":4,"name":"s4-b-0-0","text":"Sketch","textPreview":"Sketch","textChars":6,"textLines":1,"bbox":[108,300,270,52]}
+{"kind":"shape","id":"sh/q1kze1w7","slide":4,"name":"s4-b-0-1-dot","bbox":[86,367,8,8]}
+{"kind":"textbox","id":"sh/b2tg76ds","slide":4,"name":"s4-b-0-1","text":"semantic contracts","textPreview":"semantic contracts","textChars":18,"textLines":1,"bbox":[108,358,270,52]}
+{"kind":"shape","id":"sh/c32hgbed","slide":4,"name":"s4-b-0-2-dot","bbox":[86,425,8,8]}
+{"kind":"textbox","id":"sh/d4by9gvy","slide":4,"name":"s4-b-0-2","text":"repair authority","textPreview":"repair authority","textChars":16,"textLines":1,"bbox":[108,416,270,52]}
+{"kind":"shape","id":"sh/2d0zahwb","slide":4,"name":"s4-b-0-3-dot","bbox":[86,483,8,8]}
+{"kind":"textbox","id":"sh/3ytg3mdw","slide":4,"name":"s4-b-0-3","text":"explicit holes","textPreview":"explicit holes","textChars":14,"textLines":1,"bbox":[108,474,270,52]}
+{"kind":"shape","id":"sh/oz2hcreh","slide":4,"name":"s4-col-1","bbox":[468,186,348,410]}
+{"kind":"textbox","id":"sh/p0by5wvm","slide":4,"name":"s4-head-1","text":"Implements meaning","textPreview":"Implements meaning","textChars":18,"textLines":1,"bbox":[494,214,296,40]}
+{"kind":"shape","id":"sh/m94zmlwf","slide":4,"name":"s4-rule-1","bbox":[494,270,296,0.01]}
+{"kind":"shape","id":"sh/nud0fqd0","slide":4,"name":"s4-b-1-0-dot","bbox":[496,309,8,8]}
+{"kind":"textbox","id":"sh/je5w7itc","slide":4,"name":"s4-b-1-0","text":"SQLGlot ASTs","textPreview":"SQLGlot ASTs","textChars":12,"textLines":1,"bbox":[518,300,270,52]}
+{"kind":"shape","id":"sh/idwvedcr","slide":4,"name":"s4-b-1-1-dot","bbox":[496,367,8,8]}
+{"kind":"textbox","id":"sh/5g7e9sbi","slide":4,"name":"s4-b-1-1","text":"SQLMesh models","textPreview":"SQLMesh models","textChars":14,"textLines":1,"bbox":[518,358,270,52]}
+{"kind":"shape","id":"sh/4fydgnux","slide":4,"name":"s4-b-1-2-dot","bbox":[496,425,8,8]}
+{"kind":"textbox","id":"sh/ripwbito","slide":4,"name":"s4-b-1-2","text":"generated SQL","textPreview":"generated SQL","textChars":13,"textLines":1,"bbox":[518,416,270,52]}
+{"kind":"shape","id":"sh/6hgvixc3","slide":4,"name":"s4-b-1-3-dot","bbox":[496,483,8,8]}
+{"kind":"textbox","id":"sh/tk7edsbe","slide":4,"name":"s4-b-1-3","text":"DuckDB tables","textPreview":"DuckDB tables","textChars":13,"textLines":1,"bbox":[518,474,270,52]}
+{"kind":"shape","id":"sh/sjydknu9","slide":4,"name":"s4-col-2","bbox":[878,186,348,410]}
+{"kind":"textbox","id":"sh/f6pwf2tk","slide":4,"name":"s4-head-2","text":"Proves behavior","textPreview":"Proves behavior","textChars":15,"textLines":1,"bbox":[904,214,296,40]}
+{"kind":"shape","id":"sh/e5gfmxcz","slide":4,"name":"s4-rule-2","bbox":[904,270,296,0.01]}
+{"kind":"shape","id":"sh/cbidw7qd","slide":4,"name":"s4-b-2-0-dot","bbox":[906,309,8,8]}
+{"kind":"textbox","id":"sh/dcru5cry","slide":4,"name":"s4-b-2-0","text":"active case","textPreview":"active case","textChars":11,"textLines":1,"bbox":[928,300,270,52]}
+{"kind":"shape","id":"sh/q90vux87","slide":4,"name":"s4-b-2-1-dot","bbox":[906,367,8,8]}
+{"kind":"textbox","id":"sh/ba9c329s","slide":4,"name":"s4-b-2-1","text":"curated regressions","textPreview":"curated regressions","textChars":19,"textLines":1,"bbox":[928,358,270,52]}
+{"kind":"shape","id":"sh/o7idsnq1","slide":4,"name":"s4-b-2-2-dot","bbox":[906,425,8,8]}
+{"kind":"textbox","id":"sh/p8ru1srm","slide":4,"name":"s4-b-2-2","text":"deterministic gates","textPreview":"deterministic gates","textChars":19,"textLines":1,"bbox":[928,416,270,52]}
+{"kind":"shape","id":"sh/2lgvqx8b","slide":4,"name":"s4-b-2-3-dot","bbox":[906,483,8,8]}
+{"kind":"textbox","id":"sh/369cz29g","slide":4,"name":"s4-b-2-3","text":"Sketch review","textPreview":"Sketch review","textChars":13,"textLines":1,"bbox":[928,474,270,52]}
+{"kind":"textbox","id":"sh/gjydonq5","slide":4,"name":"s4-bottom","text":"The anti-pattern: fixing a projection and letting successful execution retroactively become policy.","textPreview":"The anti-pattern: fixing a projection and letting successful execution retroactively become policy.","textChars":99,"textLines":1,"bbox":[76,620,1128,38]}
+{"kind":"notes","id":"nt/ewzh71","slide":4,"text":"[Sources]\n- /Users/muness1/.agents/skills/cess/SKILL.md\n- sketches/trade-dim-v1.md\n- contracts/artifact-classification-v1.json\n- contracts/repair-authority/trade-lifecycle-edge-v1.json"}
+{"kind":"slide","id":"sl/2ybtmx","slide":5,"title":"Governed synthesis for a change request","textShapes":22}
+{"kind":"textbox","id":"sh/47uxsb6t","slide":5,"name":"title-5","text":"Governed synthesis for a change request","textPreview":"Governed synthesis for a change request","textChars":39,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/36lgj6p8","slide":5,"name":"title-rule-5","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/25sfq1on","slide":5,"name":"footer-left-5","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/dw3ypg7a","slide":5,"name":"footer-num-5","text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"shape","id":"sh/cvuhwv6p","slide":5,"name":"s5-a-0","bbox":[176,350,72,0]}
+{"kind":"shape","id":"sh/rulgnqp4","slide":5,"name":"s5-a-1","bbox":[378,350,72,0]}
+{"kind":"shape","id":"sh/qtcfuloj","slide":5,"name":"s5-a-2","bbox":[580,350,72,0]}
+{"kind":"shape","id":"sh/l0nyt0n6","slide":5,"name":"s5-a-3","bbox":[782,350,72,0]}
+{"kind":"shape","id":"sh/0zeh0v6l","slide":5,"name":"s5-a-4","bbox":[984,350,72,0]}
+{"kind":"shape","id":"sh/y98jm1o3","slide":5,"name":"s5-box-0","bbox":[48,238,170,225]}
+{"kind":"textbox","id":"sh/zahkf65o","slide":5,"name":"s5-num-0","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[66,258,40,32]}
+{"kind":"textbox","id":"sh/kbqlor69","slide":5,"name":"s5-name-0","text":"Observe","textPreview":"Observe","textChars":7,"textLines":1,"bbox":[66,302,134,42]}
+{"kind":"textbox","id":"sh/lcz2hwne","slide":5,"name":"s5-desc-0","text":"Preserve input, output, trace","textPreview":"Preserve input, output, trace","textChars":29,"textLines":1,"bbox":[66,360,134,72]}
+{"kind":"shape","id":"sh/md83q1oz","slide":5,"name":"s5-box-1","bbox":[250,238,170,225]}
+{"kind":"textbox","id":"sh/7ehkj65k","slide":5,"name":"s5-num-1","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[268,258,40,32]}
+{"kind":"textbox","id":"sh/8fqlsb65","slide":5,"name":"s5-name-1","text":"Classify","textPreview":"Classify","textChars":8,"textLines":1,"bbox":[268,302,134,42]}
+{"kind":"textbox","id":"sh/9gj2lgnq","slide":5,"name":"s5-desc-1","text":"stage · edge · path · hole","textPreview":"stage · edge · path · hole","textChars":26,"textLines":1,"bbox":[268,360,134,72]}
+{"kind":"shape","id":"sh/2hojehov","slide":5,"name":"s5-box-2","bbox":[452,238,170,225]}
+{"kind":"textbox","id":"sh/nixk7mpg","slide":5,"name":"s5-num-2","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[470,258,40,32]}
+{"kind":"textbox","id":"sh/rmt0fi58","slide":5,"name":"s5-name-2","text":"Authorize","textPreview":"Authorize","textChars":9,"textLines":1,"bbox":[470,302,134,42]}
+{"kind":"textbox","id":"sh/6lkzmd4n","slide":5,"name":"s5-desc-2","text":"name the only legal surface","textPreview":"name the only legal surface","textChars":27,"textLines":1,"bbox":[470,360,134,72]}
+{"kind":"shape","id":"sh/dobih83e","slide":5,"name":"s5-box-3","bbox":[654,238,170,225]}
+{"kind":"textbox","id":"sh/sn2honmt","slide":5,"name":"s5-num-3","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[672,258,40,32]}
+{"kind":"textbox","id":"sh/jitgby5w","slide":5,"name":"s5-name-3","text":"Evolve","textPreview":"Evolve","textChars":6,"textLines":1,"bbox":[672,302,134,42]}
+{"kind":"textbox","id":"sh/ihkzit4r","slide":5,"name":"s5-desc-3","text":"smallest Sketch rule required","textPreview":"smallest Sketch rule required","textChars":29,"textLines":1,"bbox":[672,360,134,72]}
+{"kind":"shape","id":"sh/5kbyd8n2","slide":5,"name":"s5-box-4","bbox":[856,238,170,225]}
+{"kind":"textbox","id":"sh/4j2hk3mh","slide":5,"name":"s5-num-4","text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[874,258,40,32]}
+{"kind":"textbox","id":"sh/ned0n2lg","slide":5,"name":"s5-name-4","text":"Compile","textPreview":"Compile","textChars":7,"textLines":1,"bbox":[874,302,134,42]}
+{"kind":"textbox","id":"sh/2d4zux4v","slide":5,"name":"s5-desc-4","text":"discard and rebuild projection","textPreview":"discard and rebuild projection","textChars":30,"textLines":1,"bbox":[874,360,134,72]}
+{"kind":"shape","id":"sh/0ne5svy1","slide":5,"name":"s5-box-5","bbox":[1058,238,170,225]}
+{"kind":"textbox","id":"sh/lon610zm","slide":5,"name":"s5-num-5","text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[1076,258,40,32]}
+{"kind":"textbox","id":"sh/ylwnqlgv","slide":5,"name":"s5-name-5","text":"Verify twice","textPreview":"Verify twice","textChars":12,"textLines":1,"bbox":[1076,302,134,42]}
+{"kind":"textbox","id":"sh/zm54zqhg","slide":5,"name":"s5-desc-5","text":"gate + current-Sketch review","textPreview":"gate + current-Sketch review","textChars":28,"textLines":1,"bbox":[1076,360,134,72]}
+{"kind":"shape","id":"sh/8be5wfyx","slide":5,"name":"s5-callout","bbox":[218,516,844,92]}
+{"kind":"textbox","id":"sh/9c7650fi","slide":5,"name":"s5-callout-text","text":"If authority is missing, the correct output is an explicit hole and one precise question—not a plausible mapping.","textPreview":"If authority is missing, the correct output is an explicit hole and one precise question—not a plausible mapping.","textChars":113,"textLines":1,"bbox":[250,541,780,48]}
+{"kind":"notes","id":"nt/2ybtmx","slide":5,"text":"[Sources]\n- /Users/muness1/.agents/skills/cess/SKILL.md\n- docs/semantic-repair-oracle.md\n- docs/semantic-contracts.md"}
+{"kind":"slide","id":"sl/c5065o","slide":6,"title":"The running case: repair the handoff, not the stages","textShapes":17}
+{"kind":"textbox","id":"sh/ora18feh","slide":6,"name":"title-6","text":"The running case: repair the handoff, not the stages","textPreview":"The running case: repair the handoff, not the stages","textChars":52,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/3q1kfuxw","slide":6,"name":"title-rule-6","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/2psj6pwr","slide":6,"name":"footer-left-6","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/hoj2dkf6","slide":6,"name":"footer-num-6","text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"shape","id":"sh/gna14fel","slide":6,"name":"s6-a1","bbox":[292,318,84,0]}
+{"kind":"shape","id":"sh/fmhkbax0","slide":6,"name":"s6-a2","bbox":[616,318,84,0]}
+{"kind":"shape","id":"sh/ul8j25wf","slide":6,"name":"s6-a3","bbox":[940,318,84,0]}
+{"kind":"shape","id":"sh/lk32p4va","slide":6,"name":"s6-box-0","bbox":[60,226,240,210]}
+{"kind":"textbox","id":"sh/0julgzep","slide":6,"name":"s6-title-0","text":"Trade","textPreview":"Trade","textChars":5,"textLines":1,"bbox":[78,246,204,36]}
+{"kind":"textbox","id":"sh/yx43a1gf","slide":6,"name":"s6-value-0","text":"T_DTS\n00:02:34","textPreview":"T_DTS | 00:02:34","textChars":14,"textLines":2,"bbox":[78,298,204,62]}
+{"kind":"textbox","id":"sh/zydk36x0","slide":6,"name":"s6-type-0","text":"trade_record_timestamp","textPreview":"trade_record_timestamp","textChars":22,"textLines":1,"bbox":[78,377,204,40]}
+{"kind":"shape","id":"sh/0zmlcbel","slide":6,"name":"s6-box-1","bbox":[384,226,240,210]}
+{"kind":"textbox","id":"sh/l0vm5gf6","slide":6,"name":"s6-title-1","text":"TradeHistory","textPreview":"TradeHistory","textChars":12,"textLines":1,"bbox":[402,246,204,36]}
+{"kind":"textbox","id":"sh/qt436hgj","slide":6,"name":"s6-value-1","text":"SBMT TH_DTS\n00:01:13","textPreview":"SBMT TH_DTS | 00:01:13","textChars":20,"textLines":2,"bbox":[402,298,204,62]}
+{"kind":"textbox","id":"sh/budkzmx4","slide":6,"name":"s6-type-1","text":"status_update_timestamp","textPreview":"status_update_timestamp","textChars":23,"textLines":1,"bbox":[402,377,204,40]}
+{"kind":"shape","id":"sh/cvml8ryp","slide":6,"name":"s6-box-2","bbox":[708,226,240,210]}
+{"kind":"textbox","id":"sh/dwv21wfa","slide":6,"name":"s6-title-2","text":"Lifecycle edge","textPreview":"Lifecycle edge","textChars":14,"textLines":1,"bbox":[726,246,204,36]}
+{"kind":"textbox","id":"sh/apo3ilwn","slide":6,"name":"s6-value-2","text":"select SBMT\nassign created_at","textPreview":"select SBMT | assign created_at","textChars":29,"textLines":2,"bbox":[726,298,204,62]}
+{"kind":"textbox","id":"sh/vqx4bqx8","slide":6,"name":"s6-type-2","text":"trade_creation_timestamp","textPreview":"trade_creation_timestamp","textChars":24,"textLines":1,"bbox":[726,377,204,40]}
+{"kind":"shape","id":"sh/ra903idk","slide":6,"name":"s6-box-3","bbox":[1032,226,240,210]}
+{"kind":"textbox","id":"sh/69gzudwf","slide":6,"name":"s6-title-3","text":"DimTrade","textPreview":"DimTrade","textChars":8,"textLines":1,"bbox":[1050,246,204,36]}
+{"kind":"textbox","id":"sh/tcri5svq","slide":6,"name":"s6-value-3","text":"created_at\n00:01:13","textPreview":"created_at | 00:01:13","textChars":19,"textLines":2,"bbox":[1050,298,204,62]}
+{"kind":"textbox","id":"sh/sbihwne5","slide":6,"name":"s6-type-3","text":"typed copy","textPreview":"typed copy","textChars":10,"textLines":1,"bbox":[1050,377,204,40]}
+{"kind":"shape","id":"sh/fy907idw","slide":6,"name":"s6-auth","bbox":[204,490,872,112]}
+{"kind":"textbox","id":"sh/ed0jydwb","slide":6,"name":"s6-auth-head","text":"Authorized repair","textPreview":"Authorized repair","textChars":17,"textLines":1,"bbox":[230,514,220,30]}
+{"kind":"textbox","id":"sh/10ri9sv2","slide":6,"name":"s6-auth-body","text":"Allowed: sketch.edge.trade_history_to_dim_trade\nForbidden: Trade stage · TradeHistory stage · DimTrade consumer · generated SQL · DuckDB table","textPreview":"Allowed: sketch.edge.trade_history_to_dim_trade | Forbidden: Trade stage · TradeHistory stage · DimTrade consumer · generated SQL · DuckD...","textChars":142,"textLines":2,"bbox":[460,508,588,74]}
+{"kind":"notes","id":"nt/c5065o","slide":6,"text":"[Sources]\n- contracts/edges/trade-history-to-dim-trade-v1.json\n- contracts/repair-authority/trade-lifecycle-edge-v1.json\n- evidence/issue-4/candidate-edge-adjudication-v1.json\n- evidence/issue-5/sqlmesh-execution-v1.json"}
+{"kind":"slide","id":"sl/iub1qm","slide":7,"title":"Two graphs, two blast radii","textShapes":20}
+{"kind":"textbox","id":"sh/hcv21kvu","slide":7,"name":"title-7","text":"Two graphs, two blast radii","textPreview":"Two graphs, two blast radii","textChars":27,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/u9kj6pc3","slide":7,"name":"title-rule-7","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/fatkzudo","slide":7,"name":"footer-left-7","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/s7214fux","slide":7,"name":"footer-num-7","text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"textbox","id":"sh/t8b2xkvi","slide":7,"name":"s7-left-head","text":"Semantic dependency graph","textPreview":"Semantic dependency graph","textChars":25,"textLines":1,"bbox":[62,178,500,34]}
+{"kind":"textbox","id":"sh/65kj25c7","slide":7,"name":"s7-right-head","text":"Executable SQLMesh graph","textPreview":"Executable SQLMesh graph","textChars":24,"textLines":1,"bbox":[702,178,500,34]}
+{"kind":"shape","id":"sh/76tkvads","slide":7,"name":"s7-l1","bbox":[190,294,120,0]}
+{"kind":"shape","id":"sh/kji10fu1","slide":7,"name":"s7-l2","bbox":[390,294,120,0]}
+{"kind":"shape","id":"sh/5kr2t0vm","slide":7,"name":"s7-l3","bbox":[510,360,0,70]}
+{"kind":"shape","id":"sh/9wnyl8j6","slide":7,"name":"s7-r1","bbox":[856,294,78,0]}
+{"kind":"shape","id":"sh/8vehc32l","slide":7,"name":"s7-r2","bbox":[1084,294,26,0]}
+{"kind":"shape","id":"sh/7ulgjy10","slide":7,"name":"s7-ln-0","bbox":[66,250,120,88]}
+{"kind":"textbox","id":"sh/mtczatkv","slide":7,"name":"s7-lt-0","text":"edge","textPreview":"edge","textChars":4,"textLines":1,"bbox":[78,264,96,22]}
+{"kind":"textbox","id":"sh/ls3yhoja","slide":7,"name":"s7-ld-0","text":"create time","textPreview":"create time","textChars":11,"textLines":1,"bbox":[78,292,96,30]}
+{"kind":"shape","id":"sh/kruh8j2p","slide":7,"name":"s7-ln-1","bbox":[310,250,150,88]}
+{"kind":"textbox","id":"sh/zqlgfel4","slide":7,"name":"s7-lt-1","text":"logical","textPreview":"logical","textChars":7,"textLines":1,"bbox":[322,264,126,22]}
+{"kind":"textbox","id":"sh/ypcz6tkj","slide":7,"name":"s7-ld-1","text":"DimTrade","textPreview":"DimTrade","textChars":8,"textLines":1,"bbox":[322,292,126,30]}
+{"kind":"shape","id":"sh/xo3ydo3y","slide":7,"name":"s7-ln-2","bbox":[510,250,150,88]}
+{"kind":"textbox","id":"sh/cnah4j2d","slide":7,"name":"s7-lt-2","text":"physical","textPreview":"physical","textChars":8,"textLines":1,"bbox":[522,264,126,22]}
+{"kind":"textbox","id":"sh/o7ehkja9","slide":7,"name":"s7-ld-2","text":"dim_trade","textPreview":"dim_trade","textChars":9,"textLines":1,"bbox":[522,292,126,30]}
+{"kind":"shape","id":"sh/p8nytobu","slide":7,"name":"s7-ln-3","bbox":[470,430,230,76]}
+{"kind":"textbox","id":"sh/25wzi9sj","slide":7,"name":"s7-lt-3","text":"metric","textPreview":"metric","textChars":6,"textLines":1,"bbox":[482,444,206,22]}
+{"kind":"textbox","id":"sh/365greto","slide":7,"name":"s7-ld-3","text":"lifecycle seconds","textPreview":"lifecycle seconds","textChars":17,"textLines":1,"bbox":[482,472,206,30]}
+{"kind":"shape","id":"sh/g3ehgjad","slide":7,"name":"s7-rn-0","bbox":[706,250,150,88]}
+{"kind":"textbox","id":"sh/14nyp4by","slide":7,"name":"s7-rt-0","text":"trade_stage","textPreview":"trade_stage","textChars":11,"textLines":1,"bbox":[716,279,130,34]}
+{"kind":"shape","id":"sh/e1wze9s7","slide":7,"name":"s7-rn-1","bbox":[934,250,150,88]}
+{"kind":"textbox","id":"sh/f25gnets","slide":7,"name":"s7-rt-1","text":"trade_lifecycle","textPreview":"trade_lifecycle","textChars":15,"textLines":1,"bbox":[944,279,130,34]}
+{"kind":"shape","id":"sh/0zyhs3ah","slide":7,"name":"s7-rn-2","bbox":[1110,250,130,88]}
+{"kind":"textbox","id":"sh/l0ri18r2","slide":7,"name":"s7-rt-2","text":"dim_trade","textPreview":"dim_trade","textChars":9,"textLines":1,"bbox":[1120,279,110,34]}
+{"kind":"textbox","id":"sh/v6ds76hg","slide":7,"name":"s7-sem-caption","text":"Captures a metric dependency absent from SQL lineage","textPreview":"Captures a metric dependency absent from SQL lineage","textChars":52,"textLines":1,"bbox":[88,530,540,42]}
+{"kind":"textbox","id":"sh/u54be1gv","slide":7,"name":"s7-exe-caption","text":"Determines which generated models actually restage","textPreview":"Determines which generated models actually restage","textChars":50,"textLines":1,"bbox":[726,530,470,42]}
+{"kind":"shape","id":"sh/h8va9wzm","slide":7,"name":"s7-metric-left","bbox":[126,592,310,62]}
+{"kind":"textbox","id":"sh/w7mtgby1","slide":7,"name":"s7-metric-left-t","text":"Localized  2 models · 781,956 rows","textPreview":"Localized  2 models · 781,956 rows","textChars":34,"textLines":1,"bbox":[144,611,274,30]}
+{"kind":"shape","id":"sh/jadcb6hs","slide":7,"name":"s7-metric-right","bbox":[820,592,310,62]}
+{"kind":"textbox","id":"sh/i94bi1g7","slide":7,"name":"s7-metric-right-t","text":"Full replay  6 models · 2,155,125 rows","textPreview":"Full replay  6 models · 2,155,125 rows","textChars":38,"textLines":1,"bbox":[838,611,274,30]}
+{"kind":"notes","id":"nt/iub1qm","slide":7,"text":"[Sources]\n- contracts/revalidation-profile-v1.json\n- evidence/issue-6/revalidation-report-v1.json\n- docs/revalidation-cones.md"}
+{"kind":"slide","id":"sl/qti8ld","slide":8,"title":"Better localization, more work","textShapes":9}
+{"kind":"textbox","id":"sh/y1cfi9wf","slide":8,"name":"title-8","text":"Better localization, more work","textPreview":"Better localization, more work","textChars":30,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/lo3yt4vq","slide":8,"name":"title-rule-8","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/0nuhkjul","slide":8,"name":"footer-left-8","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/by1gnudo","slide":8,"name":"footer-num-8","text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"shape","id":"sh/d0jyp4vu","slide":8,"name":"s8-call-1","bbox":[830,195,380,110]}
+{"kind":"textbox","id":"sh/czaxgze9","slide":8,"name":"s8-call-1-h","text":"2 physical composition repairs","textPreview":"2 physical composition repairs","textChars":30,"textLines":1,"bbox":[856,218,328,34]}
+{"kind":"textbox","id":"sh/3u1gjuds","slide":8,"name":"s8-call-1-b","text":"Native and stage-local retained both wrong outputs.","textPreview":"Native and stage-local retained both wrong outputs.","textChars":51,"textLines":1,"bbox":[856,264,328,26]}
+{"kind":"shape","id":"sh/2tsfapw7","slide":8,"name":"s8-call-2","bbox":[830,333,380,110]}
+{"kind":"textbox","id":"sh/ovaxczix","slide":8,"name":"s8-call-2-h","text":"24 work units vs 19 native","textPreview":"24 work units vs 19 native","textChars":26,"textLines":1,"bbox":[856,356,328,34]}
+{"kind":"textbox","id":"sh/pwjyl4zi","slide":8,"name":"s8-call-2-b","text":"No human operator time or monetary compute cost was measured.","textPreview":"No human operator time or monetary compute cost was measured.","textChars":61,"textLines":1,"bbox":[856,402,328,26]}
+{"kind":"shape","id":"sh/29sfap0r","slide":8,"name":"s8-call-3","bbox":[830,471,380,110]}
+{"kind":"textbox","id":"sh/na1gjuhc","slide":8,"name":"s8-call-3-h","text":"Frozen score: 1 of 2","textPreview":"Frozen score: 1 of 2","textChars":20,"textLines":1,"bbox":[856,494,328,34]}
+{"kind":"textbox","id":"sh/g7ax8zil","slide":8,"name":"s8-call-3-b","text":"Order-sensitive descendant comparison conservatively false-negatives one repair.","textPreview":"Order-sensitive descendant comparison conservatively false-negatives one repair.","textChars":80,"textLines":1,"bbox":[856,540,328,30]}
+{"kind":"chart","id":"ch/exgfupcj","slide":8,"name":"","chartType":"bar","bbox":[56,184,720,420]}
+{"kind":"notes","id":"nt/qti8ld","slide":8,"text":"[Sources]\n- evidence/issue-8/bounded-decision-v1.json\n- evidence/issue-7/experiment-result-v2.4.json\n- docs/matched-experiment.md"}
+{"kind":"slide","id":"sl/kwfx9f","slide":9,"title":"The bounded decision is revise—not adopt","textShapes":12}
+{"kind":"textbox","id":"sh/vyp0n65w","slide":9,"name":"title-9","text":"The bounded decision is revise—not adopt","textPreview":"The bounded decision is revise—not adopt","textChars":40,"textLines":1,"bbox":[56,42,1168,102]}
+{"kind":"shape","id":"sh/gzyhgb6h","slide":9,"name":"title-rule-9","bbox":[56,153,1168,0.01]}
+{"kind":"textbox","id":"sh/h07ipgn2","slide":9,"name":"footer-left-9","text":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textPreview":"Bounded TPC-DI-derived spike · scripted zero-model experiment","textChars":61,"textLines":1,"bbox":[56,680,850,20]}
+{"kind":"textbox","id":"sh/m9wzahof","slide":9,"name":"footer-num-9","text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1160,680,64,20]}
+{"kind":"textbox","id":"sh/7a50jm50","slide":9,"name":"s9-verdict","text":"REVISE","textPreview":"REVISE","textChars":6,"textLines":1,"bbox":[58,190,350,90]}
+{"kind":"textbox","id":"sh/8behcr65","slide":9,"name":"s9-thesis","text":"The architecture earned a stronger semantic result, but the valid scored run missed its preregistered quality gate.","textPreview":"The architecture earned a stronger semantic result, but the valid scored run missed its preregistered quality gate.","textChars":115,"textLines":1,"bbox":[58,300,470,128]}
+{"kind":"shape","id":"sh/tc7ilwnq","slide":9,"name":"s9-split","bbox":[606,184,0.01,0.01]}
+{"kind":"textbox","id":"sh/y5wz6ho3","slide":9,"name":"s9-keep","text":"What survived review","textPreview":"What survived review","textChars":20,"textLines":1,"bbox":[664,190,500,36]}
+{"kind":"shape","id":"sh/z650fm5o","slide":9,"name":"s9-b1-dot","bbox":[664,254,8,8]}
+{"kind":"textbox","id":"sh/rm5wbehk","slide":9,"name":"s9-b1","text":"Local-pass / edge-fail distinction is executable","textPreview":"Local-pass / edge-fail distinction is executable","textChars":48,"textLines":1,"bbox":[686,245,498,52]}
+{"kind":"shape","id":"sh/6lwvi90z","slide":9,"name":"s9-b2-dot","bbox":[664,319,8,8]}
+{"kind":"textbox","id":"sh/donedoza","slide":9,"name":"s9-b2","text":"Only the authorized edge Sketch can change","textPreview":"Only the authorized edge Sketch can change","textChars":42,"textLines":1,"bbox":[686,310,498,52]}
+{"kind":"shape","id":"sh/snedkjip","slide":9,"name":"s9-b3-dot","bbox":[664,384,8,8]}
+{"kind":"textbox","id":"sh/fq5wfyhg","slide":9,"name":"s9-b3","text":"Fresh projection rebuilds without CE archive context","textPreview":"Fresh projection rebuilds without CE archive context","textChars":52,"textLines":1,"bbox":[686,375,498,52]}
+{"kind":"shape","id":"sh/epwvmt0v","slide":9,"name":"s9-b4-dot","bbox":[664,449,8,8]}
+{"kind":"textbox","id":"sh/1c7ehozm","slide":9,"name":"s9-b4","text":"Localized and full replay both retain recall 1.0","textPreview":"Localized and full replay both retain recall 1.0","textChars":48,"textLines":1,"bbox":[686,440,498,52]}
+{"kind":"shape","id":"sh/0bedoji1","slide":9,"name":"s9-next","bbox":[58,510,1128,112]}
+{"kind":"textbox","id":"sh/vulc3u1c","slide":9,"name":"s9-next-h","text":"Next experiment","textPreview":"Next experiment","textChars":15,"textLines":1,"bbox":[86,534,210,30]}
+{"kind":"textbox","id":"sh/utcvap0r","slide":9,"name":"s9-next-b","text":"Correct descendant-set scoring under a new preregistration, retain the same authority boundaries, then introduce real model-generated change proposals and measured human review effort.","textPreview":"Correct descendant-set scoring under a new preregistration, retain the same authority boundaries, then introduce real model-generated cha...","textChars":184,"textLines":1,"bbox":[306,526,842,66]}
+{"kind":"notes","id":"nt/kwfx9f","slide":9,"text":"[Sources]\n- docs/bounded-experiment-report.md\n- evidence/issue-8/bounded-decision-v1.json\n- scripts/verify_final_report.py"}
+{"kind":"slide","id":"sl/8o1man","slide":10,"title":"QUESTIONS FOR A DATA ARCHITECT","textShapes":12}
+{"kind":"textbox","id":"sh/ip8v65kv","slide":10,"name":"s10-eyebrow","text":"QUESTIONS FOR A DATA ARCHITECT","textPreview":"QUESTIONS FOR A DATA ARCHITECT","textChars":30,"textLines":1,"bbox":[58,48,520,26]}
+{"kind":"textbox","id":"sh/5szu103m","slide":10,"name":"s10-title","text":"Where would you distrust this architecture?","textPreview":"Where would you distrust this architecture?","textChars":43,"textLines":1,"bbox":[58,100,850,80]}
+{"kind":"textbox","id":"sh/krqd8f21","slide":10,"name":"s10-num-0","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[64,236,56,48]}
+{"kind":"textbox","id":"sh/7uhc3alc","slide":10,"name":"s10-head-0","text":"Boundary","textPreview":"Boundary","textChars":8,"textLines":1,"bbox":[142,236,190,42]}
+{"kind":"textbox","id":"sh/6t8va5kr","slide":10,"name":"s10-body-0","text":"Are grain, identity, units, and time semantics sufficient to make stage edges governable in real warehouses?","textPreview":"Are grain, identity, units, and time semantics sufficient to make stage edges governable in real warehouses?","textChars":108,"textLines":1,"bbox":[360,234,820,72]}
+{"kind":"shape","id":"sh/twju5k3i","slide":10,"name":"s10-rule-0","bbox":[142,331,1038,0.01]}
+{"kind":"textbox","id":"sh/svqdcf2x","slide":10,"name":"s10-num-1","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[64,368,56,48]}
+{"kind":"textbox","id":"sh/nyxcrql8","slide":10,"name":"s10-head-1","text":"Authority","textPreview":"Authority","textChars":9,"textLines":1,"bbox":[142,368,190,42]}
+{"kind":"textbox","id":"sh/mx4bylkn","slide":10,"name":"s10-body-1","text":"Can policy ownership be operationalized without turning every repair into a governance ceremony?","textPreview":"Can policy ownership be operationalized without turning every repair into a governance ceremony?","textChars":96,"textLines":1,"bbox":[360,366,820,72]}
+{"kind":"shape","id":"sh/gbalwvud","slide":10,"name":"s10-rule-1","bbox":[142,463,1038,0.01]}
+{"kind":"textbox","id":"sh/hc32p0vy","slide":10,"name":"s10-num-2","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[64,500,56,48]}
+{"kind":"textbox","id":"sh/u9s3ulc7","slide":10,"name":"s10-head-2","text":"Blast radius","textPreview":"Blast radius","textChars":12,"textLines":1,"bbox":[142,500,190,42]}
+{"kind":"textbox","id":"sh/fa1knqds","slide":10,"name":"s10-body-2","text":"When does semantic dependency add useful precision beyond lineage—and when does full replay simply win?","textPreview":"When does semantic dependency add useful precision beyond lineage—and when does full replay simply win?","textChars":103,"textLines":1,"bbox":[360,498,820,72]}
+{"kind":"textbox","id":"sh/4zul0vu9","slide":10,"name":"s10-footer","text":"Architecture and evidence: github.com/open-horizon-labs/governed-compositional-etl","textPreview":"Architecture and evidence: github.com/open-horizon-labs/governed-compositional-etl","textChars":82,"textLines":1,"bbox":[58,656,900,24]}
+{"kind":"notes","id":"nt/8o1man","slide":10,"text":"Close by inviting architectural criticism. The useful outcome is a sharper next experiment, not agreement.\n\n[Sources]\n- docs/bounded-experiment-report.md\n- .oh/tpcdi-governed-etl.md"}
