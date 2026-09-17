@@ -853,3 +853,10 @@ Five cycles on one job with a Sonnet Developer and an Opus reviewer. Every failu
 - Two-phase simulation added to the runner: project Batch1, reload sources with Batch2 and the labeled constructed account change without dropping governed tables, re-project. Result on trade 372101: status PNDG to CMPT, executed price, fees, commission, tax filled; owning_account_effective_from stays 2012-11-15 18:05:28 and owning customer stays 238, while account 428's current statement is the 2017-07-08 constructed one. Changed columns are exactly mutable ones. This is the rebind the phase-2 aim described, not happening, on real Batch2 rows plus one labeled constructed row.
 - Trade 353232 is marked first seen late because its only held report is the historical CMPT row; the historical TradeHistory file is not anchored in this chain. Sent to the projection reviewer as a question about the anchors.
 - Gate heuristic added: a trade artifact that references is_current on an entity the model resolves as of an event time is rejected. That is the tempting wrong resolution, mechanized.
+
+### Trade-lifecycle on both engines; the counterexample survives on both (2026-09-17)
+
+- duckdb-native: native MERGE with the matched update limited to the six mutable attributes; check ok; five audits clean; two-phase simulation: PNDG to CMPT, prices filled, ownership reference pinned to 2012 while the constructed 2017 statement is current. Cross-target compare: `governed.trade` identical on duckdb-native and duckdb-sqlmesh. Chain tests green, including both two-phase simulations.
+- Same L2, two engines, one guard, one materialization workaround confined to the profile that needs it. That is the solution space's third success signal.
+- The native Developer self-reported reading gate source against its brief and drew no policy from it. Recorded; the reads restriction stays in the brief.
+- Both trade projections are with projection reviewers. Positions L2 and the counterfactual compile of ownership-history without the statement-content clauses are still running.
