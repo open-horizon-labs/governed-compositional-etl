@@ -26,7 +26,8 @@ MODEL (
     "inv.holding_quantity_change_is_difference",
     "inv.holding_change_ownership_present",
     "inv.holding_change_current_trade_known",
-    "inv.holding_quantities_present"
+    "inv.holding_quantities_present",
+    "inv.eligible_holding_report_persisted"
   ),
   depends_on (governed.trade)
 );

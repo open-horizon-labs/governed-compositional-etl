@@ -37,7 +37,9 @@
     "cross-engine"
   ],
   "observed": {
-    "2026-09-17 before positions L3 cycle 3": "see coordinator log: run on both engines with this document; recorded in .oh/tpcdi-governed-etl.md"
+    "2026-09-17 after positions L3 cycle 3": "silent on both engines; each accepts whichever undominated candidate the projection adopted; the tie stays hole.batch_identity's case. Deterministic assertion holds.",
+    "2026-09-17 before positions L3 cycle 3": "duckdb-native silent: holding_change carries 0 -> 5225 for the tied pair (one candidate adopted), positions net 0. duckdb-sqlmesh: inv.holding_quantity_updates_in_place fires once and refuses the plan. Exactly the divergence the review predicted.",
+    "command": ".venv/bin/python scripts/chain_l3.py simulate <target> positions --ce counterexamples/proposed/ce-holding-historical-report-tie-v1.json"
   },
   "proposed_on": "2026-09-17",
   "provenance": "controlled_counterexample",

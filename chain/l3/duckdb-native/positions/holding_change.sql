@@ -66,7 +66,17 @@
 -- normalizes Batch1 to I/0); report_order's applies_to states these historical
 -- rows precede all incremental rows regardless of batch_date/cdc_dsn. A
 -- cdc_flag IS NULL row is therefore a valid (historical) report, ranked
--- earliest, never excluded the way a D-flagged row is.
+-- earliest, never excluded the way a D-flagged row is. The candidate filter
+-- (cdc_flag IS NULL OR cdc_flag IN ('I', 'U')) enumerates the anchored
+-- vocabulary {I, U, historical-null} rather than merely excluding D; it is
+-- phrased the same way as audits/inv.holding_quantity_updates_in_place.sql's
+-- own eligible-report filter, but deliberately not the same as
+-- inv.eligible_holding_report_persisted's whole-pair
+-- BOOL_AND(cdc_flag IS DISTINCT FROM 'D') test, which abstains only on D. A
+-- report whose cdc_flag falls outside {I, U, D, null} is therefore dropped
+-- here (not projected as a candidate) while still counted by that audit's
+-- expected set, which is exactly what lets the audit fire on such a report
+-- instead of the projection silently accepting it.
 -- owning_account_number, owning_account_effective_from, owning_customer_number,
 -- owning_customer_effective_from: copied directly from governed.trade's current
 -- row for current_trade_number. Because trade-lifecycle's own owning_* columns

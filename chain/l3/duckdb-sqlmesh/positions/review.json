@@ -1,12 +1,10 @@
 {
   "job": "positions",
-  "manifest_sha256": "6a59ef0ef8f2514bc282777195b86c85dd7a4f0b7629c10abde58b5d6ec59ef8",
-  "notes": "see review-1..2",
-  "rejected_artifacts": [
-    "audits/inv.holding_quantity_updates_in_place.sql"
-  ],
-  "reviewer": "Opus sketch reviewer, scoped projection review 2",
+  "manifest_sha256": "a105ec1446f6c9ef57e612ea414d3ec25ba583b8a39496cd842d7f4ee4bb879a",
+  "notes": "see review-1..3",
+  "rejected_artifacts": [],
+  "reviewer": "Opus sketch reviewer, scoped projection review 3",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
-  "verdict": "fail"
+  "verdict": "pass"
 }

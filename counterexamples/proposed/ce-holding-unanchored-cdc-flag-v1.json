@@ -1,0 +1,51 @@
+{
+  "adjacent_not_authorized": [
+    "what an out-of-vocabulary flag means (anchor authority)"
+  ],
+  "approved_or_rejected_by": "pending: anchor authority on the cdc_flag vocabulary",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "After the candidate-filter revert on duckdb-native, simulate on either engine for positions fires exactly inv.eligible_holding_report_persisted, one row, pair (372101, 372101).",
+  "expected": {
+    "after_alignment": "both projections drop the report (candidate set enumerates the anchored codes) and inv.eligible_holding_report_persisted fires once on each engine, naming the pair; the question of whether the vocabulary is closed goes to anchor authority.",
+    "as_found_2026-09-17": "duckdb-native (cycle 3 as first landed) admits the report, persists a holding_change row for (372101, 372101) and stays silent on all 13 audits, moving both position sums by 10; duckdb-sqlmesh drops the report, persists no row, and inv.eligible_holding_report_persisted fires once."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "holding_history": [
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488407,
+          "cdc_flag": "X",
+          "hh_after_qty": 10,
+          "hh_before_qty": 0,
+          "hh_h_t_id": 372101,
+          "hh_t_id": 372101,
+          "note": "Constructed. A report of a fresh pair (372101, 372101) whose current trade 372101 resolves to a fully pinned governed.trade row, carrying a cdc_flag outside the anchored vocabulary. Not TPC-DI data; labeled by this document."
+        }
+      ]
+    },
+    "raw_anchor": "oracle/fixtures/public/chain-fixture-v1.json"
+  },
+  "id": "ce.l3.holding-unanchored-cdc-flag",
+  "labels": [
+    "constructed",
+    "L3",
+    "positions",
+    "K",
+    "cross-engine"
+  ],
+  "observed": {
+    "2026-09-17 after the native revert": "both engines fire exactly inv.eligible_holding_report_persisted, one row, pair (372101, 372101). Deterministic assertion holds. The vocabulary question is filed on both targets' manifests.",
+    "2026-09-17 as found": "duckdb-sqlmesh: inv.eligible_holding_report_persisted fires once (plan refused). duckdb-native, cycle 3 as first landed: silent (the report admitted by an IS DISTINCT FROM 'D' candidate filter)."
+  },
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "ce-document/v1",
+  "status": "proposed",
+  "tempting_wrong_repair": [
+    "aligning both projections to IS DISTINCT FROM 'D' in the candidate position, which silences the check on both engines",
+    "adding a flag-validity audit the anchors do not state"
+  ],
+  "why_constructed": "trade_code_meanings.cdc_flag anchors I, U, D; historical rows carry null. Nothing says the vocabulary is closed. The two engine projections of positions came to treat a flag outside that set differently (one admits it as a report, the other drops it), and the converse audit inv.eligible_holding_report_persisted fires on one engine only. The fixture never carries such a flag."
+}

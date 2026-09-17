@@ -15,6 +15,15 @@
 -- Restated independently of the projection's own ROW_NUMBER/QUALIFY selection:
 -- here "the latest report" is expressed as "a report nothing else dominates",
 -- via correlated NOT EXISTS, rather than by reusing that window-function CTE.
+-- The candidate (eligible) filter itself is phrased the same way as
+-- holding_change.sql's own latest_report filter -- cdc_flag IS NULL OR
+-- cdc_flag IN ('I', 'U'), enumerating the anchored vocabulary -- and
+-- deliberately not the same as inv.eligible_holding_report_persisted's
+-- whole-pair BOOL_AND(cdc_flag IS DISTINCT FROM 'D') test, which abstains
+-- only on D. The two differ exactly on a report whose cdc_flag falls outside
+-- {I, U, D, null}: this candidate position drops it, so it plays no part in
+-- "the latest report" here, while that audit's expected set still counts it,
+-- which is what lets the converse audit fire on such a report.
 -- Note (L1.hole.batch-identity, not resolved here): several historical reports
 -- of the same pair would tie under this order (null cdc_dsn, and possibly the
 -- same batch_date), since ordering rests on file production order, not on a

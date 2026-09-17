@@ -6,10 +6,10 @@
     "sg.no-phantom-positions"
   ],
   "job": "positions",
-  "model_sha256": "4e3ccdf59160fc0d3def31650486c3653822b59f18bdbe6890bbda8a4f935bd5",
-  "notes": "see review-6.md",
+  "model_sha256": "ab348e496ada950f959fbed79ef1e9963b5799d893408cc03bd66e08da9cdaf1",
+  "notes": "see review-7.md",
   "rejected_element_ids": [],
-  "reviewer": "Opus sketch reviewer, scoped review 6",
+  "reviewer": "coordinator, bookkeeping review 7 (four texts)",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity",

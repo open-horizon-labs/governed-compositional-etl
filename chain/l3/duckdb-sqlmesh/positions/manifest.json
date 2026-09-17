@@ -1,16 +1,6 @@
 {
-  "schema_version": "l3-manifest/v1",
-  "target": "duckdb-sqlmesh",
-  "job": "positions",
-  "derived_from_model": {
-    "path": "chain/l2/positions/semantic-model.json",
-    "review_sha256": "26f0fde3836e40f0b2adb6d2211451b4d3c1a2cb91233e2382100c403af4b2aa"
-  },
   "artifacts": [
     {
-      "entity": "logical.holding_change",
-      "file": "models/holding_change.sql",
-      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key (original_trade_number, current_trade_number); frozen_columns (owning_account_number, owning_account_effective_from, owning_customer_number, owning_customer_effective_from) copied from trade-lifecycle's governed.trade for the pair's current_trade_number and written only on insert; mutable_columns (before_qty, after_qty, quantity_change) computed from the latest I- or U-flagged raw.holding_history report of the pair and refreshed on match.",
       "derived_from": [
         "logical.holding_change",
         "logical.holding_change.original_trade_number",
@@ -31,16 +21,16 @@
         "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
         "handoff.logical.trade.owning_customer_effective_from->logical.holding_change.owning_customer_effective_from"
       ],
+      "entity": "logical.holding_change",
+      "file": "models/holding_change.sql",
+      "note": "inv.holding_change_not_constructed (selected in review.json) is deterministic: false and has no SQL audit here, mirroring trade-lifecycle's own treatment of its analogous inv.trade_not_constructed: sources-v1.json anchors no ce.* source for holding changes, so there is nothing this job's SQL could check for an unlabeled constructed fact.",
       "reads": [
         "raw.holding_history",
         "governed.trade"
       ],
-      "note": "inv.holding_change_not_constructed (selected in review.json) is deterministic: false and has no SQL audit here, mirroring trade-lifecycle's own treatment of its analogous inv.trade_not_constructed: sources-v1.json anchors no ce.* source for holding changes, so there is nothing this job's SQL could check for an unlabeled constructed fact."
+      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key (original_trade_number, current_trade_number); frozen_columns (owning_account_number, owning_account_effective_from, owning_customer_number, owning_customer_effective_from) copied from trade-lifecycle's governed.trade for the pair's current_trade_number and written only on insert; mutable_columns (before_qty, after_qty, quantity_change) computed from the latest I, U or historical (null-flag) raw.holding_history report of the pair and refreshed on match."
     },
     {
-      "entity": "logical.account_position",
-      "file": "models/account_position.sql",
-      "strategy": "aggregate, rebuilt FULL: account_number/account_effective_from computed_within_entity, read off each group's own owning_account_number/owning_account_effective_from; net_quantity is the sum of quantity_change across every holding_change sharing that key.",
       "derived_from": [
         "logical.account_position",
         "logical.account_position.account_number",
@@ -48,14 +38,14 @@
         "logical.account_position.net_quantity",
         "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity"
       ],
+      "entity": "logical.account_position",
+      "file": "models/account_position.sql",
       "reads": [
         "governed.holding_change"
-      ]
+      ],
+      "strategy": "aggregate, rebuilt FULL: account_number/account_effective_from computed_within_entity, read off each group's own owning_account_number/owning_account_effective_from; net_quantity is the sum of quantity_change across every holding_change sharing that key."
     },
     {
-      "entity": "logical.customer_position",
-      "file": "models/customer_position.sql",
-      "strategy": "aggregate, rebuilt FULL: customer_number/customer_effective_from computed_within_entity, read off each group's own owning_customer_number/owning_customer_effective_from; net_quantity is the sum of quantity_change across every holding_change sharing that key.",
       "derived_from": [
         "logical.customer_position",
         "logical.customer_position.customer_number",
@@ -63,9 +53,12 @@
         "logical.customer_position.net_quantity",
         "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity"
       ],
+      "entity": "logical.customer_position",
+      "file": "models/customer_position.sql",
       "reads": [
         "governed.holding_change"
-      ]
+      ],
+      "strategy": "aggregate, rebuilt FULL: customer_number/customer_effective_from computed_within_entity, read off each group's own owning_customer_number/owning_customer_effective_from; net_quantity is the sum of quantity_change across every holding_change sharing that key."
     }
   ],
   "audits": [
@@ -128,9 +121,27 @@
       "entity": "logical.customer_position",
       "file": "audits/inv.customer_position_is_sum_of_changes.sql",
       "invariant": "inv.customer_position_is_sum_of_changes"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.eligible_holding_report_persisted.sql",
+      "invariant": "inv.eligible_holding_report_persisted"
     }
   ],
+  "derived_from_model": {
+    "path": "chain/l2/positions/semantic-model.json",
+    "review_sha256": "4e3ccdf59160fc0d3def31650486c3653822b59f18bdbe6890bbda8a4f935bd5"
+  },
+  "group_fingerprints": {
+    "sg.holding-attribution": "8b5a5bce38f1d3dde2f19080203949325a9a8270228b0542b284e7ef0816dba1",
+    "sg.holding-shape": "cb553511f42f03edf2e452665cb5eef2b1b729ba719aa3a985962ed8565dd214",
+    "sg.no-phantom-positions": "7398a842554519057435564399746230c4e8f994d214240c91d8476f9b27cc0a"
+  },
+  "job": "positions",
   "questions_for_authority": [
-    "A (original_trade_number, current_trade_number) pair whose only raw.holding_history reports carry cdc_flag D is excluded entirely by this job's latest_change selector, so no logical.holding_change row is ever created for it, and it never enters an account_position or customer_position sum. hole.deletions reserves what a D-flagged report means for a holding change, including whether a row should exist for such a pair (e.g. zeroed out, or carrying its last pre-deletion values) rather than being omitted. This is stated as the current, unchanged behavior, decided nowhere but in this job's SQL; it is not resolved here."
-  ]
+    "A (original_trade_number, current_trade_number) pair whose only raw.holding_history reports carry cdc_flag D is excluded entirely by this job's latest_change selector, so no logical.holding_change row is ever created for it, and it never enters an account_position or customer_position sum. hole.deletions reserves what a D-flagged report means for a holding change, including whether a row should exist for such a pair (e.g. zeroed out, or carrying its last pre-deletion values) rather than being omitted. This is stated as the current, unchanged behavior, decided nowhere but in this job's SQL; it is not resolved here.",
+    "Is trade_code_meanings.cdc_flag a closed vocabulary (I, U, D, and null for historical rows only), and which reading defines the latest_change candidate set: every non-D report (as hole.deletions describes it) or every I, U, or historical report (as inv.eligible_holding_report_persisted's parallel_assumption describes it)? The two readings coincide only over the anchored vocabulary; today this projection's candidate filter (cdc_flag IS NULL OR cdc_flag IN ('I', 'U')) silently drops a report carrying any other flag value from latest_change, while inv.holding_change_current_trade_known and inv.eligible_holding_report_persisted's converse reasoning treat only D as excluded, so an out-of-vocabulary flag would be dropped by the former and reported by the latter's converse audit. Not resolved here."
+  ],
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-sqlmesh"
 }

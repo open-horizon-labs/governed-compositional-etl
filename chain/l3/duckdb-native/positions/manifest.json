@@ -1,17 +1,6 @@
 {
-  "schema_version": "l3-manifest/v1",
-  "target": "duckdb-native",
-  "job": "positions",
-  "derived_from_model": {
-    "path": "chain/l2/positions/semantic-model.json",
-    "review_sha256": "26f0fde3836e40f0b2adb6d2211451b4d3c1a2cb91233e2382100c403af4b2aa"
-  },
   "artifacts": [
     {
-      "entity": "logical.holding_change",
-      "file": "holding_change.sql",
-      "strategy": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT",
-      "note": "inv.holding_change_not_constructed (sufficiency_group sg.constructed-scenarios) is deterministic false and has no SQL audit on this target, per the Developer contract's rule that only deterministic invariants get audits.",
       "derived_from": [
         "logical.holding_change",
         "logical.holding_change.original_trade_number",
@@ -39,15 +28,16 @@
         "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
         "handoff.logical.trade.owning_customer_effective_from->logical.holding_change.owning_customer_effective_from"
       ],
+      "entity": "logical.holding_change",
+      "file": "holding_change.sql",
+      "note": "inv.holding_change_not_constructed (sufficiency_group sg.constructed-scenarios) is deterministic false and has no SQL audit on this target, per the Developer contract's rule that only deterministic invariants get audits.",
       "reads": [
         "raw.holding_history",
         "governed.trade"
-      ]
+      ],
+      "strategy": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT"
     },
     {
-      "entity": "logical.account_position",
-      "file": "account_position.sql",
-      "strategy": "CREATE OR REPLACE TABLE AS",
       "derived_from": [
         "logical.account_position",
         "logical.account_position.account_number",
@@ -58,14 +48,14 @@
         "type.holding_quantity_change",
         "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity"
       ],
+      "entity": "logical.account_position",
+      "file": "account_position.sql",
       "reads": [
         "governed.holding_change"
-      ]
+      ],
+      "strategy": "CREATE OR REPLACE TABLE AS"
     },
     {
-      "entity": "logical.customer_position",
-      "file": "customer_position.sql",
-      "strategy": "CREATE OR REPLACE TABLE AS",
       "derived_from": [
         "logical.customer_position",
         "logical.customer_position.customer_number",
@@ -76,9 +66,12 @@
         "type.holding_quantity_change",
         "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity"
       ],
+      "entity": "logical.customer_position",
+      "file": "customer_position.sql",
       "reads": [
         "governed.holding_change"
-      ]
+      ],
+      "strategy": "CREATE OR REPLACE TABLE AS"
     }
   ],
   "audits": [
@@ -141,9 +134,27 @@
       "entity": "logical.customer_position",
       "file": "audits/inv.customer_position_is_sum_of_changes.sql",
       "invariant": "inv.customer_position_is_sum_of_changes"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.eligible_holding_report_persisted.sql",
+      "invariant": "inv.eligible_holding_report_persisted"
     }
   ],
+  "derived_from_model": {
+    "path": "chain/l2/positions/semantic-model.json",
+    "review_sha256": "4e3ccdf59160fc0d3def31650486c3653822b59f18bdbe6890bbda8a4f935bd5"
+  },
+  "group_fingerprints": {
+    "sg.holding-attribution": "8b5a5bce38f1d3dde2f19080203949325a9a8270228b0542b284e7ef0816dba1",
+    "sg.holding-shape": "cb553511f42f03edf2e452665cb5eef2b1b729ba719aa3a985962ed8565dd214",
+    "sg.no-phantom-positions": "7398a842554519057435564399746230c4e8f994d214240c91d8476f9b27cc0a"
+  },
+  "job": "positions",
   "questions_for_authority": [
-    "A raw.holding_history pair (original_trade_number, current_trade_number) whose only reports are all cdc_flag D currently produces no logical.holding_change row at all: with no I, U, or historical (null cdc_flag) candidate, before_qty and after_qty (nullable: false) cannot be filled, so the model yields no row rather than a row with null quantities. hole.deletions reserves row existence for such a pair as undecided ('whether a pair whose only reports are D-flagged has a holding_change row at all is undecided here too -- row existence, not only the values within an existing row'). This SQL does not resolve that; it states the question so the current no-row behavior is recognized as one behavior consistent with the hole, not an answer to it. Should a D-only pair (1) never appear, as today, (2) appear with quantities held at some other stated value, or (3) be treated as an error the pipeline should fail on?"
-  ]
+    "A raw.holding_history pair (original_trade_number, current_trade_number) whose only reports are all cdc_flag D currently produces no logical.holding_change row at all: with no I, U, or historical (null cdc_flag) candidate, before_qty and after_qty (nullable: false) cannot be filled, so the model yields no row rather than a row with null quantities. hole.deletions reserves row existence for such a pair as undecided ('whether a pair whose only reports are D-flagged has a holding_change row at all is undecided here too -- row existence, not only the values within an existing row'). This SQL does not resolve that; it states the question so the current no-row behavior is recognized as one behavior consistent with the hole, not an answer to it. Should a D-only pair (1) never appear, as today, (2) appear with quantities held at some other stated value, or (3) be treated as an error the pipeline should fail on?",
+    "Is sources-v1.json's trade_code_meanings.cdc_flag a closed vocabulary ({I, U, D}, plus null for a historical Batch1 row), or could a raw.holding_history report carry some other flag value? The candidate set feeding latest_change (holding_change.sql's latest_report CTE and audits/inv.holding_quantity_updates_in_place.sql's eligible CTE) enumerates the anchored codes directly (cdc_flag IS NULL OR cdc_flag IN ('I', 'U')), so an out-of-vocabulary flag is today simply dropped from that set rather than treated as a candidate report. inv.eligible_holding_report_persisted's expected set instead abstains only on D (BOOL_AND(cdc_flag IS DISTINCT FROM 'D')), per the invariant's own wording; its parallel_assumption separately describes the candidate set as 'every raw.holding_history report for the pair is either I, U, or a historical row.' Which reading defines the latest_change candidate set: every non-D report (hole.deletions' framing), or every I, U, or historical report (the invariant's parallel_assumption)? An out-of-vocabulary-flag report is dropped by this projection today and surfaces only through inv.eligible_holding_report_persisted firing on the resulting zero-row pair; this SQL does not resolve which reading is correct, only that the two differ on this case."
+  ],
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-native"
 }

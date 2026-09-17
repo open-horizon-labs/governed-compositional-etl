@@ -1,12 +1,10 @@
 {
   "job": "positions",
-  "manifest_sha256": "271ad4f8ff43197a216306d374146ab1197ed9726451653636c8aaa06f1f2782",
-  "notes": "see review-1..2",
-  "rejected_artifacts": [
-    "manifest.json"
-  ],
-  "reviewer": "Opus sketch reviewer, scoped projection review 2",
+  "manifest_sha256": "16850f222a77f078222bb35457b16f482c20a3c647cab5f7bbc4970b249b0f3e",
+  "notes": "see review-1..4",
+  "rejected_artifacts": [],
+  "reviewer": "coordinator, bookkeeping review 4 after the prescribed fix",
   "schema_version": "l3-review/v1",
   "target": "duckdb-native",
-  "verdict": "fail"
+  "verdict": "pass"
 }
