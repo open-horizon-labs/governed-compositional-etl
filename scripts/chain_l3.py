@@ -405,6 +405,7 @@ def run_two_phase(target: str, job: str, database: Path | None = None, watch: st
         con.close()
     LOADER.reload_sources(database, fixture, "rollover", changes)
     report = {"target": target, "job": job, "phase": "two-phase", "upstream": [], "audits": {}, "samples": {}}
+    reporting_invariants = {i["id"] for i in json.loads((L2_DIR / job / "selected-model.json").read_text())["invariants"] if i.get("reports")}
     if is_sqlmesh(profile):
         second = run_sqlmesh_replan(target, job, database, report)
     else:
@@ -417,10 +418,10 @@ def run_two_phase(target: str, job: str, database: Path | None = None, watch: st
             execute(con, base, manifest)
             for a in manifest["audits"]:
                 rows = con.execute((base / a["file"]).read_text()).fetchall()
-                report["audits"][a["invariant"]] = {"violations": len(rows)}
+                report["audits"][a["invariant"]] = {("reported" if a["invariant"] in reporting_invariants else "violations"): len(rows)}
         finally:
             con.close()
-        report["ok"] = all(v["violations"] == 0 for v in report["audits"].values())
+        report["ok"] = all(v.get("violations", 0) == 0 for v in report["audits"].values())
         second = report
     con = duckdb.connect(str(database), read_only=True)
     try:
@@ -493,16 +494,18 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
         base = L3_DIR / target / job
         manifest = json.loads((base / "manifest.json").read_text())
         execute(con, base, manifest)
+        reporting = {i["id"] for i in json.loads((L2_DIR / job / "selected-model.json").read_text())["invariants"] if i.get("reports")}
         for a in manifest["audits"]:
             rows = con.execute((base / a["file"]).read_text()).fetchall()
-            report["audits"][a["invariant"]] = {"violations": len(rows), "sample": [list(map(str, r)) for r in rows[:3]]}
+            report["audits"][a["invariant"]] = {("reported" if a["invariant"] in reporting else "violations"): len(rows), "sample": [list(map(str, r)) for r in rows[:3]]}
         for art in manifest["artifacts"]:
             table = "governed." + art["entity"].split(".")[-1]
             cur = con.execute(f"SELECT * FROM {table} ORDER BY 1, 2 LIMIT 12")
             report["samples"][table] = {"columns": [d[0] for d in cur.description], "rows": [list(map(str, r)) for r in cur.fetchall()], "count": con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]}
     finally:
         con.close()
-    report["ok"] = all(v["violations"] == 0 for v in report["audits"].values())
+    report["ok"] = all(v.get("violations", 0) == 0 for v in report["audits"].values())
+    report["findings_for_the_business"] = {inv: v["sample"] for inv, v in report["audits"].items() if v.get("reported")}
     return report
 
 
@@ -527,6 +530,7 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
     perturb (a different value of the same type); for every other non-nullable, non-identity attribute, null.
     Reports mutations no audit catches as unprotected."""
     import shutil
+    reporting_invariants = {i["id"] for i in json.loads((L2_DIR / job / "selected-model.json").read_text())["invariants"] if i.get("reports")}  # a report already fires; it proves nothing about protection
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
     sqlmesh_target = is_sqlmesh(profile)
     model, review = load_job(job)
@@ -595,7 +599,7 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
                         if not others:
                             continue
                         con.execute(f"UPDATE {target_table} SET {attr['name']} = ? WHERE {where}", [others[0], *target_row[:-1]])
-                    fired = [inv for inv, sql in audits if con.execute(sql).fetchall()]
+                    fired = [inv for inv, sql in audits if con.execute(sql).fetchall() and inv not in reporting_invariants]
                 finally:
                     con.close()
                 results.append({"entity": entity["id"], "attribute": attr["name"], "role": role, "class": klass, "mutation": kind, "fired": fired, "protected": bool(fired)})

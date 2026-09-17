@@ -407,6 +407,10 @@
             "description": "Required when disposition is rejected: the tempting wrong derivation and why it is wrong.",
             "type": "string"
           },
+          "reports": {
+            "description": "true when a violation is a finding the chain hands the business rather than a defect in the projection. A reported invariant still needs an audit and still must be deterministic; its rows are surfaced, not failed.",
+            "type": "boolean"
+          },
           "review_trigger": {
             "minLength": 5,
             "type": "string"

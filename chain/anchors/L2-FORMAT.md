@@ -82,3 +82,35 @@ When you consider a derivation the anchors make tempting and the clauses do not 
 ## Aggregate keys and frozen copies within one job
 
 A handoff inside one job may land on a type with a different id when the two types share semantic_kind and physical_type and the target's role is identity (an aggregate's group key) or frozen_from_first_encounter (a copy fixed at first encounter). Any other type change needs a conversion clause. This rule came from the positions Developer, whose aggregate keys the gate wrongly rejected.
+
+## An invariant that reports rather than holds
+
+Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
+
+A reported invariant is deterministic like any other, needs an audit like any other, and its rows are named like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
+
+Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
+
+## An invariant that reports rather than holds
+
+Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
+
+A reported invariant is deterministic like any other, needs an audit like any other, and names its rows like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
+
+Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
+
+## An invariant that reports rather than holds
+
+Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
+
+A reported invariant is deterministic like any other, needs an audit like any other, and names its rows like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
+
+Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
+
+## An invariant that reports rather than holds
+
+Most invariants say what must be true, and a violation means the projection is wrong. Some say what the business must look at, and a violation means the received records contain something only the business can resolve. Mark the second kind `reports: true`.
+
+A reported invariant is deterministic like any other, needs an audit like any other, and names its rows like any other. What differs is what a run does with them: they are surfaced as findings, not counted as failures, because the projection did exactly what the Sketch told it to do. Use it only when a clause says the case is reported for review rather than prevented, and say in `necessity` which clause says so.
+
+Do not use it to excuse a projection you cannot make pass. If the rows mean the compiled thing is wrong, the invariant is a must-hold and the projection is defective.
