@@ -489,6 +489,47 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class CitedPathMustExistTests(unittest.TestCase):
+    """A citation to a path that is not there reads as evidence and supplies none. One model justified an explained
+    absence -- a reports:true invariant with no counterexample naming its rows -- by citing chain/ce/proposed/... when
+    the path is counterexamples/proposed/..., which emptied the entire justification while looking settled. A reviewer
+    caught it by hand; it is one directory name, and the gate can check it."""
+
+    def _check_with(self, text):
+        import copy, json as _json, tempfile, shutil
+        path = ROOT / "chain/l2/positions/semantic-model.json"
+        if not path.exists():
+            self.skipTest("positions not compiled")
+        scratch = copy.deepcopy(_json.loads(path.read_text()))
+        scratch["invariants"][0]["necessity"] = text
+        with tempfile.TemporaryDirectory() as tmp:
+            l2 = Path(tmp) / "l2"
+            shutil.copytree(ROOT / "chain/l2", l2)
+            (l2 / "positions/semantic-model.json").write_text(_json.dumps(scratch))
+            saved = L2.L2_DIR
+            L2.L2_DIR = l2
+            try:
+                return L2.check("positions")
+            finally:
+                L2.L2_DIR = saved
+
+    def test_a_citation_to_a_missing_path_is_reported(self):
+        r = self._check_with("Evidence is in chain/ce/proposed/ce-withdrawn-account-v1.json as filed.")
+        self.assertTrue([q for q in r["questions"] if "does not exist" in q], r["questions"])
+        self.assertFalse([p for p in r["problems"] if "does not exist" in p], "a question, never a refusal")
+
+    def test_a_citation_to_a_real_path_is_not_reported(self):
+        real = "counterexamples/proposed/ce-withdrawn-account-v1.json"
+        if not (ROOT / real).exists():
+            self.skipTest("the counterexample is not present")
+        r = self._check_with(f"Evidence is in {real} as filed.")
+        self.assertFalse([q for q in r["questions"] if "does not exist" in q], r["questions"])
+
+    def test_prose_that_cites_nothing_is_not_reported(self):
+        r = self._check_with("A held report changes nothing and creates nothing, so it is inert to the partition.")
+        self.assertFalse([q for q in r["questions"] if "does not exist" in q], r["questions"])
+
+
 class DanglingHoleReferenceTests(unittest.TestCase):
     """A hole that closes leaves its text behind. Two reviewers found the same defect in two different jobs in one
     cycle: an element's statement rewritten to the new clause while its necessity and parallel_assumption went on

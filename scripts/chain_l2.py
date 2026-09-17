@@ -401,6 +401,26 @@ def check(job: str, l1: dict | None = None) -> dict:
             continue
         also = f" ({len(where) - len(live)} more name it as closed, which is provenance and fine)" if len(where) > len(live) else ""
         questions.append(f"{len(live)} field(s) defer to {h}, which this model does not carry: {', '.join(live[:6])}{' and more' if len(live) > 6 else ''}.{also} A necessity or parallel_assumption is read as normative, so one still deferring to a closed question reinstates whatever the statement just fixed")
+    # A citation to a path that does not exist reads as evidence and supplies none. One model justified an
+    # "explained absence" -- a reported invariant with no counterexample -- by citing chain/ce/proposed/... when the
+    # path is counterexamples/proposed/..., which emptied the whole justification while looking settled. Cheap to
+    # check, so the gate checks it. A question and not a problem: a path may legitimately name something not yet
+    # written, and the fix is usually one character of directory.
+    missing_paths: dict[str, list[str]] = {}
+    def paths_in(o, path=""):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                paths_in(v, f"{path}.{k}" if path else str(k))
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                paths_in(v, f"{path}[{i}]")
+        elif isinstance(o, str):
+            for cited in set(PATH_REF.findall(o)):
+                if not (ROOT / cited).exists():
+                    missing_paths.setdefault(cited, []).append(path)
+    paths_in(doc)
+    for cited, where in sorted(missing_paths.items()):
+        questions.append(f"{len(where)} field(s) cite {cited}, which does not exist: {', '.join(where[:4])}{' and more' if len(where) > 4 else ''}. A citation to a path that is not there reads as evidence and supplies none")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"job": job, "status": status, "problems": problems, "questions": questions, "holes_carried": sorted(carried),
             "groups": {g: {"parents": groups[g]["parent_clauses"], "gap": groups[g]["gap"]} for g in groups},
@@ -491,6 +511,8 @@ def select(job: str, review: dict) -> dict:
 
 
 HOLE_REF = re.compile(r"L1\.hole\.[a-z0-9-]+")
+# repo-relative paths a model cites as evidence: a known top directory plus at least one segment and an extension
+PATH_REF = re.compile(r"\b(?:chain|counterexamples|sketches|scripts|tests|evidence|oracle)/[A-Za-z0-9._/-]+\.(?:json|md|py|sql|jsonl)\b")
 # a sentence that says a hole closed is recording why an element reads as it does, not deferring to it
 CLOSURE_WORDS = re.compile(r"clos(?:ed|ing|es)|no longer|prior deferral|supersed|settles|answered|replac", re.I)
 
