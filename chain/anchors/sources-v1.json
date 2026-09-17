@@ -360,13 +360,41 @@
         "action_at"
       ],
       "name": "ce.account_changes"
+    },
+    {
+      "description": "Batch1 TradeHistory.txt: one per-status report per trade with its own time; the brokerage's held lifecycle reports for historical-load trades. Incremental batches carry no TradeHistory file; their Trade change records carry the status. batch_date added by the loader.",
+      "fields": [
+        {
+          "name": "th_t_id",
+          "physical_type": "BIGINT"
+        },
+        {
+          "name": "th_dts",
+          "physical_type": "TIMESTAMP"
+        },
+        {
+          "name": "th_st_id",
+          "physical_type": "VARCHAR"
+        },
+        {
+          "name": "batch_date",
+          "physical_type": "DATE"
+        }
+      ],
+      "identifiers": [
+        "th_t_id",
+        "th_dts",
+        "th_st_id"
+      ],
+      "name": "raw.trade_history"
     }
   ],
   "natural_identity_hints": {
     "account": "ca_id / account number",
     "customer": "c_id / customer number",
     "holding change": "(hh_h_t_id original trade, hh_t_id current trade)",
-    "trade": "t_id / trade number"
+    "trade": "t_id / trade number",
+    "trade report": "(t_id, batch_date, cdc_dsn) for change records; (th_t_id, th_dts, th_st_id) for historical per-status reports"
   },
   "note": "Structural anchors K. Field names, physical types, and natural identifiers only. They authorize no rule; see sketches/l1-brokerage-intent-v1.md.",
   "schema_version": "source-anchors/v1",
@@ -388,7 +416,7 @@
     "report_order": {
       "first_report_of_a_trade": "the row with the smallest (batch_date, cdc_dsn) for that t_id",
       "latest_report_of_a_trade": "the row with the largest (batch_date, cdc_dsn) for that t_id",
-      "note": "How reports of the same trade are ordered, as the source files are produced: historical Batch1 rows come first (loader sequence 0, batch 1); incremental rows follow in batch order and, within a batch, by cdc_dsn. This is file production order, shape only. Whether a report must carry which file delivered it is L1.hole.batch-identity.",
+      "note": "How reports of the same trade are ordered, as the source files are produced: historical Batch1 rows come first (loader sequence 0, batch 1); incremental rows follow in batch order and, within a batch, by cdc_dsn. This is file production order, shape only. Whether a report must carry which file delivered it is L1.hole.batch-identity. For historical-load trades, the held reports are the TradeHistory rows (each with its own th_dts) together with the snapshot Trade row; the earliest held report of such a trade is its earliest TradeHistory row.",
       "order_by": [
         "batch_date",
         "cdc_dsn"

@@ -1,6 +1,6 @@
 ### CE: ce.k.trade-history-not-anchored
 
-- Status: proposed (anchor amendment under the data-architect hat, with an L2 consequence for trade-lifecycle)
+- Status: approved (anchor amendment, data-architect hat; see .oh/metis/issue-8-scd2-versioning-adjudication.md addendum)
 - Level: K (anchors), observed at L3 review of trade-lifecycle on duckdb-sqlmesh; confirmed on duckdb-native
 - Input and simulation context: trade 353232's only anchored report is the Batch1 historical snapshot row (status CMPT, t_dts 2017-04-10 20:26:42). The brokerage also holds Batch1 TradeHistory rows for it (per-status times), which phase 1 used and this chain did not anchor.
 - Projection output: placed_at = the completion-time t_dts; first_seen_late = true; ownership pinned as of that moment.

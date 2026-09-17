@@ -20,6 +20,7 @@ DDL = {
     "raw.customer_cdc": "(cdc_flag VARCHAR, cdc_dsn BIGINT, c_id BIGINT, c_st_id VARCHAR, c_tier SMALLINT, batch_date DATE)",
     "raw.trade_cdc": "(cdc_flag VARCHAR, cdc_dsn BIGINT, t_id BIGINT, t_dts TIMESTAMP, t_st_id VARCHAR, t_tt_id VARCHAR, t_is_cash BOOLEAN, t_s_symb VARCHAR, t_qty BIGINT, t_bid_price DECIMAL(8,2), t_ca_id BIGINT, t_exec_name VARCHAR, t_trade_price DECIMAL(8,2), t_chrg DECIMAL(10,2), t_comm DECIMAL(10,2), t_tax DECIMAL(10,2), batch_date DATE)",
     "raw.holding_history": "(cdc_flag VARCHAR, cdc_dsn BIGINT, hh_h_t_id BIGINT, hh_t_id BIGINT, hh_before_qty BIGINT, hh_after_qty BIGINT, batch_date DATE)",
+    "raw.trade_history": "(th_t_id BIGINT, th_dts TIMESTAMP, th_st_id VARCHAR, batch_date DATE)",
     "ce.account_changes": "(account_id BIGINT, action_at TIMESTAMP, tax_status_id SMALLINT, status_id VARCHAR, provenance VARCHAR)",
 }
 COLUMNS = {table: [c.split()[0] for c in ddl.strip("()").split(", ")] for table, ddl in DDL.items()}
@@ -51,8 +52,8 @@ def load_fixture(database: Path, fixture: dict, phase: str, ce_changes: list[dic
     con = duckdb.connect(str(database))
     try:
         _insert(con, "raw.customer_mgmt_action", fixture["raw"]["customer_mgmt_action"])
-        for table in ("account_cdc", "customer_cdc", "trade_cdc", "holding_history"):
-            _insert(con, f"raw.{table}", [r for r in fixture["raw"][table] if r["batch_date"] in batches])
+        for table in ("account_cdc", "customer_cdc", "trade_cdc", "holding_history", "trade_history"):
+            _insert(con, f"raw.{table}", [r for r in fixture["raw"].get(table, []) if r["batch_date"] in batches])
         if spec["apply_counterexample"] and ce_changes:
             for row in ce_changes:
                 if row.get("provenance") != "controlled_counterexample":
@@ -72,8 +73,8 @@ def reload_sources(database: Path, fixture: dict, phase: str, ce_changes: list[d
             con.execute(f"DROP TABLE IF EXISTS {table}")
             con.execute(f"CREATE TABLE {table} {ddl}")
         _insert(con, "raw.customer_mgmt_action", fixture["raw"]["customer_mgmt_action"])
-        for table in ("account_cdc", "customer_cdc", "trade_cdc", "holding_history"):
-            _insert(con, f"raw.{table}", [r for r in fixture["raw"][table] if r["batch_date"] in batches])
+        for table in ("account_cdc", "customer_cdc", "trade_cdc", "holding_history", "trade_history"):
+            _insert(con, f"raw.{table}", [r for r in fixture["raw"].get(table, []) if r["batch_date"] in batches])
         if spec["apply_counterexample"] and ce_changes:
             _insert(con, "ce.account_changes", ce_changes)
     finally:
@@ -115,6 +116,8 @@ def load_digen(database: Path, batches_root: Path, up_to_batch: int) -> dict:
             columns={{'t_id':'BIGINT','t_dts':'TIMESTAMP','t_st_id':'VARCHAR','t_tt_id':'VARCHAR','t_is_cash':'BOOLEAN','t_s_symb':'VARCHAR','t_qty':'BIGINT','t_bid_price':'DECIMAL(8,2)','t_ca_id':'BIGINT','t_exec_name':'VARCHAR','t_trade_price':'DECIMAL(8,2)','t_chrg':'DECIMAL(10,2)','t_comm':'DECIMAL(10,2)','t_tax':'DECIMAL(10,2)'}})""")
         con.execute(f"""INSERT INTO raw.holding_history SELECT NULL, NULL, *, DATE '{batch_date}' FROM read_csv('{(b1 / 'HoldingHistory.txt').as_posix()}', delim='|', header=false,
             columns={{'hh_h_t_id':'BIGINT','hh_t_id':'BIGINT','hh_before_qty':'BIGINT','hh_after_qty':'BIGINT'}})""")
+        con.execute(f"""INSERT INTO raw.trade_history SELECT *, DATE '{batch_date}' FROM read_csv('{(b1 / 'TradeHistory.txt').as_posix()}', delim='|', header=false,
+            columns={{'th_t_id':'BIGINT','th_dts':'TIMESTAMP','th_st_id':'VARCHAR'}})""")
         for n in range(2, up_to_batch + 1):
             b = batches_root / f"Batch{n}"
             batch_date = (b / "BatchDate.txt").read_text().strip()

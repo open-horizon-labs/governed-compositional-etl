@@ -41,3 +41,7 @@ Constructed account changes enter through a stage whose every row is labeled `co
 ## Review trigger
 
 Reading the TPC-DI 1.1.0 DimCustomer, DimAccount, DimTrade incremental, and FactHoldings clauses. Any rule the specification states differently flips to `rejected`, its counterexamples are re-adjudicated, and the projection is regenerated.
+
+## Addendum, 2026-09-17: anchor the historical trade history
+
+A projection reviewer found that the chain's source anchors omitted Batch1 TradeHistory.txt, so a historical-load trade's earliest held report was its snapshot row with its final status. Real rows: trade 353232 was pending on 2017-01-12 14:55:11, submitted 2017-04-10 20:25:00, completed 20:26:42; the chain had placed it at completion. Under the data-architect hat, anchor `raw.trade_history` as shape and state in `report_order` that a historical-load trade's held reports include its TradeHistory rows. No clause changes: L1.placement-moment already says "the earliest report of it the brokerage holds"; the anchors under-stated what is held. Consequence: trade-lifecycle L2 cycle 5 adds the history handoff for placed_at and lets first_seen_late consider it; the cache should stale sg.placement-moment only. Proposal `ce.k.trade-history-not-anchored` accepted as this addendum.

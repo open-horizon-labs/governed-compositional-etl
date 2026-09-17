@@ -1,12 +1,13 @@
 {
   "jobs": [
     "ownership-history",
-    "trade-lifecycle"
+    "trade-lifecycle",
+    "positions"
   ],
   "relations": [
     {
-      "note": "downstream job freezes a copy of an upstream statement value; meaning shared, role differs by lifecycle",
-      "relation": "overlap",
+      "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy",
+      "relation": "contradiction",
       "semantic_kind": "statement_effective_time",
       "uses": [
         [
@@ -18,12 +19,22 @@
           "trade-lifecycle",
           "trade_owning_account_effective_from",
           "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
+          "holding_owning_account_effective_from",
+          "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
+          "account_position_effective_from_key",
+          "identity"
         ]
       ]
     },
     {
-      "note": "downstream job freezes a copy of an upstream statement value; meaning shared, role differs by lifecycle",
-      "relation": "overlap",
+      "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy",
+      "relation": "contradiction",
       "semantic_kind": "account_owner_identity_reference",
       "uses": [
         [
@@ -35,6 +46,38 @@
           "trade-lifecycle",
           "trade_owning_customer_reference",
           "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
+          "holding_owning_customer_reference",
+          "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
+          "customer_position_key",
+          "identity"
+        ]
+      ]
+    },
+    {
+      "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy",
+      "relation": "contradiction",
+      "semantic_kind": "trade_owning_account_identity_reference",
+      "uses": [
+        [
+          "trade-lifecycle",
+          "trade_owning_account_reference",
+          "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
+          "holding_owning_account_reference",
+          "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
+          "account_position_account_key",
+          "identity"
         ]
       ]
     },
@@ -51,14 +94,22 @@
       "to_job": "trade-lifecycle"
     },
     {
-      "clause": "L1.holdings-follow-trade",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
+      "from_job": "trade-lifecycle",
+      "handoff": "logical.trade.owning_account_number->logical.holding_change.owning_account_number",
+      "relation": "dependency",
+      "to_job": "positions"
     },
     {
-      "clause": "L1.no-phantom-positions",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
+      "from_job": "trade-lifecycle",
+      "handoff": "logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from",
+      "relation": "dependency",
+      "to_job": "positions"
+    },
+    {
+      "from_job": "trade-lifecycle",
+      "handoff": "logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
+      "relation": "dependency",
+      "to_job": "positions"
     },
     {
       "gap": "L1.hole.change-effective-time",
@@ -107,14 +158,26 @@
       "group": "sg.outcome",
       "job": "trade-lifecycle",
       "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; see coverage_claim.",
+      "group": "sg.holding-attribution",
+      "job": "positions",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; see coverage_claim.",
+      "group": "sg.no-phantom-positions",
+      "job": "positions",
+      "relation": "named-gap"
     }
   ],
   "schema_version": "l2-weave/v1",
   "summary": {
-    "contradiction": 0,
-    "dependency": 2,
-    "gap": 2,
-    "named-gap": 8,
-    "overlap": 2
+    "contradiction": 3,
+    "dependency": 5,
+    "gap": 0,
+    "named-gap": 10,
+    "overlap": 0
   }
 }

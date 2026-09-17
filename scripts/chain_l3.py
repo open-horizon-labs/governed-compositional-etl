@@ -146,7 +146,7 @@ def check(target: str, job: str) -> dict:
         if not questions:
             problems.append(f"selected entity {missing} has no artifact and no question filed")
     listed_files = {a["file"] for a in manifest.get("artifacts", [])} | {a["file"] for a in manifest.get("audits", [])} | {"manifest.json"}
-    governance = re.compile(r"^(change-contract-\d+\.md|review(-\d+)?\.(md|json)|adjudication-.*\.md)$")
+    governance = re.compile(r"^(change-contract-\d+\.md|review(-\d+)?\.(md|json)|adjudication-.*\.md|mutation-findings-\d+\.md)$")
     actual = {p.relative_to(base).as_posix() for p in base.rglob("*") if p.is_file() and not governance.match(p.relative_to(base).as_posix())}
     for extra in sorted(actual - listed_files):
         problems.append(f"file {extra} is not listed in the manifest")
