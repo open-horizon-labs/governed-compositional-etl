@@ -288,7 +288,7 @@ class CounterexampleDocumentTests(unittest.TestCase):
             if not (ROOT / "chain/l3" / target / "trade-lifecycle/manifest.json").exists():
                 self.skipTest(f"trade-lifecycle not projected on {target}")
             reports[target] = L3.simulate(target, "trade-lifecycle", self.CE)
-            counts[target] = reports[target]["samples"]["governed.trade"]
+            counts[target] = reports[target]["samples"].get("governed.trade")  # None when a blocking audit refused the plan
         all_fired = all(not r["silent"] for r in reports.values())
         engines_disagree = len(set(counts.values())) > 1
         self.assertTrue(all_fired or engines_disagree, {t: (r["silent"], counts[t]) for t, r in reports.items()})

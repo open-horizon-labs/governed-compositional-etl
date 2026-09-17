@@ -55,6 +55,11 @@
     "trade-lifecycle",
     "cross-engine"
   ],
+  "observed": {
+    "2026-09-17 after trade-lifecycle L3 cycle 4": "exactly one audit per engine: duckdb-native inv.trade_ownership_pin_present (1 row, trade 900001); duckdb-sqlmesh inv.every_received_trade_persisted (1 row; the blocking audit refused the plan). Deterministic assertion holds.",
+    "2026-09-17 before trade-lifecycle L3 cycle 4": "silent on both engines; native governed.trade held 900001 with owning_account_effective_from, owning_customer_number, owning_customer_effective_from null (3 trades); SQLMesh had no row (2 trades)",
+    "command": ".venv/bin/python scripts/chain_l3.py simulate <target> trade-lifecycle --ce counterexamples/proposed/ce-trade-before-account-statement-v1.json"
+  },
   "proposal": "chain/ce/proposed/ce.l2.trade-before-account-statement.md",
   "proposed_on": "2026-09-17",
   "provenance": "controlled_counterexample",

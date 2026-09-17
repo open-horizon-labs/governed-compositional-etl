@@ -289,11 +289,20 @@ def run_sqlmesh(target: str, job: str, database: Path, fixture_report: dict) -> 
         for a in manifest["audits"]:
             shutil.copy(base / a["file"], project / "audits" / Path(a["file"]).name)
     result = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "plan", "prod", "--auto-apply", "--no-prompts", "--skip-tests", "--skip-linter"], cwd=ROOT, text=True, capture_output=True)
+    manifest = json.loads((L3_DIR / target / job / "manifest.json").read_text())
+    # SQLMesh audits block promotion: a failing audit aborts the plan. That is a projection result, not a harness error,
+    # so read the failures off the plan output and report them the way a native run reports violating rows.
+    blocking = {name: int(n) for name, n in re.findall(r"'([^']+)' audit error: (\d+) rows? failed", result.stdout)}
+    if blocking:
+        for a in manifest["audits"]:
+            fixture_report["audits"][a["invariant"]] = {"violations": blocking.get(a["invariant"], 0), "via": "sqlmesh plan (blocking audit)", "sample": []}
+        fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": False, "blocking_failures": blocking}
+        fixture_report["ok"] = False
+        return fixture_report
     if result.returncode or "Failed models" in result.stdout:
         raise L3Error(f"SQLMesh plan failed:\n{result.stdout[-4000:]}\n{result.stderr[-2000:]}")
     audit = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "audit"], cwd=ROOT, text=True, capture_output=True)
     fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": audit.returncode == 0 and "0 audit errors" in audit.stdout, "audit_tail": (audit.stdout + audit.stderr)[-1500:]}
-    manifest = json.loads((L3_DIR / target / job / "manifest.json").read_text())
     con = duckdb.connect(str(database), read_only=True)
     try:
         for a in manifest["audits"]:
@@ -432,7 +441,8 @@ def simulate(target: str, job: str, ce_path: Path) -> dict:
     report = run(target, job, "rollover", database=database, ce=ce)
     fired = {inv: info for inv, info in report["audits"].items() if info["violations"]}
     return {"target": target, "job": job, "counterexample": ce.get("id", Path(ce_path).stem), "status": ce.get("status"), "ok": report["ok"],
-            "fired": fired, "silent": not fired, "deterministic_assertion": ce.get("deterministic_assertion"), "samples": {t: s["count"] for t, s in report["samples"].items()}}
+            "fired": fired, "silent": not fired, "deterministic_assertion": ce.get("deterministic_assertion"), "samples": {t: s["count"] for t, s in report.get("samples", {}).items()},
+            "note": "SQLMesh audits block promotion, so a fired audit here means the plan was refused and no table was written" if report.get("sqlmesh", {}).get("blocking_failures") else None}
 
 
 def mutate(target: str, job: str, database: Path | None = None) -> dict:
