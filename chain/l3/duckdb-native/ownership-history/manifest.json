@@ -142,11 +142,16 @@
       "entity": "logical.account",
       "file": "audits/inv.account_owner_matches_producing_source.sql",
       "invariant": "inv.account_owner_matches_producing_source"
+    },
+    {
+      "entity": "logical.account",
+      "file": "audits/inv.unknown_codes_held.sql",
+      "invariant": "inv.unknown_codes_held"
     }
   ],
   "derived_from_model": {
     "path": "chain/l2/ownership-history/selected-model.json",
-    "review_sha256": "12961d03caa20257bd2a2980d08f688fc8985a80d435c776c803d42467a8dddf"
+    "review_sha256": "93ad098e0c9231e37c24efae1404c695b7e5d3713bd5e72d1c82c3f91bbf7572"
   },
   "group_fingerprints": {
     "sg.constructed-scenarios": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
@@ -154,7 +159,8 @@
     "sg.history-asof": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
     "sg.identity": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
     "sg.owner-standing": "7718f313b24aded61e77ebeffaf7ec1b736e434f25b43a0f47ee1fec9eab5364",
-    "sg.statement-content": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95"
+    "sg.statement-content": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95",
+    "sg.unknown-codes": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "job": "ownership-history",
   "questions_for_authority": [],

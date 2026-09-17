@@ -1,26 +1,32 @@
--- inv.trade_first_seen_late_matches_status_order (L2 cycle 5, restated): for
--- any trade_number whose order_type is one of the anchored four codes and
--- whose first-encountered report's status is not PNDG for a market order,
--- first_seen_late is true if and only if that report -- across both anchored
--- sources, the trade's earliest raw.trade_history row if any exist,
--- otherwise its earliest raw.trade_cdc row -- carries a status later, in
+-- inv.trade_first_seen_late_matches_status_order (restated): for any
+-- trade_number whose first-encountered report's status and order type are
+-- not held under L1.unknown-codes (per inv.unknown_codes_held) and that is
+-- not held as a market order seen pending (per
+-- inv.trade_market_order_seen_pending_held), first_seen_late is true if and
+-- only if that report -- across both anchored sources, the trade's
+-- earliest raw.trade_history row if any exist, otherwise its earliest
+-- valid_cdc_rows row -- carries a status later, in
 -- trade_code_meanings.status_order (PNDG, SBMT, CMPT, with terminal CNCL
 -- treated as later than any of them), than order_type's first lifecycle
--- event: PNDG for a limit order (TLB, TLS), per status_order's first entry;
--- SBMT for a market order (TMB, TMS), per L1.placement-moment's amended
--- sentence. A trade whose order_type is outside the anchored four, or a
--- market order whose first-encountered report is PNDG, is not claimed by
--- this invariant and is excluded from scope entirely (not merely defaulted).
--- Also checked: order_type itself is frozen_from_first_encounter (set once
--- from the trade's first-encountered raw.trade_cdc report's t_tt_id and
--- never replaced), since first_seen_late's restated derivation depends on it
--- and a corrupted or drifted order_type would make first_seen_late
--- unrecomputable from its own recorded inputs. Zero rows means the
--- invariant holds.
+-- event: PNDG for a limit order (TLB, TLS); SBMT for a market order (TMB,
+-- TMS). A trade whose first-encountered report is held, or that is held as
+-- a market order seen pending, is not claimed by this invariant and is
+-- excluded from scope entirely (not merely defaulted). order_type's own
+-- freeze is checked separately by inv.trade_order_type_frozen. Zero rows
+-- means the invariant holds.
 
-WITH first_cdc_report AS (
-    SELECT t_id, t_st_id, t_tt_id
+WITH valid_cdc_rows AS (
+    -- A row carrying any code outside its anchored vocabulary in any of
+    -- cdc_flag, t_st_id, t_tt_id is held in its entirety.
+    SELECT *
     FROM raw.trade_cdc
+    WHERE cdc_flag IN ('I', 'U', 'D')
+      AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+      AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
+),
+first_cdc_report AS (
+    SELECT t_id, t_st_id, t_tt_id
+    FROM valid_cdc_rows
     QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date, cdc_dsn) = 1
 ),
 first_history_report AS (
@@ -51,11 +57,13 @@ ranked AS (
     FROM first_report
 ),
 in_scope AS (
-    -- order_type must be one of the anchored four, and a market order whose
-    -- first-encountered report is PNDG is excluded from this invariant's claim.
+    -- order_type and first_status must both be anchored, and a market
+    -- order whose first-encountered report is PNDG is excluded from this
+    -- invariant's claim (held under the hole instead).
     SELECT *
     FROM ranked
     WHERE order_type IN ('TLB', 'TLS', 'TMB', 'TMS')
+      AND first_status IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
       AND NOT (order_type IN ('TMB', 'TMS') AND first_status = 'PNDG')
 ),
 expected AS (
@@ -67,11 +75,4 @@ expected AS (
 SELECT t.trade_number, 'first_seen_late_mismatch' AS problem
 FROM governed.trade AS t
 JOIN expected AS e ON e.trade_number = t.trade_number
-WHERE t.first_seen_late IS DISTINCT FROM e.expected_first_seen_late
-
-UNION ALL
-
-SELECT t.trade_number, 'order_type_not_frozen' AS problem
-FROM governed.trade AS t
-JOIN first_report fr ON fr.trade_number = t.trade_number
-WHERE t.order_type IS DISTINCT FROM fr.order_type;
+WHERE t.first_seen_late IS DISTINCT FROM e.expected_first_seen_late;

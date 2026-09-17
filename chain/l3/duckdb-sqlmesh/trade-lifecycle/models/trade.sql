@@ -28,12 +28,16 @@ MODEL (
   audits (
     "inv.trade_owning_account_frozen",
     "inv.trade_placement_reference_frozen",
+    "inv.trade_order_type_frozen",
     "inv.trade_first_seen_late_matches_status_order",
+    "inv.trade_first_seen_late_defined_or_held",
+    "inv.trade_market_order_seen_pending_held",
     "inv.trade_placed_at_matches_earliest_report",
     "inv.trade_outcome_updates_in_place",
     "inv.trade_ownership_provenance_reachable",
     "inv.trade_ownership_pin_present",
-    "inv.every_received_trade_persisted"
+    "inv.every_received_trade_persisted",
+    "inv.unknown_codes_held"
   ),
   depends_on (governed.account, governed.customer)
 );
@@ -43,10 +47,18 @@ MODEL (
 -- the mutable_columns; the frozen columns below are therefore only ever taken at insert time
 -- from a trade's first-encountered report, never replaced by a later run recomputing them.
 --
+-- L1.unknown-codes: a raw.trade_cdc row whose cdc_flag is outside {I, U, D} is held -- it
+-- creates and changes nothing, so it is excluded up front from every CTE below that
+-- establishes a trade's identity or first-encountered report; a trade known only through such
+-- rows (no report at all with an anchored cdc_flag) produces no row here (inv.unknown_codes_held
+-- reports the row directly against the source). t_st_id/th_st_id and t_tt_id are not filtered
+-- out of identity here: an unknown status or order type on the first-encountered report leaves
+-- first_seen_late undefined (NULL) rather than removing the trade or the report.
+--
 -- owning_account_number is still, and only, handoff.raw.trade_cdc.t_ca_id->
 -- logical.trade.owning_account_number: raw.trade_history carries no account field, so this
--- is always the first-encountered raw.trade_cdc row's t_ca_id regardless of which anchored
--- source supplies placed_at.
+-- is always the first-encountered (anchored-cdc_flag) raw.trade_cdc row's t_ca_id regardless of
+-- which anchored source supplies placed_at.
 WITH first_cdc_report AS (
   SELECT
     t_id AS trade_number,
@@ -55,6 +67,7 @@ WITH first_cdc_report AS (
     t_tt_id AS order_type,
     t_st_id AS status_at_first_report
   FROM raw.trade_cdc
+  WHERE cdc_flag IN ('I', 'U', 'D')
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date ASC, cdc_dsn ASC) = 1
 ),
 -- For a historical-load trade, trade_code_meanings.report_order states its earliest held
@@ -76,29 +89,46 @@ first_history_report AS (
 -- status against the anchored status_order (PNDG, SBMT, CMPT, with CNCL terminal and later than
 -- any of them), ranked relative to order_type's own first lifecycle event -- PNDG for a limit
 -- order (TLB, TLS), SBMT for a market order (TMB, TMS) sent straight to market and so never
--- pending. An order_type outside the anchored four leaves that first lifecycle event, and so
--- first_seen_late, undefined (NULL) rather than defaulted.
+-- pending. Held cases leave first_seen_late NULL, with no rank arithmetic reaching them: an
+-- unknown status or order type on the first-encountered report (L1.unknown-codes; reported by
+-- inv.unknown_codes_held), or a market order whose first-encountered report is PNDG
+-- (L1.hole.market-order-seen-pending; reported by inv.trade_market_order_seen_pending_held).
 first_report AS (
   SELECT
     c.trade_number,
     c.owning_account_number,
     c.order_type,
     COALESCE(h.placed_at, c.placed_at) AS placed_at,
-    (CASE COALESCE(h.status_at_first_report, c.status_at_first_report)
-       WHEN 'PNDG' THEN 0
-       WHEN 'SBMT' THEN 1
-       WHEN 'CMPT' THEN 2
-       WHEN 'CNCL' THEN 3
-     END)
-    >
-    (CASE c.order_type
-       WHEN 'TLB' THEN 0
-       WHEN 'TLS' THEN 0
-       WHEN 'TMB' THEN 1
-       WHEN 'TMS' THEN 1
-     END) AS first_seen_late
+    COALESCE(h.status_at_first_report, c.status_at_first_report) AS status_at_first_report
   FROM first_cdc_report AS c
   LEFT JOIN first_history_report AS h ON h.trade_number = c.trade_number
+),
+first_seen_late_computed AS (
+  SELECT
+    trade_number,
+    owning_account_number,
+    order_type,
+    placed_at,
+    CASE
+      WHEN order_type NOT IN ('TLB', 'TLS', 'TMB', 'TMS') THEN NULL
+      WHEN status_at_first_report NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL') THEN NULL
+      WHEN order_type IN ('TMB', 'TMS') AND status_at_first_report = 'PNDG' THEN NULL
+      ELSE
+        (CASE status_at_first_report
+           WHEN 'PNDG' THEN 0
+           WHEN 'SBMT' THEN 1
+           WHEN 'CMPT' THEN 2
+           WHEN 'CNCL' THEN 3
+         END)
+        >
+        (CASE order_type
+           WHEN 'TLB' THEN 0
+           WHEN 'TLS' THEN 0
+           WHEN 'TMB' THEN 1
+           WHEN 'TMS' THEN 1
+         END)
+    END AS first_seen_late
+  FROM first_report
 ),
 -- handoff.logical.account.effective_from->logical.trade.owning_account_effective_from and
 -- handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number,
@@ -109,7 +139,7 @@ account_asof AS (
     f.trade_number,
     a.effective_from AS owning_account_effective_from,
     a.owning_customer_number
-  FROM first_report AS f
+  FROM first_seen_late_computed AS f
   JOIN governed.account AS a
     ON a.account_number = f.owning_account_number
    AND a.effective_from <= f.placed_at
@@ -123,17 +153,21 @@ customer_asof AS (
   SELECT
     f.trade_number,
     c.effective_from AS owning_customer_effective_from
-  FROM first_report AS f
+  FROM first_seen_late_computed AS f
   JOIN account_asof AS aa ON aa.trade_number = f.trade_number
   JOIN governed.customer AS c
     ON c.customer_number = aa.owning_customer_number
    AND c.effective_from <= f.placed_at
   QUALIFY ROW_NUMBER() OVER (PARTITION BY f.trade_number ORDER BY c.effective_from DESC) = 1
 ),
--- mutable outcome facts: selector latest_change from the latest I- or U-flagged report
--- (handoff.raw.trade_cdc.t_st_id/t_trade_price/t_chrg/t_comm/t_tax/t_qty ->
--- logical.trade.status/executed_price/fees/commission/tax/quantity). A D-flagged report is
--- not a later report under inv.trade_outcome_updates_in_place, so it is excluded here.
+-- mutable outcome facts: selector latest_change from the latest I- or U-flagged report whose
+-- own t_st_id is anchored (handoff.raw.trade_cdc.t_st_id/t_trade_price/t_chrg/t_comm/t_tax/
+-- t_qty -> logical.trade.status/executed_price/fees/commission/tax/quantity). A D-flagged
+-- report is not a later report under inv.trade_outcome_updates_in_place, so it is excluded
+-- here; a report with an unknown t_st_id is held under L1.unknown-codes and is likewise not a
+-- later report for this selector -- the outcome stands as last derived from the latest report
+-- whose status is anchored, falling back as far as the first-encountered report if every later
+-- report is held.
 latest_change AS (
   SELECT
     t_id AS trade_number,
@@ -145,6 +179,7 @@ latest_change AS (
     t_qty AS quantity
   FROM raw.trade_cdc
   WHERE cdc_flag IN ('I', 'U')
+    AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date DESC, cdc_dsn DESC) = 1
 )
 SELECT
@@ -162,7 +197,7 @@ SELECT
   m.commission,
   m.tax,
   m.quantity
-FROM first_report AS f
+FROM first_seen_late_computed AS f
 JOIN account_asof AS aa ON aa.trade_number = f.trade_number
 JOIN customer_asof AS ca ON ca.trade_number = f.trade_number
 JOIN latest_change AS m ON m.trade_number = f.trade_number;

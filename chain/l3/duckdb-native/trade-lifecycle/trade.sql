@@ -42,13 +42,34 @@
 -- owning_customer_effective_from, first_seen_late, order_type) are written
 -- only on INSERT, from the trade's first-encountered report.
 --
+-- L1.unknown-codes (this cycle, held at the report level): a raw.trade_cdc
+-- row carrying any code outside its anchored vocabulary in any of
+-- cdc_flag, t_st_id, t_tt_id is held in its entirety -- nothing is derived
+-- from it, for any fact, not only the fact tied to the specific bad field.
+-- Such rows are excluded from every CTE below via valid_cdc_rows, which
+-- requires cdc_flag, t_st_id, and t_tt_id to all be anchored. Since
+-- owning_account_number, order_type, and (via first_cdc_report) placed_at
+-- are all sourced from a trade's earliest valid_cdc_rows row, a trade whose
+-- only raw.trade_cdc report is held has no first_cdc_report row and
+-- therefore no source row at all here -- even when a raw.trade_history
+-- report for the same trade is itself anchored: identity and placement
+-- both rest on raw.trade_cdc (trade_history carries no account or
+-- order-type field and, per the anchors, a historical-load trade always
+-- has a matching, anchored Batch1 trade_cdc row of its own; a trade whose
+-- only trade_cdc report is held is known only through a held report and is
+-- not yet known to this job). inv.every_received_trade_persisted does not
+-- claim such a trade; inv.unknown_codes_held reports the held record(s)
+-- instead.
+--
 -- selector first_encounter_only, across both anchored report sources
 -- (report_order): placed_at <- the earliest raw.trade_history row's th_dts
 -- when any exist for the trade (history precedes all raw.trade_cdc rows),
--- else the earliest raw.trade_cdc row's t_dts. owning_account_number and
--- order_type <- t_ca_id / t_tt_id from the trade's earliest raw.trade_cdc row
--- specifically (raw.trade_history carries no account or order-type field,
--- regardless of which source supplies placed_at).
+-- else the earliest valid_cdc_rows row's t_dts. owning_account_number <-
+-- t_ca_id from the trade's earliest valid_cdc_rows row specifically
+-- (raw.trade_history carries no account field, regardless of which source
+-- supplies placed_at). order_type <- t_tt_id from that same earliest
+-- valid_cdc_rows row when it is one of {TLB, TLS, TMB, TMS}, else no
+-- order_type fact is derived (null): nothing is defaulted or inferred.
 -- selector as_of_event_time: owning_account_effective_from <- the
 -- governed.account statement of owning_account_number whose effective_from is
 -- latest at or before placed_at.
@@ -57,19 +78,26 @@
 -- selector as_of_event_time: owning_customer_effective_from <- the
 -- governed.customer statement of owning_customer_number whose effective_from
 -- is latest at or before placed_at.
--- first_seen_late (computed_within_entity, L1.placement-moment amended):
--- true when the first-encountered report (same one placed_at is drawn from,
--- across both sources) carries a status later, in trade_code_meanings.status_order
--- (PNDG, SBMT, CMPT, with terminal CNCL treated as later than any of them),
--- than order_type's first lifecycle event -- PNDG for a limit order (TLB,
--- TLS), SBMT for a market order (TMB, TMS), since an order sent straight to
--- market has no pending stage; false when it carries exactly that event. A
--- market order first reported PNDG, and an order_type outside the anchored
--- four codes, are undefined by this rule (review triggers, not decided here).
--- selector latest_change (report_order descending, cdc_flag I or U only, per
--- inv.trade_outcome_updates_in_place; D rows excluded, provisional pending
--- L1.hole.deletions): status, executed_price, fees, commission, tax, quantity
--- all come from the same latest I/U raw.trade_cdc report.
+-- first_seen_late (computed_within_entity, L1.placement-moment amended,
+-- L1.hole.market-order-seen-pending): null when the first-encountered
+-- report is held under L1.unknown-codes (order_type not derived, or the
+-- first_status drawn the same way as placed_at is outside the anchored
+-- status vocabulary) or when order_type is a market order (TMB, TMS) and
+-- that first_status is PNDG (the hole's own case, held for review, not
+-- decided). No rank arithmetic reaches either held case. Otherwise: true
+-- when first_status is later, in trade_code_meanings.status_order (PNDG,
+-- SBMT, CMPT, with terminal CNCL treated as later than any of them), than
+-- order_type's first lifecycle event -- PNDG for a limit order (TLB, TLS),
+-- SBMT for a market order (TMB, TMS), since an order sent straight to
+-- market has no pending stage; false when it carries exactly that event.
+-- selector latest_change (report_order descending, cdc_flag I or U and
+-- t_st_id anchored only, per inv.trade_outcome_updates_in_place and
+-- logical.trade.status's own parallel_assumption; D rows excluded,
+-- provisional pending L1.hole.deletions; a later report whose t_st_id is
+-- unanchored is not a later report for this selection, so the outcome
+-- stands as it last stood): status, executed_price, fees, commission, tax,
+-- quantity all come from the same latest qualifying raw.trade_cdc report,
+-- when one exists; otherwise all six stay null (nothing derived).
 
 CREATE TABLE IF NOT EXISTS governed.trade (
     trade_number BIGINT,
@@ -90,9 +118,19 @@ CREATE TABLE IF NOT EXISTS governed.trade (
 
 MERGE INTO governed.trade AS tgt
 USING (
-    WITH first_cdc_report AS (
-        SELECT t_id, t_dts, t_ca_id, t_st_id, t_tt_id
+    WITH valid_cdc_rows AS (
+        -- A row carrying any code outside its anchored vocabulary in any of
+        -- cdc_flag, t_st_id, t_tt_id is held in its entirety: unusable for
+        -- identity, ownership, order type, placement, or outcome.
+        SELECT *
         FROM raw.trade_cdc
+        WHERE cdc_flag IN ('I', 'U', 'D')
+          AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+          AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
+    ),
+    first_cdc_report AS (
+        SELECT t_id, t_dts, t_ca_id, t_st_id, t_tt_id
+        FROM valid_cdc_rows
         QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date, cdc_dsn) = 1
     ),
     first_history_report AS (
@@ -102,9 +140,13 @@ USING (
     ),
     -- The trade's earliest held report, across both anchored sources: its
     -- earliest raw.trade_history row when one exists (history precedes every
-    -- raw.trade_cdc row, per report_order), else its earliest raw.trade_cdc row.
-    -- order_type always comes from the earliest raw.trade_cdc row specifically,
-    -- since raw.trade_history carries no order-type field.
+    -- raw.trade_cdc row, per report_order), else its earliest valid_cdc_rows
+    -- row. A trade with no first_cdc_report row at all (its only raw.trade_cdc
+    -- reports are held) never reaches this CTE, regardless of whether a
+    -- raw.trade_history report exists for it. owning_account_number and
+    -- order_type always come from the earliest valid_cdc_rows row
+    -- specifically (already anchored by construction), since raw.trade_history
+    -- carries no account or order-type field.
     first_report AS (
         SELECT
             fc.t_id AS trade_number,
@@ -119,6 +161,7 @@ USING (
         SELECT t_id, t_st_id, t_trade_price, t_chrg, t_comm, t_tax, t_qty
         FROM raw.trade_cdc
         WHERE cdc_flag IN ('I', 'U')
+          AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
         QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date DESC, cdc_dsn DESC) = 1
     ),
     owning_account_pin AS (
@@ -150,16 +193,26 @@ USING (
         ap.owning_account_effective_from,
         ap.owning_customer_number,
         cp.owning_customer_effective_from,
-        (
-            CASE fr.first_status
-                WHEN 'PNDG' THEN 0 WHEN 'SBMT' THEN 1 WHEN 'CMPT' THEN 2 WHEN 'CNCL' THEN 3
-            END
-            >
-            CASE fr.order_type
-                WHEN 'TLB' THEN 0 WHEN 'TLS' THEN 0
-                WHEN 'TMB' THEN 1 WHEN 'TMS' THEN 1
-            END
-        ) AS first_seen_late,
+        CASE
+            -- Held: no order_type fact, or the first-encountered report's
+            -- own status is outside the anchored vocabulary.
+            WHEN fr.order_type IS NULL THEN NULL
+            WHEN fr.first_status NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL') THEN NULL
+            -- L1.hole.market-order-seen-pending: a market order whose
+            -- first-encountered report is PNDG is held for review, not
+            -- decided either way.
+            WHEN fr.order_type IN ('TMB', 'TMS') AND fr.first_status = 'PNDG' THEN NULL
+            ELSE (
+                CASE fr.first_status
+                    WHEN 'PNDG' THEN 0 WHEN 'SBMT' THEN 1 WHEN 'CMPT' THEN 2 WHEN 'CNCL' THEN 3
+                END
+                >
+                CASE fr.order_type
+                    WHEN 'TLB' THEN 0 WHEN 'TLS' THEN 0
+                    WHEN 'TMB' THEN 1 WHEN 'TMS' THEN 1
+                END
+            )
+        END AS first_seen_late,
         fr.order_type,
         lo.t_st_id AS status,
         lo.t_trade_price AS executed_price,
@@ -168,7 +221,7 @@ USING (
         lo.t_tax AS tax,
         lo.t_qty AS quantity
     FROM first_report fr
-    JOIN latest_outcome lo ON lo.t_id = fr.trade_number
+    LEFT JOIN latest_outcome lo ON lo.t_id = fr.trade_number
     LEFT JOIN owning_account_pin ap ON ap.trade_number = fr.trade_number
     LEFT JOIN owning_customer_pin cp ON cp.trade_number = fr.trade_number
 ) AS src

@@ -83,11 +83,31 @@
       "entity": "logical.trade",
       "file": "audits/inv.every_received_trade_persisted.sql",
       "invariant": "inv.every_received_trade_persisted"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.unknown_codes_held.sql",
+      "invariant": "inv.unknown_codes_held"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.trade_market_order_seen_pending_held.sql",
+      "invariant": "inv.trade_market_order_seen_pending_held"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.trade_first_seen_late_defined_or_held.sql",
+      "invariant": "inv.trade_first_seen_late_defined_or_held"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.trade_order_type_frozen.sql",
+      "invariant": "inv.trade_order_type_frozen"
     }
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "9330f3d22bdfc1120c4627deff8c0ed5e275fdb88be2c7202d108c7b34c631b7"
+    "review_sha256": "153309314e831c40440b6f9edb597c00eb86dba46d4db8e9daaa724d306f99f7"
   },
   "group_fingerprints": {
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",

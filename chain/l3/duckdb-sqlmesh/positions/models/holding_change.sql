@@ -27,7 +27,8 @@ MODEL (
     "inv.holding_change_ownership_present",
     "inv.holding_change_current_trade_known",
     "inv.holding_quantities_present",
-    "inv.eligible_holding_report_persisted"
+    "inv.eligible_holding_report_persisted",
+    "inv.unknown_codes_held"
   ),
   depends_on (governed.trade)
 );

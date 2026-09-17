@@ -126,11 +126,16 @@
       "entity": "logical.holding_change",
       "file": "audits/inv.eligible_holding_report_persisted.sql",
       "invariant": "inv.eligible_holding_report_persisted"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.unknown_codes_held.sql",
+      "invariant": "inv.unknown_codes_held"
     }
   ],
   "derived_from_model": {
     "path": "chain/l2/positions/semantic-model.json",
-    "review_sha256": "4e3ccdf59160fc0d3def31650486c3653822b59f18bdbe6890bbda8a4f935bd5"
+    "review_sha256": "e3d5796935ac35f2030ec53f8037ce54b2ba04458db0108f57ee58227bf27df4"
   },
   "group_fingerprints": {
     "sg.holding-attribution": "8b5a5bce38f1d3dde2f19080203949325a9a8270228b0542b284e7ef0816dba1",
@@ -139,8 +144,7 @@
   },
   "job": "positions",
   "questions_for_authority": [
-    "A (original_trade_number, current_trade_number) pair whose only raw.holding_history reports carry cdc_flag D is excluded entirely by this job's latest_change selector, so no logical.holding_change row is ever created for it, and it never enters an account_position or customer_position sum. hole.deletions reserves what a D-flagged report means for a holding change, including whether a row should exist for such a pair (e.g. zeroed out, or carrying its last pre-deletion values) rather than being omitted. This is stated as the current, unchanged behavior, decided nowhere but in this job's SQL; it is not resolved here.",
-    "Is trade_code_meanings.cdc_flag a closed vocabulary (I, U, D, and null for historical rows only), and which reading defines the latest_change candidate set: every non-D report (as hole.deletions describes it) or every I, U, or historical report (as inv.eligible_holding_report_persisted's parallel_assumption describes it)? The two readings coincide only over the anchored vocabulary; today this projection's candidate filter (cdc_flag IS NULL OR cdc_flag IN ('I', 'U')) silently drops a report carrying any other flag value from latest_change, while inv.holding_change_current_trade_known and inv.eligible_holding_report_persisted's converse reasoning treat only D as excluded, so an out-of-vocabulary flag would be dropped by the former and reported by the latter's converse audit. Not resolved here."
+    "A (original_trade_number, current_trade_number) pair whose only raw.holding_history reports carry cdc_flag D is excluded entirely by this job's latest_change selector, so no logical.holding_change row is ever created for it, and it never enters an account_position or customer_position sum. hole.deletions reserves what a D-flagged report means for a holding change, including whether a row should exist for such a pair (e.g. zeroed out, or carrying its last pre-deletion values) rather than being omitted. This is stated as the current, unchanged behavior, decided nowhere but in this job's SQL; it is not resolved here."
   ],
   "schema_version": "l3-manifest/v1",
   "target": "duckdb-sqlmesh"

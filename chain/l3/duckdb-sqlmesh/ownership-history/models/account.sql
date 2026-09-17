@@ -12,7 +12,8 @@ MODEL (
     "inv.account_asof_carries_customer_asof",
     "inv.account_status_matches_producing_source",
     "inv.account_tax_treatment_matches_producing_source",
-    "inv.account_owner_matches_producing_source"
+    "inv.account_owner_matches_producing_source",
+    "inv.unknown_codes_held"
   ),
   depends_on (governed.customer)
 );
