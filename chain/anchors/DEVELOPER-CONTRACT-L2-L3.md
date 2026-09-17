@@ -43,6 +43,26 @@ writes nothing at all, and `chain_l2.py weave` writes only `chain/weave.json`, w
 Neither one writes any job's `semantic-model.json`. If you see another job's model modified while you work, another
 Developer is writing it.
 
+## A review finding is a claim, not an authority
+
+When a reviewer reports a defect, it is telling you what it believes. It is not telling you a fact you must adopt.
+Reviewers read quickly across a lot of material and they do make mistakes of detail -- a transposed pair of ids, a
+misread partition key, a line number off by a file.
+
+So: where a finding asserts something you can check, check it. If the check agrees, fix the defect. If the check
+disagrees, say so in your report, show what you ran and what it returned, and do not write the finding's version
+into the model. Writing a claim you have evidence against is worse than leaving a gap, because a gap is visible as
+a gap while a confident false statement reads as settled -- and the model is what the next Developer and every
+projection compile from.
+
+This has happened. A reviewer called an invariant vacuous because it read a counterexample's constructed pair
+`(372101, 353232)` as the received pair `(353232, 372101)` -- the reverse ordering, and a different partition key.
+The Developer was told the measurement and deferred to the finding anyway, on the grounds that verifying it was
+the reviewer's job rather than its own, which put a falsehood about the fixture into a coverage claim. One query
+would have settled it.
+
+Deferring to a review is not humility when you hold the evidence. Your job is to be right about your own model.
+
 ## Change contract (CESS working form)
 
 - **Prior policy authority:** `chain/l2/<job>/semantic-model.json`, restricted to `selected_element_ids` in `chain/l2/<job>/review.json`. Deferred elements are not projected; rejected elements never.

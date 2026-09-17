@@ -145,7 +145,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time. The no-answer-on-withdrawal behavior the unique-answer invariants now state is fully expressed, but unexercised: this job produces no statement with is_withdrawal true today, because the sources that could carry a withdrawal signal (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) supply no effective-time handoff of their own and stay deferred under the same hole.",
+      "gap": "L1.hole.change-effective-time. The no-answer-on-withdrawal behavior the unique-answer invariants now state is fully expressed, but unexercised: this job produces no statement with is_withdrawal true today, because the sources that could carry a withdrawal signal (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) supply no effective-time handoff of their own and stay deferred under the same hole. Also bounded by L1.hole.deletion-reversal: the reversal-foreclosure reading these invariants state (a report after a withdrawal never resumes the record) is this job's own reading of what the hole's 'until answered' sentence licenses, not an answer to the hole itself, and must be revisited if the business answers otherwise.",
       "group": "sg.history-asof",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -157,7 +157,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment). The owner-standing cascade and the reporting invariant are fully expressed but unexercised for the same reason: no customer statement this job currently produces has is_withdrawal true, so no account has yet been observed losing standing through its owner's withdrawal, or reported for one.",
+      "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment). The owner-standing cascade's producing derivation lives on logical.account.is_current in sg.current-version, not in this group; this group's own members check that compiled behavior rather than compile it. The cascade and the reporting invariant are fully expressed but unexercised for the same reason as sg.current-version's gap: no customer statement this job currently produces has is_withdrawal true, so no account has yet been observed losing standing through its owner's withdrawal, or reported for one. The reporting invariant additionally has no counterexample yet naming a non-zero expected row count for it (see chain/ce/proposed/ce-withdrawn-account-v1.json's own account for why that scenario needs a labeled customer-level constructed source this job does not have); see questions_for_authority.",
       "group": "sg.owner-standing",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -169,7 +169,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred. Listed under hole.change_effective_time.blocks even though it has no deferred member, because that hole's resolution (whether an incremental change file's own status value takes effect at all) bears on whether the deferred c_st_id/ca_st_id handoffs this gap names ever become this group's members.",
+      "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred. raw.customer_cdc.cdc_flag and raw.account_cdc.cdc_flag are likewise coded fields this job now reads (into is_withdrawal) against the anchored {I, U, D} vocabulary, but their handoffs are also deferred and this invariant does not yet check them either; is_withdrawal's own derivation rule states that a cdc_flag outside that vocabulary must hold the record under L1.unknown-codes rather than fall through to false, but nothing in this group projects that hold yet. Listed under hole.change_effective_time.blocks even though it has no deferred member, because that hole's resolution (whether an incremental change file's own value takes effect at all) bears on whether the deferred c_st_id/ca_st_id/cdc_flag handoffs this gap names ever become this group's members.",
       "group": "sg.unknown-codes",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -199,7 +199,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.deletion-reversal bounds this group's row-per-pair claim for a pair with a cdc_flag D report followed by a later non-D report: what such a report means is undecided, so that ordering is excluded from both inv.eligible_holding_report_persisted and inv.holding_change_absent_for_withdrawn_only_pair.",
+      "gap": "L1.hole.deletion-reversal bounds this group's row-per-pair claim for a pair whose earliest anchored report is cdc_flag D and which has a later anchored non-D report: what such a report means is undecided, so that case is excluded from both inv.eligible_holding_report_persisted and inv.holding_change_absent_for_withdrawn_only_pair.",
       "group": "sg.holding-shape",
       "job": "positions",
       "relation": "named-gap"
@@ -211,7 +211,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; What a D-only pair's quantities are is now decided by L1.deletion-withdraws, not a hole: such a pair contributes no row at all, per sg.holding-shape's inv.holding_change_absent_for_withdrawn_only_pair, so it contributes nothing to any sum here either; a pair with a D report followed by a later non-D report remains L1.hole.deletion-reversal's case; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution.",
+      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletion-reversal bounds whether a report received after a pair's earliest anchored cdc_flag D report may be read into this group's sums, per inv.holding_quantity_updates_in_place's freeze; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution.",
       "group": "sg.no-phantom-positions",
       "job": "positions",
       "relation": "named-gap"
