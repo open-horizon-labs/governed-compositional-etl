@@ -8,15 +8,16 @@
     "sg.unknown-codes"
   ],
   "job": "trade-lifecycle",
-  "model_sha256": "040535420f59ec57f2010b28824082dfaec08e18d19219fd4125fe8d2670c7f6",
-  "notes": "see review-19.md and review-20.md",
+  "model_sha256": "4867fa234db29335e2cb1539336ccf984ac9b670691a24d8c68a5abdfdb6ed83",
+  "notes": "see review-1..23. Three rounds on one defect. review-21 found withdrawn bounded by the open hole while the outcome selector was not, so a D-then-U trade came out withdrawn and freshly updated, and because the selector is per-field with nullable outcome attributes a post-withdrawal report with null price, fees, commission and tax erased those values. review-22 found the round-2 fix applied to sg.outcome only, leaving the placement selectors excluding D-flaggedness rather than post-D position, so for a D-first trade the post-withdrawal report was read as the report that creates and attributes the trade, and the row was claimed with an empty candidate set under non-nullable status and quantity. review-23 passes the round-3 fix and explains why it holds structurally rather than by luck: the existential and the selectors' candidate sets are written against the same report set, so the qualifying report is always a member of the candidate set, which makes the empty-candidate-set contradiction impossible rather than merely absent, and the excluded report is out of the set entirely so per-field nullability has nothing to launder. It verified that a trade withdrawn after earlier I/U reports keeps all three of placement, attribution and outcome, and that ce-report-after-withdrawal-v1's deterministic assertion is satisfied. Its partition analysis found the three unclaimed invariants exhaustive but not disjoint, with two orderings claimed twice; the all-D overlap is now disjoint by construction, and the held-first overlap is left as an honest outcome-level coincidence rather than forced apart. M1 is cleared across 38 sites: the D side is now qualified 'anchored, fully-coded' as the I/U side already was, so a held D row can no longer set the bound and freeze a trade the model says was never withdrawn. The cross-job agreement with positions was verified by reading positions/selected-model.json directly rather than from the Developer's claim, and is agreement about claims, which weave structurally cannot see. ONE RESIDUAL, recorded rather than fixed: inv.trade_placed_at_matches_earliest_report's review_trigger still says 'after that trade's earliest anchored D report' without the fully-coded qualifier. Its sibling clause in the same sentence uses the bare form legitimately, as a deliberately broader violation condition; this one is a bound reference and should be qualified. It is a review trigger, read by a reviewer and compiled by nothing, and it cannot fail a projection.",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 20",
+  "reviewer": "capable-model verification review 23, plus coordinator verification of the four prescribed fixes",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
     "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
     "handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from",
+    "handoff.raw.trade_cdc.cdc_flag->logical.trade.withdrawn",
     "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number",
     "handoff.raw.trade_cdc.t_chrg->logical.trade.fees",
     "handoff.raw.trade_cdc.t_comm->logical.trade.commission",
@@ -29,6 +30,7 @@
     "handoff.raw.trade_cdc.t_tt_id->logical.trade.order_type",
     "handoff.raw.trade_history.th_dts->logical.trade.placed_at",
     "inv.every_received_trade_persisted",
+    "inv.trade_earliest_report_withdrawn_unclaimed",
     "inv.trade_first_seen_late_defined_or_held",
     "inv.trade_first_seen_late_matches_status_order",
     "inv.trade_held_first_report_unclaimed",
@@ -41,6 +43,8 @@
     "inv.trade_owning_account_frozen",
     "inv.trade_placed_at_matches_earliest_report",
     "inv.trade_placement_reference_frozen",
+    "inv.trade_withdrawn_matches_deletion_report",
+    "inv.trade_withdrawn_only_unclaimed",
     "inv.unknown_codes_held",
     "logical.trade",
     "logical.trade.commission",
@@ -57,6 +61,7 @@
     "logical.trade.status",
     "logical.trade.tax",
     "logical.trade.trade_number",
+    "logical.trade.withdrawn",
     "type.trade_commission",
     "type.trade_executed_price",
     "type.trade_fees",
@@ -70,7 +75,8 @@
     "type.trade_placed_at",
     "type.trade_quantity",
     "type.trade_status",
-    "type.trade_tax"
+    "type.trade_tax",
+    "type.trade_withdrawn"
   ],
   "verdict": "pass"
 }
