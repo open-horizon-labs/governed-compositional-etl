@@ -217,7 +217,7 @@
           ]
         },
         "sg.owner-standing": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation under L1.omitted-facts-stand, which holds that a constructed change not mentioning the owner leaves it as it last stood. L1.identity and L1.history make 'the account's immediately preceding statement' well defined, and L1.constructed-scenarios together with inv.constructed_account_change_refers_to_known_account guarantee that a preceding statement exists to carry from. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies. The inv.account_owner_matches_producing_source invariant additionally checks that owning_customer_number equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
           "derived_from": [
             "L1.as-of",
@@ -230,7 +230,6 @@
           ],
           "fingerprint": "7718f313b24aded61e77ebeffaf7ec1b736e434f25b43a0f47ee1fec9eab5364",
           "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment) and L1.hole.deletions (what a deletion marker in that file means for owner-standing is unresolved).",
-          "jev": null,
           "justifications": {
             "handoff.raw.account_cdc.c_id->logical.account.owning_customer_number": {
               "necessity": "L1.owner-standing requires the owning customer be carried on the account's statement; this incremental file's c_id supplies that value even while the statement's own effective moment is unresolved.",
@@ -264,11 +263,10 @@
             "inv.account_owner_matches_producing_source",
             "logical.account.owning_customer_number",
             "type.account_owner_reference"
-          ],
-          "touched_clauses": []
+          ]
         },
         "sg.statement-content": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes \u2014 the one account source with no pending effective-time hole of its own \u2014 status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred. Four value-correctness invariants (inv.customer_status_matches_producing_source, inv.customer_tier_matches_producing_source, inv.account_status_matches_producing_source, inv.account_tax_treatment_matches_producing_source) additionally check that each populated value equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
           "derived_from": [
             "L1.constructed-scenarios",
@@ -279,7 +277,6 @@
           ],
           "fingerprint": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95",
           "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved.",
-          "jev": null,
           "justifications": {
             "handoff.ce.account_changes.status_id->logical.account.status": {
               "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this labeled constructed source's own status_id field supplies that fact directly for scenarios built to test these rules, per L1.constructed-scenarios.",
@@ -403,15 +400,11 @@
             "type.account_tax_treatment",
             "type.customer_standing_status",
             "type.customer_tier"
-          ],
-          "touched_clauses": []
+          ]
         }
       },
-      "l3_reprojection_required": true,
-      "stale": [
-        "sg.owner-standing",
-        "sg.statement-content"
-      ],
+      "l3_reprojection_required": false,
+      "stale": [],
       "status": "ok"
     },
     "positions": {
@@ -435,7 +428,7 @@
           ]
         },
         "sg.holding-attribution": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward, naming both which account and, 'through it the customer, as they stood,' which customer statement; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution; sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for holding-change reports, anchoring first_encounter_only's ordering directly for this entity rather than by extension from trade reports. inv.holding_change_ownership_frozen restates that all four values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own four attributes resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account or customer statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). Separately, L1.hole.owner-change-reversions-account bounds which account statement -- and hence which customer statement -- a trade's placed_at pins in the first place: if a customer-only change also re-versions the account, a trade placed shortly after such a change could pin a different account (and customer) statement than it does today, which would change what this holding change copies without this job deciding it. A holding change whose current trade's ownership pin does not resolve, for any of these reasons, has no ownership reference for this job to copy.",
           "derived_from": [
             "L1.attribution-at-placement",
@@ -444,7 +437,6 @@
           ],
           "fingerprint": "547e748650f9953e086f1ca5ecb5c5731fec4b16c604b71201e5bb0c31bbe046",
           "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; L1.hole.owner-change-reversions-account bounds which statement is pinned in the first place; see coverage_claim.",
-          "jev": null,
           "justifications": {
             "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from": {
               "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership as recorded on the causing trade, which names a specific account statement, not merely an account; trade-lifecycle's logical.trade.owning_account_effective_from is that statement's effective_from, already frozen at the current trade's own first encounter per L1.attribution-at-placement. Copying it directly completes the (owning_account_number, owning_account_effective_from) pair without a second, forbidden resolution against logical.account.",
@@ -513,8 +505,7 @@
             "type.holding_owning_account_reference",
             "type.holding_owning_customer_effective_from",
             "type.holding_owning_customer_reference"
-          ],
-          "touched_clauses": []
+          ]
         },
         "sg.holding-shape": {
           "cache": "hit",
@@ -562,7 +553,7 @@
           ]
         },
         "sg.no-phantom-positions": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total.",
           "derived_from": [
             "L1.attribution-at-placement",
@@ -572,7 +563,6 @@
           ],
           "fingerprint": "2d88f8c96175432b0eebedcbf7de43179bba82b9cc1ac1255ce84c374556f132",
           "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution.",
-          "jev": null,
           "justifications": {
             "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity": {
               "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of an account; quantity_change is each holding change's own net contribution, and net_quantity is that sum across every holding_change sharing this row's (account_number, account_effective_from) key.",
@@ -706,15 +696,11 @@
             "type.customer_position_key",
             "type.holding_quantity",
             "type.holding_quantity_change"
-          ],
-          "touched_clauses": []
+          ]
         }
       },
-      "l3_reprojection_required": true,
-      "stale": [
-        "sg.holding-attribution",
-        "sg.no-phantom-positions"
-      ],
+      "l3_reprojection_required": false,
+      "stale": [],
       "status": "ok"
     },
     "trade-lifecycle": {
