@@ -147,12 +147,52 @@ def screen(job: str, contract: Path | None = None) -> dict:
     return out
 
 
+def screen_assertions(job: str, target: str = "duckdb-native") -> dict:
+    """The other half of the cheap read, at the other end of the chain. A counterexample's deterministic_assertion is
+    prose about what a run does, and prose does not recompile: when the chain gains a new kind of audit result, an
+    assertion written before it stops describing the run while still reading as true. Three went stale this way in one
+    loop and were caught by eye. Every CE document is simulated once and its assertion read against the report.
+
+    Native only. The assertions claim the two engines agree, and `compare` is what actually checks that."""
+    L3 = _mod("chain_l3", "scripts/chain_l3.py")
+    findings = []
+    for ce_path in sorted((ROOT / "counterexamples/proposed").glob("*.json")) + sorted((ROOT / "counterexamples/archive").glob("ce-*.json")):
+        ce = json.loads(ce_path.read_text())
+        assertion = ce.get("deterministic_assertion")
+        if not assertion:
+            continue
+        # A CE document names no job, but its assertion names one. Screening a positions assertion against a
+        # trade-lifecycle run contradicts it for the wrong reason, so let the text say which job it is about.
+        # Mechanical on purpose: which job a sentence names is a substring question, not a reading one.
+        others = [j for j in L3.JOB_ORDER if j != job and j in assertion]
+        if others and job not in assertion:
+            findings.append({"counterexample": ce_path.name, "not_screened": f"assertion is about {', '.join(others)}"})
+            continue
+        try:
+            r = L3.simulate(target, job, ce_path.relative_to(ROOT))
+        except Exception as e:  # a CE that does not belong to this job, or a projection mid-cycle
+            findings.append({"counterexample": ce_path.name, "not_screened": str(e)[:200]})
+            continue
+        report = {"failures": {k: v.get("violations") for k, v in r["failures"].items()},
+                  "reported": {k: v.get("reported") for k, v in r["fired"].items() if "reported" in v}}
+        entry = {"counterexample": ce_path.name, "report": report}
+        j = JEV.assertion_still_describes_the_report(assertion, report)
+        if j.get("verdict") == "ran":
+            entry.update(p_contradicts=round(j["p_contradicts"], 3), confidence=j["confidence_band"], stale=j["flag"])
+        findings.append(entry)
+    findings.sort(key=lambda f: -f.get("p_contradicts", -1))
+    return {"job": job, "target": target, "counterexamples": len(findings),
+            "stale": [f["counterexample"] for f in findings if f.get("stale")], "findings": findings}
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("job")
     p.add_argument("--contract", type=Path)
+    p.add_argument("--assertions", metavar="TARGET", nargs="?", const="duckdb-native",
+                   help="instead of the L2 diff, read every counterexample's deterministic_assertion against what a run of it actually reports")
     a = p.parse_args()
-    print(json.dumps(screen(a.job, a.contract), indent=2))
+    print(json.dumps(screen_assertions(a.job, a.assertions) if a.assertions else screen(a.job, a.contract), indent=2))
     return 0
 
 

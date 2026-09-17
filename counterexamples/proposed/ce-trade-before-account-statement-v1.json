@@ -5,7 +5,7 @@
   ],
   "approved_or_rejected_by": "pending: business authority for the disposition; the invariants need only the L2 review",
   "constructed_by_hat": "sketch-reviewer",
-  "deterministic_assertion": "After trade-lifecycle cycle 8 and the L3 audits it demands, simulate on either engine fires exactly one audit naming trade 900001, and the two engines' governed tables otherwise agree.",
+  "deterministic_assertion": "After trade-lifecycle cycle 8 and the L3 audits it demands, simulate on either engine fails exactly one must-hold audit, naming trade 900001, alongside the fixture's standing report under inv.trade_on_closed_account_reported, and the two engines' governed tables otherwise agree.",
   "expected": {
     "after_cycle_8": "Exactly one violation on each engine naming trade 900001: inv.trade_ownership_pin_present on native, inv.every_received_trade_persisted on SQLMesh.",
     "before_cycle_8": "Silent on both engines: native persists trade 900001 with null owning_account_effective_from, owning_customer_number, owning_customer_effective_from; SQLMesh has no row for 900001; no audit fires on either.",

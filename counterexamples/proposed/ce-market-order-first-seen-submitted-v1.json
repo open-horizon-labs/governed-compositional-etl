@@ -5,7 +5,7 @@
   ],
   "approved_or_rejected_by": "clause approved by business authority 2026-09-17; projection pending",
   "constructed_by_hat": "sketch-reviewer",
-  "deterministic_assertion": "After trade-lifecycle cycle 11 and L3 cycle 5, run on either engine yields first_seen_late false for 900002 and true for 900003 with every audit at zero.",
+  "deterministic_assertion": "After trade-lifecycle cycle 11 and L3 cycle 5, run on either engine yields first_seen_late false for 900002 and true for 900003 with every must-hold audit at zero and only inv.trade_on_closed_account_reported returning rows, being the fixture's standing two.",
   "expected": {
     "after_cycle_11": "900002 first_seen_late false, 900003 true, on both engines; all audits at zero; the two engines agree.",
     "before_cycle_11": "both trades marked first_seen_late true; no audit fires (the projection is consistent with the old rule)."

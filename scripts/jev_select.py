@@ -216,6 +216,31 @@ def anchor_is_shape_only(entry: dict) -> dict:
     return {**result, "p_states_policy": p_policy, "confidence_band": _band(p_policy), "flag": p_policy >= 0.5 or _band(p_policy) != "high"}
 
 
+def assertion_still_describes_the_report(assertion: str, report: dict) -> dict:
+    """A counterexample's deterministic_assertion is a claim in prose about what a run does. When the chain gains a new
+    kind of audit result, assertions written before it silently stop describing the run -- they still read as true.
+    This loop's reporting invariant made three of them stale and they were found by eye, which does not scale.
+
+    This is a reading question with the discriminating fact in the state: the report says which audits returned rows and
+    what those rows mean, and the selector only has to say whether the prose matches it. It does not have to derive what
+    the projection ought to do, which is where the withdrawn hole selector failed.
+    """
+    state = {"assertion": assertion,
+             "run_report": {"must_hold_audits_that_failed": report.get("failures", {}),
+                            "reported_audits_that_returned_rows": report.get("reported", {}),
+                            "note": "A reported audit hands the business a finding. It returns rows without the run failing."}}
+    try:
+        from typesafe_sdk import Noul
+        q = {"contradicts_report": Noul(instructions="Does the assertion make a claim about which audits return rows that the run_report contradicts? Answer yes when the assertion says every audit is at zero, or names an exact number or set of firing audits, and the run_report shows other audits returning rows as well. Answer no when the assertion's account of the audits is consistent with the run_report, including when it separately acknowledges the reported audits.")}
+    except ImportError:
+        return {"verdict": "not-run"}
+    result = _call("assertion_still_describes_the_report", state, q)
+    if result["verdict"] != "ran":
+        return result
+    p = result["answers"]["contradicts_report"]["noul"]
+    return {**result, "p_contradicts": p, "confidence_band": _band(p), "flag": p >= 0.5}
+
+
 def _band(p: float) -> str:
     return "high" if abs(p - 0.5) >= 0.3 else ("low" if abs(p - 0.5) < 0.15 else "medium")
 

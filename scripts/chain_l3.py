@@ -215,8 +215,17 @@ def check(target: str, job: str) -> dict:
     unresolved = [gid for gid in moved if gid not in kept and gid not in awaiting]
     if awaiting:
         problems.append(f"groups {awaiting} moved under an L1 change that Jev routed to review; adjudicate (keep or invalidate) before this projection can be accepted or re-projected")
-    if unresolved:
+    # A moved fingerprint has two causes the gate was reading as one. If the projection's content is still exactly what
+    # the last acceptance covered, then nothing has been recompiled for the move and the artifacts really are stale. If
+    # the content has changed since, the Developer has already recompiled and what is out of date is the manifest's
+    # stamp, which only a reviewer may rewrite. That second case is the ordinary mid-cycle state, so it is a question
+    # for the reviewer, not a refusal: reporting it as a problem told a Developer to redo work it had just done.
+    accepted_digest = json.loads((base / "review.json").read_text()).get("projection_sha256") if (base / "review.json").exists() else None
+    unchanged_since_acceptance = accepted_digest is not None and accepted_digest == projection_digest(base)
+    if unresolved and unchanged_since_acceptance:
         problems.append(f"groups {unresolved} moved since this projection was stamped; re-project the stale artifacts")
+    elif unresolved:
+        questions.append(f"groups {unresolved} moved, and this projection has been recompiled since the acceptance that stamped them: a reviewer judges whether the new SQL answers the move and then stamps the new fingerprints, or rejects it if it does not")
     elif not stamped and not sha_matches:
         problems.append("manifest review_sha256 does not match the selected L2 model and no group fingerprints are stamped; re-project")
     elif kept:
@@ -319,6 +328,56 @@ def check(target: str, job: str) -> dict:
             "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", []))}
 
 
+AUDIT_RESULT = re.compile(r"([A-Za-z0-9_.]+) on model ([A-Za-z0-9_.]+) (?:(\u2705 PASS)|\u274c FAIL \[(\d+)\])")
+
+
+def reporting_invariants_for(job: str) -> set[str]:
+    """The invariants this job's selected L2 model marks reports: true. Their rows are a finding for the business,
+    not a projection defect, so they neither refuse a run nor count as protection evidence."""
+    model = json.loads((L2_DIR / job / "selected-model.json").read_text())
+    return {i["id"] for i in model["invariants"] if i.get("reports")}
+
+
+def record_audit(audits: dict, invariant: str, count, reporting: set[str], **extra) -> None:
+    """Write one audit's result under the key that says what its count means: a reported invariant's rows are
+    findings, every other invariant's are violations. Consumers read the key, so the distinction cannot be lost."""
+    audits[invariant] = {("reported" if invariant in reporting else "violations"): count, **extra}
+
+
+def audit_rows(info: dict):
+    """How many rows one audit returned, whatever those rows mean. None when the count is unknown."""
+    return info["reported"] if "reported" in info else info.get("violations")
+
+
+def must_hold_failures(audits: dict) -> dict:
+    """Audits that were supposed to hold and did not. A reported audit is never a failure. An unknown count is
+    not a pass, so it counts against the run."""
+    return {inv: info for inv, info in audits.items() if "violations" in info and info["violations"] != 0}
+
+
+def audits_with_rows(audits: dict) -> dict:
+    """Every audit that returned rows, violation or finding alike. A counterexample that expects a report is
+    answered by a reported audit, so both kinds count as the audit having fired."""
+    return {inv: info for inv, info in audits.items() if audit_rows(info) != 0}
+
+
+def findings(audits: dict) -> dict:
+    """What the reported invariants have to say to the business: their sample rows where the harness captured
+    them, otherwise how many rows they named."""
+    return {inv: (info.get("sample") or info["reported"]) for inv, info in audits.items()
+            if "reported" in info and info["reported"]}
+
+
+def sqlmesh_audit_counts(text: str) -> dict[str, int]:
+    """Per-audit outcomes read off `sqlmesh audit` output. Rich wraps its lines at the terminal width, so collapse
+    whitespace before matching or a long invariant name loses its verdict. One audit name can appear on several
+    models; a failure on any of them is a failure for that invariant."""
+    counts: dict[str, int] = {}
+    for name, _model, passed, failed in AUDIT_RESULT.findall(" ".join(text.split())):
+        counts[name] = counts.get(name, 0) + (0 if passed else int(failed))
+    return counts
+
+
 def execute(con, base: Path, manifest: dict) -> None:
     for art in manifest["artifacts"]:
         con.execute((base / art["file"]).read_text())
@@ -354,28 +413,37 @@ def run_sqlmesh(target: str, job: str, database: Path, fixture_report: dict) -> 
     manifest = json.loads((L3_DIR / target / job / "manifest.json").read_text())
     # SQLMesh audits block promotion: a failing audit aborts the plan. That is a projection result, not a harness error,
     # so read the failures off the plan output and report them the way a native run reports violating rows.
-    blocking = {name: int(n) for name, n in re.findall(r"'([^']+)' audit error: (\d+) rows? failed", result.stdout)}
-    if blocking:
+    reporting = reporting_invariants_for(job)
+    # A blocking audit aborts the plan; a non-blocking one only warns and the plan applies. The two messages are
+    # worded identically, so the plan's own outcome -- not the message -- says which happened.
+    messages = {name: int(n) for name, n in re.findall(r"'([^']+)' audit error: (\d+) rows? failed", " ".join(result.stdout.split()))}
+    refused = bool(result.returncode) or "Failed models" in result.stdout
+    if refused and not messages:
+        raise L3Error(f"SQLMesh plan failed:\n{result.stdout[-4000:]}\n{result.stderr[-2000:]}")
+    if refused:
         for a in manifest["audits"]:
-            fixture_report["audits"][a["invariant"]] = {"violations": blocking.get(a["invariant"], 0), "via": "sqlmesh plan (blocking audit)", "sample": []}
-        fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": False, "blocking_failures": blocking}
+            record_audit(fixture_report["audits"], a["invariant"], messages.get(a["invariant"], 0), reporting, via="sqlmesh plan (blocking audit)", sample=[])
+        fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": False, "blocking_failures": messages}
         fixture_report["ok"] = False
         return fixture_report
-    if result.returncode or "Failed models" in result.stdout:
-        raise L3Error(f"SQLMesh plan failed:\n{result.stdout[-4000:]}\n{result.stderr[-2000:]}")
     audit = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "audit"], cwd=ROOT, text=True, capture_output=True)
-    fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": audit.returncode == 0 and "0 audit errors" in audit.stdout, "audit_tail": (audit.stdout + audit.stderr)[-1500:]}
+    counts = sqlmesh_audit_counts(audit.stdout + audit.stderr)
+    # SQLMesh's own verdict counts a non-blocking failure as an audit error. Keep it for the record, but decide
+    # this run on the per-audit counts, which know which invariants only report.
+    fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": audit.returncode == 0 and "0 audit errors" in audit.stdout,
+                                 "warned": {n: c for n, c in counts.items() if c and n in reporting}, "audit_tail": (audit.stdout + audit.stderr)[-1500:]}
     con = duckdb.connect(str(database), read_only=True)
     try:
         for a in manifest["audits"]:
-            fixture_report["audits"][a["invariant"]] = {"violations": 0 if fixture_report["sqlmesh"]["audit_ok"] else None, "via": "sqlmesh audit"}
+            record_audit(fixture_report["audits"], a["invariant"], counts.get(a["invariant"]), reporting, via="sqlmesh audit")
         for art in manifest["artifacts"]:
             table = "governed." + art["entity"].split(".")[-1]
             cur = con.execute(f"SELECT * FROM {table} ORDER BY 1, 2 LIMIT 12")
             fixture_report["samples"][table] = {"columns": [d[0] for d in cur.description], "rows": [list(map(str, r)) for r in cur.fetchall()], "count": con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]}
     finally:
         con.close()
-    fixture_report["ok"] = fixture_report["sqlmesh"]["audit_ok"]
+    fixture_report["ok"] = not must_hold_failures(fixture_report["audits"])
+    fixture_report["findings_for_the_business"] = findings(fixture_report["audits"])
     return fixture_report
 
 
@@ -405,7 +473,7 @@ def run_two_phase(target: str, job: str, database: Path | None = None, watch: st
         con.close()
     LOADER.reload_sources(database, fixture, "rollover", changes)
     report = {"target": target, "job": job, "phase": "two-phase", "upstream": [], "audits": {}, "samples": {}}
-    reporting_invariants = {i["id"] for i in json.loads((L2_DIR / job / "selected-model.json").read_text())["invariants"] if i.get("reports")}
+    reporting_invariants = reporting_invariants_for(job)
     if is_sqlmesh(profile):
         second = run_sqlmesh_replan(target, job, database, report)
     else:
@@ -418,10 +486,11 @@ def run_two_phase(target: str, job: str, database: Path | None = None, watch: st
             execute(con, base, manifest)
             for a in manifest["audits"]:
                 rows = con.execute((base / a["file"]).read_text()).fetchall()
-                report["audits"][a["invariant"]] = {("reported" if a["invariant"] in reporting_invariants else "violations"): len(rows)}
+                record_audit(report["audits"], a["invariant"], len(rows), reporting_invariants, sample=[list(map(str, r)) for r in rows[:3]])
         finally:
             con.close()
-        report["ok"] = all(v.get("violations", 0) == 0 for v in report["audits"].values())
+        report["ok"] = not must_hold_failures(report["audits"])
+        report["findings_for_the_business"] = findings(report["audits"])
         second = report
     con = duckdb.connect(str(database), read_only=True)
     try:
@@ -448,8 +517,13 @@ def run_sqlmesh_replan(target: str, job: str, database: Path, report: dict) -> d
     if result.returncode or "Failed models" in result.stdout:
         raise L3Error(f"SQLMesh second-phase plan failed:\n{result.stdout[-3000:]}\n{result.stderr[-1500:]}")
     audit = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "audit"], cwd=ROOT, text=True, capture_output=True)
-    report["ok"] = audit.returncode == 0 and "0 audit errors" in audit.stdout
-    report["sqlmesh"] = {"audit_tail": (audit.stdout + audit.stderr)[-800:]}
+    reporting = reporting_invariants_for(job)
+    counts = sqlmesh_audit_counts(audit.stdout + audit.stderr)
+    for a in json.loads((L3_DIR / target / job / "manifest.json").read_text())["audits"]:
+        record_audit(report["audits"], a["invariant"], counts.get(a["invariant"]), reporting, via="sqlmesh audit")
+    report["ok"] = not must_hold_failures(report["audits"])
+    report["findings_for_the_business"] = findings(report["audits"])
+    report["sqlmesh"] = {"audit_ok": audit.returncode == 0 and "0 audit errors" in audit.stdout, "audit_tail": (audit.stdout + audit.stderr)[-800:]}
     return report
 
 
@@ -494,18 +568,18 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
         base = L3_DIR / target / job
         manifest = json.loads((base / "manifest.json").read_text())
         execute(con, base, manifest)
-        reporting = {i["id"] for i in json.loads((L2_DIR / job / "selected-model.json").read_text())["invariants"] if i.get("reports")}
+        reporting = reporting_invariants_for(job)
         for a in manifest["audits"]:
             rows = con.execute((base / a["file"]).read_text()).fetchall()
-            report["audits"][a["invariant"]] = {("reported" if a["invariant"] in reporting else "violations"): len(rows), "sample": [list(map(str, r)) for r in rows[:3]]}
+            record_audit(report["audits"], a["invariant"], len(rows), reporting, sample=[list(map(str, r)) for r in rows[:3]])
         for art in manifest["artifacts"]:
             table = "governed." + art["entity"].split(".")[-1]
             cur = con.execute(f"SELECT * FROM {table} ORDER BY 1, 2 LIMIT 12")
             report["samples"][table] = {"columns": [d[0] for d in cur.description], "rows": [list(map(str, r)) for r in cur.fetchall()], "count": con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]}
     finally:
         con.close()
-    report["ok"] = all(v.get("violations", 0) == 0 for v in report["audits"].values())
-    report["findings_for_the_business"] = {inv: v["sample"] for inv, v in report["audits"].items() if v.get("reported")}
+    report["ok"] = not must_hold_failures(report["audits"])
+    report["findings_for_the_business"] = findings(report["audits"])
     return report
 
 
@@ -517,9 +591,12 @@ def simulate(target: str, job: str, ce_path: Path) -> dict:
     if database.exists():
         database.unlink()
     report = run(target, job, "rollover", database=database, ce=ce)
-    fired = {inv: info for inv, info in report["audits"].items() if info["violations"]}
+    # A counterexample is answered when an audit returns rows. For a must-hold invariant those rows are a
+    # violation the CE provoked; for a reported one they are the finding the CE expects. Either way it fired.
+    fired = audits_with_rows(report["audits"])
     return {"target": target, "job": job, "counterexample": ce.get("id", Path(ce_path).stem), "status": ce.get("status"), "ok": report["ok"],
-            "fired": fired, "silent": not fired, "deterministic_assertion": ce.get("deterministic_assertion"), "samples": {t: s["count"] for t, s in report.get("samples", {}).items()},
+            "fired": fired, "silent": not fired, "failures": must_hold_failures(report["audits"]),
+            "findings_for_the_business": report.get("findings_for_the_business", {}), "deterministic_assertion": ce.get("deterministic_assertion"), "samples": {t: s["count"] for t, s in report.get("samples", {}).items()},
             "note": "SQLMesh audits block promotion, so a fired audit here means the plan was refused and no table was written" if report.get("sqlmesh", {}).get("blocking_failures") else None}
 
 
@@ -530,7 +607,7 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
     perturb (a different value of the same type); for every other non-nullable, non-identity attribute, null.
     Reports mutations no audit catches as unprotected."""
     import shutil
-    reporting_invariants = {i["id"] for i in json.loads((L2_DIR / job / "selected-model.json").read_text())["invariants"] if i.get("reports")}  # a report already fires; it proves nothing about protection
+    reporting_invariants = reporting_invariants_for(job)  # a report already fires; it proves nothing about protection
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
     sqlmesh_target = is_sqlmesh(profile)
     model, review = load_job(job)

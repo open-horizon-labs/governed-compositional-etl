@@ -41,7 +41,28 @@
       "verdict": "usable once the settled question is in the state; useless without it. Added after a capable reviewer found two review triggers still firing on a question the business had answered, and observed that a screen comparing a changed field against the unchanged fields of the same element would have caught it.",
       "false_positive_mode": "On first use it flagged the very invariants written to implement the answer: an element about the settled subject scores high on any phrasing, and a reporting invariant literally says 'reported for review' while the settled answer contains 'review'. Narrowed to what the reviewer actually described: fields that did NOT change, on elements that did. The defect is the field left behind, not the field written fresh.",
       "live_result": "One flag on its first real cycle, and it was a false positive: inv.trade_placement_reference_frozen's review_trigger is about a later report carrying an earlier event time and never mentions closure; it was flagged because its element had gained the clause. Demoted from a finding to a labelled hint. It scores on subject overlap, which correlates with an element being related to the answer rather than stale against it."
+    },
+    "assertion_still_describes_the_report": {
+      "separation": 0.42,
+      "stale_assertions": {
+        "held-CE": 0.87,
+        "market-order": 0.89,
+        "trade-before-statement": 0.81,
+        "min": 0.81
+      },
+      "fresh_assertions": {
+        "held-CE": 0.21,
+        "market-order": 0.16,
+        "trade-before-statement": 0.39,
+        "closed-account (never stale)": 0.16,
+        "positions control (no reporting invariant)": 0.2,
+        "max": 0.39
+      },
+      "agreement": "8/8",
+      "design": "Paired: each CE's assertion text before and after this loop's correction, scored against the same run report. The three positives are the authentic texts, written before the reporting invariant existed, so the positive side is blind. The negatives are the coordinator's corrections, so the negative side is not.",
+      "weakest_margin": "trade-before-statement's corrected text scores 0.39 (band low) -- the wordiest correction is the thinnest negative. Treat a low band as unscreened rather than as fresh.",
+      "verdict": "shipped as a check, not a hint: the best separation of any reading selector here, and the question is pure reading with the discriminating fact (which audits returned rows, and what the rows mean) placed in the state. Runs as `chain_screen.py <job> --assertions`. Which job an assertion is about is filtered mechanically by substring, not asked of Jev; asking it of every job produced a confident false positive (0.84) on a positions assertion screened against a trade-lifecycle run."
     }
   },
-  "rule_learned": "Ask the selector what a text says. Ask the counterexample what the code does. Ask a capable model what a rule implies. And put the discriminating fact in the state: every selector that failed here failed because it had to infer which thing to compare against."
+  "rule_learned": "Ask the selector what a text says. Ask the counterexample what the code does. Ask a capable model what a rule implies. And put the discriminating fact in the state: every selector that failed here failed because it had to infer which thing to compare against. And a selector's false positives are usually the harness asking about the wrong subject, not the selector misreading: filter the subject mechanically before spending a question on it."
 }

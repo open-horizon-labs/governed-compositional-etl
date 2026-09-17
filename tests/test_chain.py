@@ -233,6 +233,13 @@ class L3ProvenanceUnderL1Tests(unittest.TestCase):
             current = {gid: i["fingerprint"] for gid, i in L2.fingerprints(job, selected=True).items()}
             manifest["group_fingerprints"] = dict(current)
             mpath.write_text(json.dumps(manifest))
+            # Complete the accepted state: the review must cover the content on disk. Without this the copy looks
+            # recompiled-since-acceptance, and a moved group there is a pending stamp rather than a stale artifact --
+            # a real distinction the gate now draws, and one this scenario has to put on the accepted side.
+            rpath = l3_dir / target / job / "review.json"
+            record = json.loads(rpath.read_text())
+            record["projection_sha256"] = L3.projection_digest(l3_dir / target / job)
+            rpath.write_text(json.dumps(record))
             saved = L3.L3_DIR
             L3.L3_DIR = l3_dir
             try:
@@ -245,6 +252,39 @@ class L3ProvenanceUnderL1Tests(unittest.TestCase):
                 L3.L3_DIR = saved
         self.assertTrue(any(moved in p and "moved" in p for p in problems), problems)
 
+    def test_a_move_on_a_projection_recompiled_since_its_acceptance_is_a_question_not_a_refusal(self):
+        """The complement, and the friction that prompted it: both trade-lifecycle projections were recompiled for a new
+        clause, ran clean, and the gate still told their Developers to re-project stale artifacts -- because a moved
+        fingerprint and an unstamped one are the same comparison. They are told apart by whether the projection's
+        content is still the content the last acceptance covered. Only then has nothing been done about the move."""
+        import shutil, tempfile
+        target, job = "duckdb-native", "trade-lifecycle"
+        if not (ROOT / "chain/l3" / target / job / "manifest.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3_dir = Path(tmp) / "l3"
+            shutil.copytree(ROOT / "chain/l3" / target / job, l3_dir / target / job)
+            base = l3_dir / target / job
+            manifest = json.loads((base / "manifest.json").read_text())
+            review = json.loads((ROOT / "chain/l2" / job / "review.json").read_text())
+            manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]
+            current = {gid: i["fingerprint"] for gid, i in L2.fingerprints(job, selected=True).items()}
+            moved = sorted(current)[0]
+            manifest["group_fingerprints"] = dict(current, **{moved: "f" * 64})
+            (base / "manifest.json").write_text(json.dumps(manifest))
+            record = json.loads((base / "review.json").read_text())
+            record["projection_sha256"] = "0" * 64  # an acceptance covering content that is no longer on disk
+            (base / "review.json").write_text(json.dumps(record))
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3_dir
+            try:
+                r = L3.check(target, job)
+            finally:
+                L3.L3_DIR = saved
+        self.assertFalse([p for p in r["problems"] if "moved" in p], r["problems"])
+        self.assertTrue(any(moved in q and "moved" in q for q in r["questions"]), r["questions"])
+        self.assertFalse(r["acceptance"]["accepted"], r["acceptance"])  # still not accepted: it awaits the reviewer
+
 
 class StampIsAcceptanceTests(unittest.TestCase):
     def test_a_projection_edited_after_its_review_cannot_be_stamped(self):
@@ -255,6 +295,10 @@ class StampIsAcceptanceTests(unittest.TestCase):
         base_src = ROOT / "chain/l3" / target / job
         if not (base_src / "review.json").exists():
             self.skipTest("not projected")
+        if not L3.acceptance(target, job)["accepted"]:
+            # The first stamp below is meant to succeed, which needs a projection its review still covers. A projection
+            # recompiled since its last review is not wrong, it is mid-cycle, and the guard under test is what says so.
+            self.skipTest("projection is not the one its review accepted: mid-cycle")
         with tempfile.TemporaryDirectory() as tmp:
             l3_dir = Path(tmp) / "l3"
             shutil.copytree(base_src, l3_dir / target / job)
@@ -439,6 +483,60 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class ReportedInvariantAggregationTests(unittest.TestCase):
+    """An invariant marked reports: true hands the business a finding instead of holding a line. That distinction has
+    to survive every path that aggregates audit results, on both engines. It did not: simulate indexed the violation
+    count unconditionally and crashed, and the SQLMesh path counted a warned audit as a failed run."""
+
+    AUDITS = {
+        "inv.holds": {"violations": 0, "sample": []},
+        "inv.broke": {"violations": 3, "sample": [["x"]]},
+        "inv.reports": {"reported": 2, "sample": [["353232"], ["372101"]]},
+        "inv.quiet_report": {"reported": 0, "sample": []},
+        "inv.unknown": {"violations": None},
+    }
+
+    def test_a_report_is_never_a_failure_but_is_always_a_finding(self):
+        self.assertEqual(set(L3.must_hold_failures(self.AUDITS)), {"inv.broke", "inv.unknown"})
+        self.assertEqual(set(L3.findings(self.AUDITS)), {"inv.reports"})
+
+    def test_an_audit_that_returned_rows_fired_whatever_the_rows_mean(self):
+        """A counterexample expecting a report is answered by a reported audit, so it must not read as silent."""
+        self.assertEqual(set(L3.audits_with_rows(self.AUDITS)), {"inv.broke", "inv.reports", "inv.unknown"})
+        self.assertEqual(L3.audits_with_rows({"inv.reports": {"reported": 2}}), {"inv.reports": {"reported": 2}})
+
+    def test_sqlmesh_per_audit_verdicts_survive_line_wrapping_and_repeated_names(self):
+        """SQLMesh prints through Rich, which wraps at the terminal width, so a long invariant name can be separated
+        from its verdict; and one audit name may run on several models, where a failure anywhere is a failure."""
+        counts = L3.sqlmesh_audit_counts(
+            "inv.short on model governed.trade \u2705 PASS.\n"
+            "inv.a_name_long_enough_that_rich_wraps_it on model governed.account\n\u2705 PASS.\n"
+            "inv.reports on model governed.trade \u274c FAIL [2].\n"
+            "inv.twice on model governed.trade \u2705 PASS.\n"
+            "inv.twice on model governed.account \u274c FAIL [1]."
+        )
+        self.assertEqual(counts, {"inv.short": 0, "inv.a_name_long_enough_that_rich_wraps_it": 0,
+                                  "inv.reports": 2, "inv.twice": 1})
+
+    def test_a_reporting_invariant_does_not_fail_the_run_on_either_engine(self):
+        """The end-to-end form of both bugs: the fixture's two trades on account 428's closing statement are reported,
+        and a run that reports them is still a passing run, identically on a native engine and under SQLMesh."""
+        job = "trade-lifecycle"
+        reporting = L3.reporting_invariants_for(job)
+        if not reporting:
+            self.skipTest("no reporting invariant selected for this job")
+        for target in ("duckdb-native", "duckdb-sqlmesh"):
+            if not (ROOT / "chain/l3" / target / job / "manifest.json").exists():
+                self.skipTest(f"{job} not projected on {target}")
+            with self.subTest(target=target):
+                r = L3.run(target, job)
+                self.assertEqual(L3.must_hold_failures(r["audits"]), {}, r["audits"])
+                self.assertTrue(r["ok"], r["audits"])
+                self.assertEqual(set(r["findings_for_the_business"]), reporting, r["audits"])
+                for inv in reporting:
+                    self.assertEqual(L3.audit_rows(r["audits"][inv]), 2, r["audits"][inv])
+
+
 class CounterexampleDocumentTests(unittest.TestCase):
     CE = Path("counterexamples/proposed/ce-trade-before-account-statement-v1.json")
 
@@ -454,12 +552,15 @@ class CounterexampleDocumentTests(unittest.TestCase):
                 self.skipTest(f"trade-lifecycle not projected on {target}")
             reports[target] = L3.simulate(target, "trade-lifecycle", self.CE)
             counts[target] = reports[target]["samples"].get("governed.trade")  # None when a blocking audit refused the plan
-        all_fired = all(not r["silent"] for r in reports.values())
+        # Caught means a must-hold audit broke. The fixture also carries a standing report under
+        # inv.trade_on_closed_account_reported, and a finding is not this counterexample being caught, so asking
+        # whether anything fired would answer yes on every run and the test would stop discriminating.
+        all_caught = all(bool(r["failures"]) for r in reports.values())
         engines_disagree = len(set(counts.values())) > 1
-        self.assertTrue(all_fired or engines_disagree, {t: (r["silent"], counts[t]) for t, r in reports.items()})
+        self.assertTrue(all_caught or engines_disagree, {t: (sorted(r["failures"]), counts[t]) for t, r in reports.items()})
         for r in reports.values():
-            if not r["silent"]:
-                self.assertTrue(set(r["fired"]) <= {"inv.trade_ownership_pin_present", "inv.every_received_trade_persisted"}, r["fired"])
+            if r["failures"]:
+                self.assertTrue(set(r["failures"]) <= {"inv.trade_ownership_pin_present", "inv.every_received_trade_persisted"}, r["failures"])
 
 
 class L3GateTests(unittest.TestCase):
