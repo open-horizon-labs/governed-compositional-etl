@@ -5,9 +5,9 @@
   ],
   "approved_or_rejected_by": "L1.unknown-codes approved; the hole open",
   "constructed_by_hat": "sketch-reviewer",
-  "deterministic_assertion": "After trade-lifecycle recompiles under L1.unknown-codes and the new hole, simulate on either engine fires exactly one audit with two rows naming 900004 and 900005, and the two engines agree.",
+  "deterministic_assertion": "After trade-lifecycle recompiles under L1.unknown-codes (with its clarification) and the new hole, simulate on either engine fires exactly two audits: inv.unknown_codes_held with three rows (900005, 900006's later report, 900007) and inv.trade_market_order_seen_pending_held with one row (900004); the two engines agree; 900006 stands at PNDG.",
   "expected": {
-    "after_the_sketch_change": "both engines: exactly the held-for-review audit fires, naming 900004 (market order seen pending) and 900005 (unknown order type); nothing is derived from either.",
+    "after_the_sketch_change": "both engines: inv.unknown_codes_held fires naming 900005 (TXX), 900006's second report (ZZZZ) and 900007's report (flag Q); inv.trade_market_order_seen_pending_held fires naming 900004; 900006's outcome stands at PNDG with no prices; 900007 has no governed.trade row and inv.every_received_trade_persisted does not claim it; nothing else fires.",
     "before_the_sketch_change": "both engines: 900004 first_seen_late false, 900005 first_seen_late NULL, no audit fires."
   },
   "fixture": {
@@ -53,6 +53,66 @@
           "t_tax": null,
           "t_trade_price": null,
           "t_tt_id": "TXX"
+        },
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed limit buy, first report fine.",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-03 10:02:00",
+          "t_exec_name": "constructed",
+          "t_id": 900006,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "PNDG",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TLB"
+        },
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488410,
+          "cdc_flag": "U",
+          "note": "Constructed later report with an unknown status: held; the trade's outcome stands as last stood (PNDG, no prices).",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": 1.0,
+          "t_comm": 1.0,
+          "t_dts": "2010-03-03 10:02:00",
+          "t_exec_name": "constructed",
+          "t_id": 900006,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "ZZZZ",
+          "t_tax": 1.0,
+          "t_trade_price": 6.5,
+          "t_tt_id": "TLB"
+        },
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488411,
+          "cdc_flag": "Q",
+          "note": "Constructed trade known only through a report with an unknown change flag: not yet known to the job; no row; reported.",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-03 10:03:00",
+          "t_exec_name": "constructed",
+          "t_id": 900007,
+          "t_is_cash": true,
+          "t_qty": 10,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "SBMT",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TLB"
         }
       ],
       "trade_history": [
@@ -69,6 +129,13 @@
           "th_dts": "2010-03-03 10:01:00",
           "th_st_id": "SBMT",
           "th_t_id": 900005
+        },
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed.",
+          "th_dts": "2010-03-03 10:02:00",
+          "th_st_id": "PNDG",
+          "th_t_id": 900006
         }
       ]
     },

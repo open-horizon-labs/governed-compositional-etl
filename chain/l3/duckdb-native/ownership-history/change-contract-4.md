@@ -1,0 +1,7 @@
+# Change contract, L3 cycle 4: ownership-history on duckdb-native (unknown codes are held, never interpreted)
+
+- **Prior policy authority:** the previous selection your accepted cycle compiled from.
+- **Exact active change authority:** the re-selected L2 (take model_sha256 from `chain/l2/ownership-history/review.json`), compiled under the Sketch's new clause `L1.unknown-codes` (a fixed vocabulary; an unknown code is held for review, never interpreted, defaulted or dropped; every job reports it naming the record and the code). Read the selected model for the new group `sg.unknown-codes` and its invariant, and every element whose parallel_assumption now says an unknown value yields no derived fact.
+- **Stale artifacts:** Add the audit for `inv.unknown_codes_held` (raw.customer_mgmt_action rows whose action_type is outside the six anchored codes; ce.account_changes rows are reported as review triggers only if the model says so, otherwise left to the group gap). Nothing else changes.
+- **Forbidden:** an ELSE branch or default for an unknown code; dropping a row because of an unknown code; deciding what a held record means afterwards.
+- **Acceptance:** `chain_l3.py check duckdb-native ownership-history` ok or question with zero problems and one audit per selected deterministic invariant; `run` ok with every audit at zero on the fixture; `twophase` ok; `mutate` zero unprotected; the simulations named above. Report briefly.

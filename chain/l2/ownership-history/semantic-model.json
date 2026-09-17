@@ -238,7 +238,7 @@
       "identifiers": [
         "customer_number"
       ],
-      "necessity": "L1.identity requires the customer to be a persistent identified thing rather than a row that changes identity; L1.history requires every change kept beside the earlier one with its effective moment; L1.as-of requires the kept statements be ordered so any moment resolves to one of them — together these entail a versioned entity of dated statements about one identified customer. The single-current-statement requirement and the standing facts each statement carries are further specified, at the attribute level, by L1.current-version and L1.statement-content respectively.",
+      "necessity": "L1.identity requires the customer to be a persistent identified thing rather than a row that changes identity; L1.history requires every change kept beside the earlier one with its effective moment; L1.as-of requires the kept statements be ordered so any moment resolves to one of them \u2014 together these entail a versioned entity of dated statements about one identified customer. The single-current-statement requirement and the standing facts each statement carries are further specified, at the attribute level, by L1.current-version and L1.statement-content respectively.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Credible while every recorded change to a customer is delivered as a new statement rather than an overwrite of a prior one.",
       "review_trigger": "a customer's prior statement is found overwritten rather than superseded by a new one",
@@ -444,7 +444,7 @@
           ],
           "derivation": {
             "kind": "carried_forward_from_previous_statement",
-            "rule": "When a statement's own source supplies no owning-customer value (as ce.account_changes does not), L1.omitted-facts-stand holds that a constructed change which does not mention the owner leaves the owner as it last stood: owning_customer_number equals the value carried by this account's immediately preceding statement. L1.identity holds that a change produces a new dated statement about the same account, not a different one, and L1.history holds that a later statement sits beside the earlier one rather than overwriting it, so 'this account's immediately preceding statement' is well defined. A constructed change sourced from ce.account_changes always has a previous statement to carry the owner from, because L1.constructed-scenarios' authorized clarification forbids a constructed scenario from introducing an account the brokerage does not have — it only changes something the received records already know — which inv.constructed_account_change_refers_to_known_account checks directly."
+            "rule": "When a statement's own source supplies no owning-customer value (as ce.account_changes does not), L1.omitted-facts-stand holds that a constructed change which does not mention the owner leaves the owner as it last stood: owning_customer_number equals the value carried by this account's immediately preceding statement. L1.identity holds that a change produces a new dated statement about the same account, not a different one, and L1.history holds that a later statement sits beside the earlier one rather than overwriting it, so 'this account's immediately preceding statement' is well defined. A constructed change sourced from ce.account_changes always has a previous statement to carry the owner from, because L1.constructed-scenarios' authorized clarification forbids a constructed scenario from introducing an account the brokerage does not have \u2014 it only changes something the received records already know \u2014 which inv.constructed_account_change_refers_to_known_account checks directly."
           },
           "disposition": "candidate",
           "feedback": [
@@ -587,11 +587,12 @@
       "disposition": "candidate",
       "feedback": [
         "inv.customer_statement_has_content",
-        "sketch-review"
+        "sketch-review",
+        "inv.unknown_codes_held"
       ],
       "necessity": "L1.history requires every change to a customer be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, UPDCUST, INACT); L1.statement-content requires that statement carry whether the customer is active or inactive. chain/anchors/sources-v1.json states what each code means (NEW, UPDCUST: active; INACT: inactive) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while the anchored action_type_meanings (assumed authority, locator unverified; see sources-v1.json) correctly and exhaustively state NEW and UPDCUST as active and INACT as inactive for a customer statement; if the business states a different meaning for any of these codes, or a code outside this enumeration is observed, this handoff must be revisited.",
+      "parallel_assumption": "Credible while the anchored action_type_meanings (assumed authority, locator unverified; see sources-v1.json) correctly and exhaustively state NEW and UPDCUST as active and INACT as inactive for a customer statement; if the business states a different meaning for any of these codes, or a code outside this enumeration is observed, this handoff must be revisited. An action_type value outside the anchored set {NEW, UPDCUST, INACT} is held under L1.unknown-codes and yields no derived fact for this statement; per inv.unknown_codes_held, the row is reported naming the record and the code instead.",
       "review_trigger": "a customer_mgmt_action row carries an action_type outside {NEW, UPDCUST, INACT}, or the business states a meaning for one of these codes that differs from the anchored one",
       "selector": "status_from_action_meaning",
       "sufficiency_group": "sg.statement-content"
@@ -638,12 +639,13 @@
       ],
       "disposition": "deferred",
       "feedback": [
-        "sketch-review"
+        "sketch-review",
+        "inv.unknown_codes_held"
       ],
       "necessity": "L1.statement-content requires a customer's dated statement to carry whether the customer is active or inactive; this incremental file's c_st_id is the brokerage's own recorded status value, supplying that fact even while the statement's own effective moment is unresolved.",
       "note": "Deferred: raw.customer_cdc supplies no handoff of its own effective moment to logical.customer, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while c_st_id on a customer change record names the active/inactive status the brokerage considers the customer to hold as of that change.",
+      "parallel_assumption": "Credible while c_st_id on a customer change record names the active/inactive status the brokerage considers the customer to hold as of that change. A c_st_id value outside the anchored status_codes {ACTV, INAC} is held under L1.unknown-codes and yields no derived fact; per inv.unknown_codes_held, once this handoff is undeferred, such a row must be reported naming the record and the code instead.",
       "review_trigger": "the change-effective-time hole is resolved and this handoff can be promoted from deferred to candidate",
       "sufficiency_group": "sg.statement-content"
     },
@@ -726,11 +728,12 @@
       "disposition": "candidate",
       "feedback": [
         "inv.account_statement_has_content",
-        "sketch-review"
+        "sketch-review",
+        "inv.unknown_codes_held"
       ],
       "necessity": "L1.history requires every change to an account be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, ADDACCT, UPDACCT, CLOSEACCT); L1.statement-content requires that statement carry whether the account is open or closed. chain/anchors/sources-v1.json states what each code means (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. Whether a CLOSEACCT statement's closed status remains accurate if the account is later found active again (activity recorded after closure with no reopening action) is bounded by L1.hole.closed-account-activity, not resolved by this handoff.",
+      "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. Whether a CLOSEACCT statement's closed status remains accurate if the account is later found active again (activity recorded after closure with no reopening action) is bounded by L1.hole.closed-account-activity, not resolved by this handoff. An action_type value outside the anchored set {NEW, ADDACCT, UPDACCT, CLOSEACCT} is held under L1.unknown-codes and yields no derived fact for this statement; per inv.unknown_codes_held, the row is reported naming the record and the code instead.",
       "review_trigger": "an account action row carries an action_type outside {NEW, ADDACCT, UPDACCT, CLOSEACCT}, or the business states a meaning for one of these codes that differs from the anchored one, or a closed account is found to carry activity after its closing statement",
       "selector": "status_from_action_meaning",
       "sufficiency_group": "sg.statement-content"
@@ -794,12 +797,13 @@
       ],
       "disposition": "deferred",
       "feedback": [
-        "sketch-review"
+        "sketch-review",
+        "inv.unknown_codes_held"
       ],
       "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this incremental file's ca_st_id is the brokerage's own recorded status value, supplying that fact even while the statement's own effective moment is unresolved.",
       "note": "Deferred: raw.account_cdc supplies no handoff of its own effective moment to logical.account, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while ca_st_id on an account change record names the open/closed status the brokerage considers the account to hold as of that change.",
+      "parallel_assumption": "Credible while ca_st_id on an account change record names the open/closed status the brokerage considers the account to hold as of that change. A ca_st_id value outside the anchored status_codes {ACTV, INAC} is held under L1.unknown-codes and yields no derived fact; per inv.unknown_codes_held, once this handoff is undeferred, such a row must be reported naming the record and the code instead.",
       "review_trigger": "the change-effective-time hole is resolved and this handoff can be promoted from deferred to candidate",
       "sufficiency_group": "sg.statement-content"
     },
@@ -865,11 +869,12 @@
       "disposition": "candidate",
       "feedback": [
         "inv.account_statement_has_content",
-        "sketch-review"
+        "sketch-review",
+        "inv.unknown_codes_held"
       ],
       "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this labeled constructed source's own status_id field supplies that fact directly for scenarios built to test these rules, per L1.constructed-scenarios.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while status_id on a constructed account-change row states the open/closed status the scenario asserts the account holds as of that row's action_at, using the anchored status_codes (ACTV: active or open; INAC: inactive or closed).",
+      "parallel_assumption": "Credible while status_id on a constructed account-change row states the open/closed status the scenario asserts the account holds as of that row's action_at, using the anchored status_codes (ACTV: active or open; INAC: inactive or closed). chain/anchors/sources-v1.json declares no vocabulary for ce.account_changes' own status_id; no meaning is invented for it here \u2014 per inv.unknown_codes_held, every row's status_id is itself a review trigger under L1.unknown-codes, reported naming the record and the code, and yields no derived fact beyond that report.",
       "review_trigger": "a constructed account-change row carries a status_id value outside the anchored status_codes",
       "sufficiency_group": "sg.statement-content"
     },
@@ -1200,6 +1205,24 @@
       "parallel_assumption": "Holds for statements sourced from the historical action file, whose account actions (NEW, ADDACCT, UPDACCT, CLOSEACCT) all carry c_id directly, and for statements sourced from ce.account_changes, whose carried-forward value can be checked against the account's immediately preceding statement, guaranteed to exist by L1.constructed-scenarios and inv.constructed_account_change_refers_to_known_account; not yet checkable for a statement whose only source is an incremental account change record, since that handoff remains deferred under L1.hole.change-effective-time.",
       "review_trigger": "an account statement's owning_customer_number does not equal its producing historical action's c_id, or does not equal the immediately preceding statement's owning_customer_number where a constructed row omits the owner",
       "sufficiency_group": "sg.owner-standing"
+    },
+    {
+      "id": "inv.unknown_codes_held",
+      "entity": "logical.account",
+      "statement": "For every raw.customer_mgmt_action row this job consumes, action_type is one of the codes chain/anchors/sources-v1.json's action_type_meanings names (NEW, ADDACCT, UPDACCT, UPDCUST, CLOSEACCT, INACT); a row carrying any other value is reported as a violation naming the row and its action_type, and nothing is derived from it. chain/anchors/sources-v1.json declares no named vocabulary for ce.account_changes' own status_id field, so every ce.account_changes row's status_id is itself a review trigger under this invariant: it is reported naming the row and its status_id value, exactly as an unrecognized action_type would be, because no anchored vocabulary exists to check it against and none is invented here. This invariant only reports the row and the code; it says nothing about what happens to the record afterward.",
+      "derived_from": [
+        "L1.unknown-codes"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.unknown-codes requires that a report carrying a code the brokerage's fixed vocabulary does not name is held for review and never interpreted, defaulted, or dropped, and that every job report such a record as a violation naming the record and the code. This job consumes raw.customer_mgmt_action rows, whose action_type it reads to populate customer and account status, and ce.account_changes rows, whose status_id it reads directly with no anchored vocabulary at all; this invariant is the direct, deterministic check that both are reported rather than silently interpreted, defaulted, or dropped.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while chain/anchors/sources-v1.json's action_type_meanings remains the exhaustive, correct naming of raw.customer_mgmt_action's action_type codes; the ce.account_changes.status_id half of this invariant carries no such assumption, since no vocabulary is anchored for it to be correct or exhaustive about \u2014 it is a review trigger by default, not a value pending validation against a named set.",
+      "review_trigger": "a raw.customer_mgmt_action row carries an action_type outside {NEW, ADDACCT, UPDACCT, UPDCUST, CLOSEACCT, INACT}, or any ce.account_changes row is consumed (its status_id is always the trigger, per the missing vocabulary)",
+      "sufficiency_group": "sg.unknown-codes"
     }
   ],
   "sufficiency_groups": [
@@ -1283,7 +1306,7 @@
         "inv.account_owner_matches_producing_source"
       ],
       "mode": "conditional",
-      "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation under L1.omitted-facts-stand, which holds that a constructed change not mentioning the owner leaves it as it last stood. L1.identity and L1.history make 'the account's immediately preceding statement' well defined, and L1.constructed-scenarios together with inv.constructed_account_change_refers_to_known_account guarantee that a preceding statement exists to carry from. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment — exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies. The inv.account_owner_matches_producing_source invariant additionally checks that owning_customer_number equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
+      "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation under L1.omitted-facts-stand, which holds that a constructed change not mentioning the owner leaves it as it last stood. L1.identity and L1.history make 'the account's immediately preceding statement' well defined, and L1.constructed-scenarios together with inv.constructed_account_change_refers_to_known_account guarantee that a preceding statement exists to carry from. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies. The inv.account_owner_matches_producing_source invariant additionally checks that owning_customer_number equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
       "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment) and L1.hole.deletions (what a deletion marker in that file means for owner-standing is unresolved)."
     },
     {
@@ -1322,7 +1345,7 @@
         "inv.account_tax_treatment_matches_producing_source"
       ],
       "mode": "conditional",
-      "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes — the one account source with no pending effective-time hole of its own — status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred. Four value-correctness invariants (inv.customer_status_matches_producing_source, inv.customer_tier_matches_producing_source, inv.account_status_matches_producing_source, inv.account_tax_treatment_matches_producing_source) additionally check that each populated value equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
+      "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes \u2014 the one account source with no pending effective-time hole of its own \u2014 status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred. Four value-correctness invariants (inv.customer_status_matches_producing_source, inv.customer_tier_matches_producing_source, inv.account_status_matches_producing_source, inv.account_tax_treatment_matches_producing_source) additionally check that each populated value equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
       "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved."
     },
     {
@@ -1345,6 +1368,18 @@
       "mode": "conditional",
       "coverage_claim": "The handoffs drawing from the labeled ce.account_changes source that are members of this group establish this account statement's identity, effective time, and constructed label: account_id populates account_number and action_at populates effective_from, satisfying L1.identity's persistent-identity requirement and L1.history/L1.as-of's dated, ordered statement requirement for this source specifically; provenance populates the account statement's own provenance field, and only ever from this source, while no raw-sourced handoff ever populates it, satisfying L1.constructed-scenarios' 'labeled... wherever it appears' and 'never mixed into the received records.' The standing facts this source's rows also carry, status_id and tax_status_id, are populated by handoffs that are members of sg.statement-content instead, since content coverage is the more specific claim owned there; this group's coverage is limited to identity, history/as-of, and labeling for this source.",
       "gap": "none"
+    },
+    {
+      "id": "sg.unknown-codes",
+      "parent_clauses": [
+        "L1.unknown-codes"
+      ],
+      "members": [
+        "inv.unknown_codes_held"
+      ],
+      "mode": "all_required",
+      "coverage_claim": "inv.unknown_codes_held is the direct and complete check, for this job, of L1.unknown-codes' requirement that an unnamed code be held for review and reported rather than interpreted, defaulted, or dropped: it covers the one coded field this job reads from a currently-projectable candidate source with an anchored vocabulary (raw.customer_mgmt_action.action_type) and the one coded field this job reads that has no anchored vocabulary at all (ce.account_changes.status_id), naming both explicitly rather than inventing a vocabulary for the second.",
+      "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred."
     }
   ],
   "holes": [
@@ -1369,7 +1404,8 @@
         "sg.history-asof",
         "sg.current-version",
         "sg.owner-standing",
-        "sg.statement-content"
+        "sg.statement-content",
+        "sg.unknown-codes"
       ]
     },
     {

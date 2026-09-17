@@ -343,15 +343,16 @@
           "derived_from": ["L1.placement-moment", "L1.attribution-at-placement"],
           "derivation": {
             "kind": "computed_within_entity",
-            "rule": "true when the trade's first-encountered report -- across both anchored sources, per trade_code_meanings.report_order (the earliest raw.trade_history row if any exist for the trade, otherwise the raw.trade_cdc row with the smallest (batch_date, cdc_dsn) for that t_id) -- carries a status (th_st_id or t_st_id, respectively) later, in trade_code_meanings.status_order (PNDG, SBMT, CMPT, with the terminal CNCL treated as later than any of them), than the order's first lifecycle event; false when it carries exactly that event. The order's first lifecycle event is read from order_type (this entity's own attribute, handed off from the trade's first-encountered raw.trade_cdc report's t_tt_id): PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage. Two cases are left undefined by this rule, not decided either way: a market order (TMB, TMS) whose first-encountered report is PNDG -- a pending market order contradicts the premise that it has no pending stage -- and an order type outside the anchored four codes (TLB, TLS, TMB, TMS); both are review triggers, not values this derivation supplies. Not received from any source; computed once, at first encounter, by comparing that report's own status against the order type's first lifecycle event, where defined."
+            "rule": "null when the trade is held for review, not decided either way: its first-encountered report's order_type (t_tt_id) is outside the anchored four codes (TLB, TLS, TMB, TMS), its first-encountered report's status (th_st_id or t_st_id) is outside the anchored four codes (PNDG, SBMT, CMPT, CNCL) -- either held under L1.unknown-codes, reported by inv.unknown_codes_held -- or it is a market order (TMB, TMS) whose first-encountered report is PNDG, held under L1.hole.market-order-seen-pending and reported by inv.trade_market_order_seen_pending_held. Otherwise: true when the trade's first-encountered report -- across both anchored sources, per trade_code_meanings.report_order (the earliest raw.trade_history row if any exist for the trade, otherwise the raw.trade_cdc row with the smallest (batch_date, cdc_dsn) for that t_id) -- carries a status later, in trade_code_meanings.status_order (PNDG, SBMT, CMPT, with the terminal CNCL treated as later than any of them), than the order's first lifecycle event; false when it carries exactly that event. The order's first lifecycle event is read from order_type (this entity's own attribute, handed off from the trade's first-encountered raw.trade_cdc report's t_tt_id): PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage. Not received from any source; computed once, at first encounter, by comparing that report's own status against the order type's first lifecycle event where the trade is not held, and left null where it is."
           },
           "disposition": "candidate",
-          "feedback": ["inv.trade_first_seen_late_matches_status_order", "sketch-review"],
-          "necessity": "L1.placement-moment (amended) requires a trade whose first-encountered report is later than its true first lifecycle event to be marked first seen late, so the ownership placement fixes can be reviewed, and states directly that an order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted -- fixing a market order's first lifecycle event at SBMT. trade_code_meanings.status_order's first entry, PNDG, fixes a limit order's first lifecycle event; trade_code_meanings.trade_type_codes supplies only which codes exist and which are market or limit (TLB, TLS limit; TMB, TMS market), not either meaning. A first-encountered report whose status is later than that first lifecycle event is exactly such a trade (SBMT or later for a limit order never seen pending; CMPT or CNCL for either order type never seen at its own first stage); a market order first reported PNDG, and an order type outside the anchored four, are not decided by the clause and are left undefined by this attribute, each a review trigger. L1.attribution-at-placement requires this marking, once made, to be fixed at first encounter and not reconsidered by a later report.",
-          "nullable": false,
+          "feedback": ["inv.trade_first_seen_late_matches_status_order", "inv.trade_first_seen_late_defined_or_held", "inv.trade_market_order_seen_pending_held", "inv.unknown_codes_held", "sketch-review"],
+          "necessity": "L1.placement-moment (amended) requires a trade whose first-encountered report is later than its true first lifecycle event to be marked first seen late, so the ownership placement fixes can be reviewed, and states directly that an order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted -- fixing a market order's first lifecycle event at SBMT. trade_code_meanings.status_order's first entry, PNDG, fixes a limit order's first lifecycle event; trade_code_meanings.trade_type_codes supplies only which codes exist and which are market or limit (TLB, TLS limit; TMB, TMS market), not either meaning. A first-encountered report whose status is later than that first lifecycle event is exactly such a trade (SBMT or later for a limit order never seen pending; CMPT or CNCL for either order type never seen at its own first stage). Two cases this clause does not decide are held rather than defaulted: L1.unknown-codes forbids interpreting a first-encountered report whose status or order type falls outside the anchored vocabularies, so first_seen_late is null for it (inv.unknown_codes_held reports the record); and L1.hole.market-order-seen-pending leaves undecided whether a market order first reported PNDG is a late first encounter, a mis-typed order, or a record error, so first_seen_late is null for it too (inv.trade_market_order_seen_pending_held reports the record). L1.attribution-at-placement requires this marking, once made (true, false, or held), to be fixed at first encounter and not reconsidered by a later report.",
+          "nullable": true,
+          "note": "null means the trade is held for review, under L1.hole.market-order-seen-pending (a market order first reported PNDG) or under L1.unknown-codes (an unanchored order type or status on the first-encountered report); it is not a value first_seen_late asserts, only the absence of one pending review.",
           "owner_hat": "data-product-owner",
-          "parallel_assumption": "Credible while every trade's lifecycle begins at its order type's first lifecycle event -- PNDG for a limit order, per status_order's first entry, SBMT for a market order sent straight to market, per L1.placement-moment's amended sentence -- and while trade_code_meanings.status_order, terminal_status_codes, and trade_type_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) and order types (TLB, TLS, TMB, TMS) with every trade report carrying one of each, and while report_order correctly identifies the first-encountered report across both anchored sources (the earliest raw.trade_history row when any exist for the trade, otherwise raw.trade_cdc's (batch_date, cdc_dsn) ordering). raw.trade_history's anchored identifiers (th_t_id, th_dts, th_st_id) permit two of a trade's rows to share a th_dts with different th_st_id, which would make the earliest row's status -- and so first_seen_late -- ambiguous; this derivation assumes that does not happen.",
-          "review_trigger": "a trade's first-encountered report, across both anchored sources, carries a status outside {PNDG, SBMT, CMPT, CNCL}, the trade's first-encountered raw.trade_cdc report carries a t_tt_id value outside {TLB, TLS, TMB, TMS}, or a market order's (TMB, TMS) first-encountered report carries status PNDG",
+          "parallel_assumption": "Credible while every trade's lifecycle begins at its order type's first lifecycle event -- PNDG for a limit order, per status_order's first entry, SBMT for a market order sent straight to market, per L1.placement-moment's amended sentence -- and while trade_code_meanings.status_order, terminal_status_codes, and trade_type_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) and order types (TLB, TLS, TMB, TMS) with every trade report carrying one of each, except that a first-encountered report may carry a status or order type outside those vocabularies, in which case L1.unknown-codes holds the record for review (inv.unknown_codes_held) and this attribute is null rather than true or false; and while report_order correctly identifies the first-encountered report across both anchored sources (the earliest raw.trade_history row when any exist for the trade, otherwise raw.trade_cdc's (batch_date, cdc_dsn) ordering). raw.trade_history's anchored identifiers (th_t_id, th_dts, th_st_id) permit two of a trade's rows to share a th_dts with different th_st_id, which would make the earliest row's status -- and so first_seen_late -- ambiguous; this derivation assumes that does not happen. A market order first reported PNDG is likewise held, under L1.hole.market-order-seen-pending (inv.trade_market_order_seen_pending_held), rather than resolved by this derivation.",
+          "review_trigger": "first_seen_late is found non-null for a trade that inv.unknown_codes_held or inv.trade_market_order_seen_pending_held reports as held, or null for a trade neither of them reports",
           "sufficiency_group": "sg.placement-moment"
         },
         {
@@ -359,7 +360,7 @@
           "semantic_type": "trade_order_type",
           "derived_from": ["L1.placement-moment"],
           "disposition": "candidate",
-          "feedback": ["inv.trade_first_seen_late_matches_status_order", "sketch-review"],
+          "feedback": ["inv.trade_first_seen_late_matches_status_order", "inv.trade_order_type_frozen", "inv.unknown_codes_held", "sketch-review"],
           "necessity": "L1.placement-moment (amended) requires knowing whether a trade is a market or limit order to determine its first lifecycle event -- SBMT for a market order sent straight to market, PNDG for a limit order -- which first_seen_late's derivation needs; this attribute carries that order type directly from the trade's first-encountered raw.trade_cdc report's t_tt_id, so the derivation, and an L3 audit recomputing it, need not re-read the raw feed for the type.",
           "nullable": false,
           "owner_hat": "data-product-owner",
@@ -505,10 +506,10 @@
       "to": "logical.trade.order_type",
       "derived_from": ["L1.placement-moment"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_first_seen_late_matches_status_order", "sketch-review"],
+      "feedback": ["inv.trade_first_seen_late_matches_status_order", "inv.trade_order_type_frozen", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.placement-moment (amended) requires the order's type to determine its first lifecycle event; raw.trade_cdc's t_tt_id is the brokerage's own recorded order-type code on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_tt_id, mirroring owning_account_number's first_encounter_only handoff since raw.trade_history carries no order-type field either.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_tt_id on a trade's first-encountered raw.trade_cdc report names the order's own type and is anchored by trade_code_meanings.trade_type_codes.",
+      "parallel_assumption": "Credible while t_tt_id on a trade's first-encountered raw.trade_cdc report names the order's own type and is anchored by trade_code_meanings.trade_type_codes. An unanchored t_tt_id value is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived order_type fact for that report.",
       "review_trigger": "t_tt_id is found to record a value outside {TLB, TLS, TMB, TMS}, or to change across reports of the same trade",
       "selector": "first_encounter_only",
       "sufficiency_group": "sg.placement-moment"
@@ -557,10 +558,10 @@
       "to": "logical.trade.status",
       "derived_from": ["L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_outcome_updates_in_place", "sketch-review"],
+      "feedback": ["inv.trade_outcome_updates_in_place", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.lifecycle-mutates-outcome requires a later report of a trade to update its status; raw.trade_cdc's t_st_id is the brokerage's own recorded lifecycle-status value on each report of the trade.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_st_id on a trade_cdc row names the trade's lifecycle status as of that report.",
+      "parallel_assumption": "Credible while t_st_id on a trade_cdc row names the trade's lifecycle status as of that report, and is one of the anchored status_codes. An unanchored t_st_id value is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived status fact for that report.",
       "review_trigger": "t_st_id is found to record something other than the trade's lifecycle status",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
@@ -570,10 +571,10 @@
       "to": "logical.trade.executed_price",
       "derived_from": ["L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_outcome_updates_in_place", "sketch-review"],
+      "feedback": ["inv.trade_outcome_updates_in_place", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's executed price; raw.trade_cdc's t_trade_price is the brokerage's own recorded executed-price value on each report, distinct from t_bid_price, which records the price at which the trade was requested rather than executed and this job does not hand off.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_trade_price on a trade_cdc row names the price at which the trade actually executed, as of that report.",
+      "parallel_assumption": "Credible while t_trade_price on a trade_cdc row names the price at which the trade actually executed, as of that report. An unanchored cdc_flag value on that row is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived executed_price fact from that report.",
       "review_trigger": "t_trade_price is found to record a requested price rather than an executed price",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
@@ -583,10 +584,10 @@
       "to": "logical.trade.fees",
       "derived_from": ["L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_outcome_updates_in_place", "sketch-review"],
+      "feedback": ["inv.trade_outcome_updates_in_place", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's fees; raw.trade_cdc's t_chrg is the brokerage's own recorded charge value on each report, the fees fact the clause names.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_chrg on a trade_cdc row names the fees the brokerage charges on the trade, as of that report.",
+      "parallel_assumption": "Credible while t_chrg on a trade_cdc row names the fees the brokerage charges on the trade, as of that report. An unanchored cdc_flag value on that row is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived fees fact from that report.",
       "review_trigger": "t_chrg is found to record something other than fees",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
@@ -596,10 +597,10 @@
       "to": "logical.trade.commission",
       "derived_from": ["L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_outcome_updates_in_place", "sketch-review"],
+      "feedback": ["inv.trade_outcome_updates_in_place", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's commission; raw.trade_cdc's t_comm is the brokerage's own recorded commission value on each report.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_comm on a trade_cdc row names the commission charged on the trade, as of that report.",
+      "parallel_assumption": "Credible while t_comm on a trade_cdc row names the commission charged on the trade, as of that report. An unanchored cdc_flag value on that row is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived commission fact from that report.",
       "review_trigger": "t_comm is found to record something other than commission",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
@@ -609,10 +610,10 @@
       "to": "logical.trade.tax",
       "derived_from": ["L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_outcome_updates_in_place", "sketch-review"],
+      "feedback": ["inv.trade_outcome_updates_in_place", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's tax; raw.trade_cdc's t_tax is the brokerage's own recorded tax value on each report.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_tax on a trade_cdc row names the tax owed on the trade, as of that report.",
+      "parallel_assumption": "Credible while t_tax on a trade_cdc row names the tax owed on the trade, as of that report. An unanchored cdc_flag value on that row is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived tax fact from that report.",
       "review_trigger": "t_tax is found to record something other than tax",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
@@ -622,10 +623,10 @@
       "to": "logical.trade.quantity",
       "derived_from": ["L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_outcome_updates_in_place", "sketch-review"],
+      "feedback": ["inv.trade_outcome_updates_in_place", "inv.unknown_codes_held", "sketch-review"],
       "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's quantity; raw.trade_cdc's t_qty is the brokerage's own recorded quantity value on each report.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while t_qty on a trade_cdc row names the trade's quantity, as of that report.",
+      "parallel_assumption": "Credible while t_qty on a trade_cdc row names the trade's quantity, as of that report. An unanchored cdc_flag value on that row is held for review under L1.unknown-codes (inv.unknown_codes_held), and this handoff yields no derived quantity fact from that report.",
       "review_trigger": "t_qty is found to record something other than quantity",
       "selector": "latest_change",
       "sufficiency_group": "sg.outcome"
@@ -677,15 +678,15 @@
     {
       "id": "inv.trade_first_seen_late_matches_status_order",
       "entity": "logical.trade",
-      "statement": "For any trade_number whose order_type is one of the anchored four codes and whose first-encountered report's status is not PNDG for a market order, first_seen_late is true if and only if that report -- across both anchored sources, the trade's earliest raw.trade_history row if any exist, otherwise its earliest raw.trade_cdc row -- carries a status (th_st_id or t_st_id, respectively) later than order_type's first lifecycle event: PNDG for a limit order (TLB, TLS), per status_order's first entry; SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence; using trade_code_meanings.status_order, trade_type_codes, and report_order to identify that first-encountered report and the order's type. A trade whose order_type is outside the anchored four, or a market order whose first-encountered report is PNDG, is not claimed by this invariant.",
+      "statement": "For any trade_number that is not held (per inv.unknown_codes_held or inv.trade_market_order_seen_pending_held), first_seen_late is true if and only if the trade's first-encountered report -- across both anchored sources, its earliest raw.trade_history row if any exist, otherwise its earliest raw.trade_cdc row -- carries a status (th_st_id or t_st_id, respectively) later than order_type's first lifecycle event: PNDG for a limit order (TLB, TLS), per status_order's first entry; SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence; using trade_code_meanings.status_order, trade_type_codes, and report_order to identify that first-encountered report and the order's type.",
       "derived_from": ["L1.placement-moment"],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": ["sketch-review"],
-      "necessity": "L1.placement-moment (amended) defines first seen late by reference to whether the earliest held report is later than the trade's true first lifecycle stage, now order-type-dependent since an order sent straight to market has no pending stage; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule, including the two cases -- an unanchored order type, and a market order first reported PNDG -- that rule leaves undefined and this invariant likewise does not claim.",
+      "necessity": "L1.placement-moment (amended) defines first seen late by reference to whether the earliest held report is later than the trade's true first lifecycle stage, now order-type-dependent since an order sent straight to market has no pending stage; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule over the trades it decides, leaving the two held cases -- reported by inv.unknown_codes_held and inv.trade_market_order_seen_pending_held -- to inv.trade_first_seen_late_defined_or_held instead.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while trade_code_meanings.status_order, trade_type_codes, and report_order remain as anchored, and while order_type correctly reflects the trade's first-encountered raw.trade_cdc report's t_tt_id.",
-      "review_trigger": "for a trade in scope (order_type one of the anchored four, and not a market order first reported PNDG), first_seen_late is found true for one whose first-encountered report has status equal to its order_type's first lifecycle event, or false for one whose status is later than it",
+      "review_trigger": "for a trade not held (per inv.unknown_codes_held or inv.trade_market_order_seen_pending_held), first_seen_late is found true for one whose first-encountered report has status equal to its order_type's first lifecycle event, or false for one whose status is later than it",
       "sufficiency_group": "sg.placement-moment"
     },
     {
@@ -757,6 +758,62 @@
       "parallel_assumption": "Holds while every raw.trade_cdc row with cdc_flag I or U, and every raw.trade_history row, reports a trade_number the business considers a real, receivable trade. L1.hole.deletions bounds what a cdc_flag D report means for a trade's persistence -- whether its trade_number must still appear as a row, must be removed, or something else -- so this invariant is quantified only over trade_numbers none of whose received reports carries cdc_flag D at all, leaving a trade_number with any D report entirely to that hole, not merely excluding the D-flagged report itself from an otherwise-qualifying trade. The anchored trade_code_meanings.report_order.note states that a historical-load trade's held reports are its TradeHistory rows together with the snapshot Trade row, so every th_t_id also appears as a Batch1 t_id (cdc_flag I, cdc_dsn 0); this invariant's raw.trade_history clause therefore rests on the entity's only identity handoff, raw.trade_cdc.t_id -> trade_number, which reaches every history-reported trade through that same snapshot row, not on a handoff this model does not define.",
       "review_trigger": "a trade_number reported by a raw.trade_cdc row whose cdc_flag is not D, or by any raw.trade_history row, does not appear as exactly one logical.trade row, or a th_t_id appears in raw.trade_history with no corresponding t_id row in any batch of raw.trade_cdc",
       "sufficiency_group": "sg.trade-identity"
+    },
+    {
+      "id": "inv.trade_first_seen_late_defined_or_held",
+      "entity": "logical.trade",
+      "statement": "For any trade_number, first_seen_late is null if and only if the trade is held: either inv.unknown_codes_held reports its first-encountered report's status or order type as outside the anchored vocabularies, or inv.trade_market_order_seen_pending_held reports it as a market order first reported PNDG. first_seen_late is non-null (true or false) for every other trade.",
+      "derived_from": ["L1.placement-moment"],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": ["sketch-review"],
+      "necessity": "L1.unknown-codes and L1.hole.market-order-seen-pending together carve out the two cases L1.placement-moment's amended rule does not decide; this invariant is the direct, checkable restatement that first_seen_late's nullability tracks exactly those two held sets and no others -- a trade is not left null for any other reason, and is not decided (true or false) for either of these two.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while inv.unknown_codes_held and inv.trade_market_order_seen_pending_held together enumerate every case this job holds rather than decides; a third undecided case would need its own hole and its own held-invariant before this one could still hold.",
+      "review_trigger": "first_seen_late is null for a trade neither invariant reports as held, or non-null for a trade either invariant reports as held",
+      "sufficiency_group": "sg.placement-moment"
+    },
+    {
+      "id": "inv.trade_market_order_seen_pending_held",
+      "entity": "logical.trade",
+      "statement": "For any trade_number whose order_type is TMB or TMS (a market order) and whose first-encountered report -- across both anchored sources -- carries status PNDG, this invariant reports the trade as held for review under L1.hole.market-order-seen-pending; first_seen_late for such a trade is null, not true or false.",
+      "derived_from": ["L1.placement-moment"],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": ["sketch-review"],
+      "necessity": "L1.hole.market-order-seen-pending leaves undecided whether a market order's earliest held report at PNDG is a late first encounter, a mis-typed order, or a record error, since L1.placement-moment's amended sentence says a market order has no pending stage at all; this invariant is the checkable restatement of the hole's own instruction to hold such a trade for review rather than decide it either way.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while trade_code_meanings.trade_type_codes and status_codes remain as anchored and order_type and the first-encountered report's status are each correctly determined; this invariant reports a trade held, it does not resolve the hole.",
+      "review_trigger": "a market order (TMB, TMS) whose first-encountered report carries status PNDG is not reported as held, or a trade reported as held under this invariant is not a market order first reported PNDG",
+      "sufficiency_group": "sg.placement-moment"
+    },
+    {
+      "id": "inv.trade_order_type_frozen",
+      "entity": "logical.trade",
+      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered raw.trade_cdc report, and is never replaced by a later report's t_tt_id.",
+      "derived_from": ["L1.lifecycle-mutates-outcome"],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": ["sketch-review"],
+      "necessity": "order_type's own type element cites L1.lifecycle-mutates-outcome's enumeration of the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and its statement that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it. This invariant is the direct, checkable restatement of that freeze -- order_type equals the trade's first-encountered raw.trade_cdc report's t_tt_id and is never replaced -- as its own audit, exactly as inv.trade_owning_account_frozen restates the analogous freeze for owning_account_number, so an L3 audit need not embed the check inside another invariant's own audit.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while t_tt_id on a trade's first-encountered raw.trade_cdc report is the order's own type and is never legitimately corrected by a later report.",
+      "review_trigger": "a later raw.trade_cdc report of a known trade_number carries a t_tt_id different from the one recorded at first encounter",
+      "sufficiency_group": "sg.placement-moment"
+    },
+    {
+      "id": "inv.unknown_codes_held",
+      "entity": "logical.trade",
+      "statement": "For every raw.trade_cdc row this job consumes, cdc_flag is one of {I, U, D}, t_st_id is one of {PNDG, SBMT, CMPT, CNCL}, and t_tt_id is one of {TLB, TLS, TMB, TMS}; for every raw.trade_history row this job consumes, th_st_id is one of {PNDG, SBMT, CMPT, CNCL}. A row carrying a value outside its field's anchored vocabulary is a violation of this invariant, naming the record and the code; it is held for review, not interpreted, defaulted, or dropped.",
+      "derived_from": ["L1.unknown-codes"],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": ["sketch-review"],
+      "necessity": "L1.unknown-codes requires every job to report, as a violation naming the record and the code, any consumed row whose coded field carries a value its anchored vocabulary does not name, and forbids interpreting, defaulting, or dropping it. This job reads three anchored code vocabularies across its two consumed sources -- cdc_flag and t_tt_id on raw.trade_cdc, and the shared status_codes vocabulary on both t_st_id (raw.trade_cdc) and th_st_id (raw.trade_history) -- and this invariant is the direct, checkable restatement of that reporting duty over all three; it says nothing about what happens to a held record afterward, which is each derivation's or handoff's own parallel_assumption to state, and, for first_seen_late specifically, L1.hole.market-order-seen-pending's neighbor.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while trade_code_meanings.status_codes, trade_type_codes, and cdc_flag remain as anchored and exhaustively enumerate the codes each field may carry; a row whose coded field falls outside its vocabulary is not decided by this job to be an error, a future code, or something else -- only reported.",
+      "review_trigger": "a raw.trade_cdc row carries a cdc_flag outside {I, U, D}, a t_st_id outside {PNDG, SBMT, CMPT, CNCL}, or a t_tt_id outside {TLB, TLS, TMB, TMS}; or a raw.trade_history row carries a th_st_id outside {PNDG, SBMT, CMPT, CNCL}",
+      "sufficiency_group": "sg.unknown-codes"
     }
   ],
   "sufficiency_groups": [
@@ -783,11 +840,14 @@
         "inv.trade_placement_reference_frozen",
         "inv.trade_first_seen_late_matches_status_order",
         "inv.trade_placed_at_matches_earliest_report",
-        "inv.trade_ownership_pin_present"
+        "inv.trade_ownership_pin_present",
+        "inv.trade_first_seen_late_defined_or_held",
+        "inv.trade_market_order_seen_pending_held",
+        "inv.trade_order_type_frozen"
       ],
       "mode": "conditional",
       "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time. placed_at is handed off, under selector first_encounter_only, from whichever anchored source holds that earliest report: raw.trade_cdc's t_dts for a trade whose held reports are Trade change records ordered by trade_code_meanings.report_order's (batch_date, cdc_dsn), or, for a historical-load trade with anchored raw.trade_history rows, raw.trade_history's th_dts on its earliest such row instead, per report_order's statement that such a trade's earliest held report is its earliest TradeHistory row, not its Trade snapshot; inv.trade_placed_at_matches_earliest_report makes this rule itself checkable, not merely that placed_at is set once. Together the two handoffs carry exactly that moment, frozen, across both anchored report sources; owning_account_number still comes only from raw.trade_cdc's t_ca_id regardless of which source supplies placed_at, since raw.trade_history carries no account field (sg.trade-shape). L1.attribution-at-placement requires the trade's ownership reference to be the pair of statements, account and customer, as they stood at that moment -- 'the account, and through it the customer, as they stood at the moment the trade was placed' -- not either one's current statement. L1.as-of defines each such answer as the upstream statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from, owning_customer_number, and owning_customer_effective_from as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account and customer entities they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies the exact account statement. owning_customer_number is handed off directly from that same pinned account statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it; owning_customer_effective_from, handed off from logical.customer.effective_from with selector as_of_event_time (also at or before placed_at), completes the (customer_number, effective_from) pair identifying the exact customer statement, satisfying the 'and through it the customer, as they stood' half of the clause in full -- not just which customer, but which of that customer's dated statements. inv.trade_placement_reference_frozen restates that all four reference attributes are set once, at first encounter, and never replaced. inv.trade_ownership_pin_present restates, as a single checkable fact, that a persisted trade never carries a null in any of these four attributes -- that the pin resolved, not merely that whatever it resolved to is frozen. first_seen_late, using trade_code_meanings.status_order and report_order together with order_type (handed off from raw.trade_cdc.t_tt_id under selector first_encounter_only and anchored, as to which codes exist and which are market or limit, by trade_code_meanings.trade_type_codes), marks a trade whose first-encountered report -- across both anchored sources -- as first seen late when its status (th_st_id or t_st_id) is later than its order type's first lifecycle event: PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage; so a limit order first reported anything other than PNDG is first seen late, a market order first reported SBMT is not, and one first reported CMPT or CNCL is -- a market order first reported PNDG, and an order type outside the anchored four, are left undefined by this rule and are not claimed by inv.trade_first_seen_late_matches_status_order, which otherwise restates it directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account- and customer-statement pins against any upstream statement ownership-history has deferred (a CDC-sourced account or customer update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order) or, for raw.trade_history, th_dts ordering, not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, and L1.hole.owner-change-reversions-account each bound part of this group's coverage; see coverage_claim."
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.market-order-seen-pending each bound part of this group's coverage; see coverage_claim."
     },
     {
       "id": "sg.trade-identity",
@@ -822,6 +882,14 @@
       "mode": "all_required",
       "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from the two anchored received sources (raw.trade_cdc and raw.trade_history) and, through the frozen ownership reference, ownership-history's logical.account and logical.customer entities. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. The customer pin (owning_customer_number, owning_customer_effective_from) raises no equivalent risk: logical.customer carries no provenance attribute of its own, and sources-v1.json anchors no ce.customer_* source, so there is no labeled constructed customer scenario for the customer pin to fail to relabel or duplicate. This claim is scoped to trades whose pins resolve; a trade whose pins do not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no pinned statements to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
       "gap": "none"
+    },
+    {
+      "id": "sg.unknown-codes",
+      "parent_clauses": ["L1.unknown-codes"],
+      "members": ["inv.unknown_codes_held"],
+      "mode": "all_required",
+      "coverage_claim": "L1.unknown-codes requires every job to report a consumed row whose coded field carries a value its anchored vocabulary does not name, naming the record and the code, and forbids interpreting, defaulting, or dropping it. This job reads three anchored code vocabularies across its two consumed sources -- cdc_flag and t_tt_id on raw.trade_cdc, and the shared status_codes vocabulary on both t_st_id (raw.trade_cdc) and th_st_id (raw.trade_history) -- and inv.unknown_codes_held is the single checkable restatement of that reporting duty across all of them; every derivation and handoff in this job that reads one of these fields (order_type, status, executed_price, fees, commission, tax, quantity, and first_seen_late) states in its own parallel_assumption that an unknown value is held under this clause and yields no derived fact, and lists this invariant in its feedback. It decides nothing about what an unnamed record subsequently means.",
+      "gap": "L1.hole.market-order-seen-pending bounds a case adjacent to but distinct from this group's claim: PNDG is itself an anchored status, so a market order first reported PNDG is not an unknown code, and inv.unknown_codes_held does not report it; inv.trade_market_order_seen_pending_held (sg.placement-moment) reports it instead."
     }
   ],
   "holes": [
@@ -878,9 +946,15 @@
       "owner_hat": "data-product-owner",
       "disposition": "deferred",
       "blocks": ["sg.placement-moment"]
+    },
+    {
+      "id": "hole.market_order_seen_pending",
+      "question": "L1.placement-moment says an order sent straight to market has no pending stage. What does it mean when a market order's earliest held report is pending: a late first encounter, a mis-typed order, or a record error? Until answered, no job may decide whether such a trade is first seen late; it is held for review and reported like an unknown code, per inv.trade_market_order_seen_pending_held.",
+      "derived_from_hole": "L1.hole.market-order-seen-pending",
+      "owner_hat": "data-product-owner",
+      "disposition": "deferred",
+      "blocks": ["sg.placement-moment", "sg.unknown-codes"]
     }
   ],
-  "questions_for_authority": [
-    "L1.placement-moment states an order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted, but does not say what a market order's earliest held report at PNDG means: is such a trade first seen late, or is that report an incoherent observation? logical.trade.first_seen_late and inv.trade_first_seen_late_matches_status_order both leave this case undefined pending the answer."
-  ]
+  "questions_for_authority": []
 }

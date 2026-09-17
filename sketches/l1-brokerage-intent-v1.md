@@ -48,7 +48,7 @@ Each job compiles to its own semantic model. A job lists the clauses it needs.
 
 ### Evidence discipline
 
-- **L1.unknown-codes** — The brokerage's records speak in a fixed vocabulary of codes (statuses, order types, change flags). A report carrying a code that vocabulary does not name is held for review and is not interpreted: no rule below may read a meaning into it, default it, or silently drop the report. Every job reports such a record as a violation, naming the record and the code.
+- **L1.unknown-codes** — The brokerage's records speak in a fixed vocabulary of codes (statuses, order types, change flags). A report carrying a code that vocabulary does not name is held for review and is not interpreted: no rule below may read a meaning into it, default it, or silently drop the report. Every job reports such a record as a violation, naming the record and the code. A held report changes nothing and creates nothing: every fact stands as it last stood, and a customer, account or trade known only through held reports is not yet known to the job; the hold itself is what is reported. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)
 - **L1.constructed-scenarios** — Any scenario built to test these rules, rather than received from the brokerage's records, is labeled as constructed wherever it appears and is never mixed into the received records. A constructed scenario changes something the received records already know; it never introduces a customer, account, or trade the brokerage does not have. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)
 
 ## Holes

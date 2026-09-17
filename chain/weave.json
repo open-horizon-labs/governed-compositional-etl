@@ -139,16 +139,6 @@
       "to_job": "positions"
     },
     {
-      "clause": "L1.unknown-codes",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
-    },
-    {
-      "hole": "L1.hole.market-order-seen-pending",
-      "note": "no job carries this hole; either it touches no job or a job filled it silently",
-      "relation": "gap"
-    },
-    {
       "gap": "L1.hole.change-effective-time",
       "group": "sg.identity",
       "job": "ownership-history",
@@ -179,13 +169,19 @@
       "relation": "named-gap"
     },
     {
+      "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred.",
+      "group": "sg.unknown-codes",
+      "job": "ownership-history",
+      "relation": "named-gap"
+    },
+    {
       "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it; L1.hole.deletions bounds what a D-flagged first-encountered report would mean for owning_account_number.",
       "group": "sg.trade-shape",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, and L1.hole.owner-change-reversions-account each bound part of this group's coverage; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.market-order-seen-pending each bound part of this group's coverage; see coverage_claim.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"
@@ -199,6 +195,12 @@
     {
       "gap": "L1.hole.deletions bounds what a D-flagged report means for a trade's outcome; L1.hole.batch-identity bounds latest_change's reliance on file production order rather than a report carrying which file delivered it.",
       "group": "sg.outcome",
+      "job": "trade-lifecycle",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.market-order-seen-pending bounds a case adjacent to but distinct from this group's claim: PNDG is itself an anchored status, so a market order first reported PNDG is not an unknown code, and inv.unknown_codes_held does not report it; inv.trade_market_order_seen_pending_held (sg.placement-moment) reports it instead.",
+      "group": "sg.unknown-codes",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
@@ -225,8 +227,8 @@
   "summary": {
     "contradiction": 0,
     "dependency": 7,
-    "gap": 2,
-    "named-gap": 12,
+    "gap": 0,
+    "named-gap": 14,
     "overlap": 3
   }
 }
