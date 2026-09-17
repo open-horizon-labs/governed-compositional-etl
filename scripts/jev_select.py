@@ -122,5 +122,82 @@ def review_triage(clauses: dict[str, str], observed: dict) -> dict:
     return {**result, "follows": flags, "needs_review": sorted(c for c, p in flags.items() if p < HIGH)}
 
 
+def restates_or_adds(clause_texts: dict[str, str], element: dict) -> dict:
+    """The question every L2 review asks first: does this element restate what its cited clauses already say, or does it
+    decide something they do not? Cheap enough to ask of every changed element before a capable reviewer is spent."""
+    state = {"cited_clauses": clause_texts, "element": {k: element.get(k) for k in ("id", "statement", "necessity", "derivation", "parallel_assumption", "review_trigger") if element.get(k) is not None}}
+    try:
+        from typesafe_sdk import Noul
+        q = {"adds_a_decision": Noul(instructions="Does the element decide something the cited clauses do not state? Answer no when it only restates, narrows to, or makes checkable what the clauses already require. Answer yes when it settles a case the clauses leave open, picks among readings, or supplies a default.")}
+    except ImportError:
+        return {"verdict": "not-run"}
+    result = _call("restates_or_adds", state, q)
+    if result["verdict"] != "ran":
+        return result
+    p_add = result["answers"]["adds_a_decision"]["noul"]
+    return {**result, "p_adds_a_decision": p_add, "confidence_band": _band(p_add), "flag": p_add >= 0.5 or _band(p_add) != "high"}
+
+
+# Deliberately absent: a selector for "does this element decide the question an L1 hole reserves". It was built,
+# calibrated and withdrawn. Jev scores 0.71 when the element SAYS the outcome for the case ("...so a market order first
+# reported PNDG is true") and 0.15 when the element states only the rule that implies it, which is the form every real
+# element takes. The question needs derivation, and Jev reads rather than derives. The chain already answers it exactly:
+# a runnable counterexample carrying that case, run through the projection, reports what the compiled thing does. Ask
+# the selector what a text says; ask the counterexample what the code does; ask a capable model what a rule implies.
+
+
+def within_contract(contract_text: str, changed: list[str]) -> dict:
+    """Did the Developer stay inside what the change contract enumerated? A cheap screen before a capable reviewer reads
+    a diff that turns out to be in scope, and a cheap catch when it is not."""
+    state = {"change_contract": contract_text, "elements_changed": changed}
+    try:
+        from typesafe_sdk import Noul
+        q = {"outside_scope": Noul(instructions="Does elements_changed include anything the change_contract did not authorize? The contract enumerates what may change; anything else is outside scope.")}
+    except ImportError:
+        return {"verdict": "not-run"}
+    result = _call("within_contract", state, q)
+    if result["verdict"] != "ran":
+        return result
+    p_out = result["answers"]["outside_scope"]["noul"]
+    return {**result, "p_outside_scope": p_out, "confidence_band": _band(p_out), "flag": p_out >= 0.5 or _band(p_out) != "high"}
+
+
+def review_needed(summary: dict) -> dict:
+    """Is a capable reviewer owed, or is this bookkeeping a coordinator records? The triage that decides where the
+    expensive reader goes."""
+    state = {"cycle": summary}
+    try:
+        from typesafe_sdk import Choice
+        q = {"depth": Choice(instructions="How deeply must this change be read? bookkeeping: prose or reference edits a prior review already prescribed, deciding nothing new. scoped: a bounded change to named elements that a reviewer should judge against the clauses. deep: new or restated rules, anything touching an open question, or a change whose scope is unclear.",
+                             criteria={"bookkeeping": None, "scoped": None, "deep": None})}
+    except ImportError:
+        return {"verdict": "not-run"}
+    result = _call("review_needed", state, q)
+    if result["verdict"] != "ran":
+        return result
+    ans = result["answers"]["depth"]
+    return {**result, "depth": ans.get("choice"), "probabilities": ans.get("probabilities"), "confidence": ans.get("confidence")}
+
+
+def anchor_is_shape_only(entry: dict) -> dict:
+    """Anchors constrain shape and authorize no rule. An anchor that states a meaning licenses a Developer to derive
+    policy from it, which is how a counterfactual round recovered a removed clause."""
+    state = {"anchor_entry": entry}
+    try:
+        from typesafe_sdk import Noul
+        q = {"states_policy": Noul(instructions="Does anchor_entry state a rule, meaning, or consequence the business must decide, rather than only the shape of the received records (which fields exist, which codes appear, how rows are ordered)?")}
+    except ImportError:
+        return {"verdict": "not-run"}
+    result = _call("anchor_is_shape_only", state, q)
+    if result["verdict"] != "ran":
+        return result
+    p_policy = result["answers"]["states_policy"]["noul"]
+    return {**result, "p_states_policy": p_policy, "confidence_band": _band(p_policy), "flag": p_policy >= 0.5 or _band(p_policy) != "high"}
+
+
+def _band(p: float) -> str:
+    return "high" if abs(p - 0.5) >= 0.3 else ("low" if abs(p - 0.5) < 0.15 else "medium")
+
+
 if __name__ == "__main__":
     print(json.dumps({"available": available()}))

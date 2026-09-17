@@ -1,0 +1,34 @@
+{
+  "note": "Every Jev selector calibrated against pairs this session already judged, before being relied on. Ranking and separation matter more than absolute values; two selectors were changed and one withdrawn on this evidence.",
+  "selectors": {
+    "within_contract": {
+      "separation": 0.75,
+      "in_scope": 0.1,
+      "breach": 0.85,
+      "verdict": "usable as a signal, straddles 0.5 correctly"
+    },
+    "anchor_is_shape_only": {
+      "separation": 0.59,
+      "clean": 0.26,
+      "leaky": 0.85,
+      "verdict": "usable as a signal"
+    },
+    "review_needed": {
+      "prose_only": "bookkeeping",
+      "new_rules": "deep",
+      "verdict": "usable as triage"
+    },
+    "restates_or_adds": {
+      "separation": 0.21,
+      "restates": 0.62,
+      "adds": 0.83,
+      "verdict": "ranks well, calibrates poorly; used as a ranking against a 45-element baseline of reviewed invariants, whose top three are the three where capable reviewers actually objected"
+    },
+    "decides_a_hole": {
+      "element_states_the_outcome": 0.71,
+      "element_states_only_the_rule": 0.15,
+      "verdict": "withdrawn: needs derivation, and Jev reads rather than derives. The question belongs to a runnable counterexample."
+    }
+  },
+  "rule_learned": "Ask the selector what a text says. Ask the counterexample what the code does. Ask a capable model what a rule implies."
+}

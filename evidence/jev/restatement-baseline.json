@@ -1,0 +1,235 @@
+{
+  "note": "p_adds_a_decision over every invariant of the three selected models, all of which passed a capable review; the screen flags a changed element scoring above this band rather than above 0.5, because the selector ranks well and calibrates poorly",
+  "n": 45,
+  "min": 0.16,
+  "median": 0.5,
+  "p90": 0.74,
+  "max": 0.82,
+  "scores": [
+    {
+      "p": 0.82,
+      "job": "ownership-history",
+      "element": "inv.customer_status_matches_producing_source"
+    },
+    {
+      "p": 0.76,
+      "job": "positions",
+      "element": "inv.holding_quantity_updates_in_place"
+    },
+    {
+      "p": 0.74,
+      "job": "trade-lifecycle",
+      "element": "inv.every_received_trade_persisted"
+    },
+    {
+      "p": 0.74,
+      "job": "positions",
+      "element": "inv.holding_quantities_present"
+    },
+    {
+      "p": 0.74,
+      "job": "ownership-history",
+      "element": "inv.constructed_scenarios_labeled"
+    },
+    {
+      "p": 0.73,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_order_type_frozen"
+    },
+    {
+      "p": 0.72,
+      "job": "ownership-history",
+      "element": "inv.account_asof_has_unique_answer"
+    },
+    {
+      "p": 0.71,
+      "job": "ownership-history",
+      "element": "inv.customer_asof_has_unique_answer"
+    },
+    {
+      "p": 0.7,
+      "job": "positions",
+      "element": "inv.holding_change_not_constructed"
+    },
+    {
+      "p": 0.67,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_first_seen_late_matches_status_order"
+    },
+    {
+      "p": 0.67,
+      "job": "positions",
+      "element": "inv.holding_change_current_trade_known"
+    },
+    {
+      "p": 0.65,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_placed_at_matches_earliest_report"
+    },
+    {
+      "p": 0.64,
+      "job": "ownership-history",
+      "element": "inv.account_status_matches_producing_source"
+    },
+    {
+      "p": 0.61,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_placement_reference_frozen"
+    },
+    {
+      "p": 0.6,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_outcome_updates_in_place"
+    },
+    {
+      "p": 0.6,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_not_constructed"
+    },
+    {
+      "p": 0.57,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_ownership_provenance_reachable"
+    },
+    {
+      "p": 0.57,
+      "job": "ownership-history",
+      "element": "inv.unknown_codes_held"
+    },
+    {
+      "p": 0.54,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_first_seen_late_defined_or_held"
+    },
+    {
+      "p": 0.52,
+      "job": "ownership-history",
+      "element": "inv.customer_statement_has_content"
+    },
+    {
+      "p": 0.52,
+      "job": "ownership-history",
+      "element": "inv.account_statement_has_content"
+    },
+    {
+      "p": 0.5,
+      "job": "positions",
+      "element": "inv.eligible_holding_report_persisted"
+    },
+    {
+      "p": 0.5,
+      "job": "ownership-history",
+      "element": "inv.account_asof_carries_customer_asof"
+    },
+    {
+      "p": 0.48,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_owning_account_frozen"
+    },
+    {
+      "p": 0.48,
+      "job": "positions",
+      "element": "inv.holding_change_ownership_present"
+    },
+    {
+      "p": 0.48,
+      "job": "ownership-history",
+      "element": "inv.account_owner_matches_producing_source"
+    },
+    {
+      "p": 0.45,
+      "job": "positions",
+      "element": "inv.holding_quantity_change_is_difference"
+    },
+    {
+      "p": 0.41,
+      "job": "positions",
+      "element": "inv.holding_change_ownership_frozen"
+    },
+    {
+      "p": 0.41,
+      "job": "ownership-history",
+      "element": "inv.customer_tier_matches_producing_source"
+    },
+    {
+      "p": 0.41,
+      "job": "ownership-history",
+      "element": "inv.account_tax_treatment_matches_producing_source"
+    },
+    {
+      "p": 0.37,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_held_first_report_unclaimed"
+    },
+    {
+      "p": 0.36,
+      "job": "positions",
+      "element": "inv.account_position_is_sum_of_changes"
+    },
+    {
+      "p": 0.36,
+      "job": "ownership-history",
+      "element": "inv.customer_single_current"
+    },
+    {
+      "p": 0.36,
+      "job": "ownership-history",
+      "element": "inv.account_single_current"
+    },
+    {
+      "p": 0.31,
+      "job": "positions",
+      "element": "inv.customer_position_is_sum_of_changes"
+    },
+    {
+      "p": 0.31,
+      "job": "ownership-history",
+      "element": "inv.account_statements_no_overlap"
+    },
+    {
+      "p": 0.3,
+      "job": "ownership-history",
+      "element": "inv.customer_statements_no_overlap"
+    },
+    {
+      "p": 0.28,
+      "job": "positions",
+      "element": "inv.account_position_key_matches_holding_change"
+    },
+    {
+      "p": 0.28,
+      "job": "ownership-history",
+      "element": "inv.constructed_account_change_refers_to_known_account"
+    },
+    {
+      "p": 0.27,
+      "job": "positions",
+      "element": "inv.customer_position_key_matches_holding_change"
+    },
+    {
+      "p": 0.24,
+      "job": "positions",
+      "element": "inv.unknown_codes_held"
+    },
+    {
+      "p": 0.23,
+      "job": "trade-lifecycle",
+      "element": "inv.trade_ownership_pin_present"
+    },
+    {
+      "p": 0.19,
+      "job": "positions",
+      "element": "inv.account_position_not_negative"
+    },
+    {
+      "p": 0.17,
+      "job": "positions",
+      "element": "inv.customer_position_not_negative"
+    },
+    {
+      "p": 0.16,
+      "job": "trade-lifecycle",
+      "element": "inv.unknown_codes_held"
+    }
+  ]
+}
