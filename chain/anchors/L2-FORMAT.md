@@ -92,3 +92,16 @@ The test is whether the rows mean the compiled thing is wrong. If a projection t
 The flag relaxes two things, not one, and you are accountable for both. Its rows are surfaced as findings rather than counted as failures. And the mutation harness stops using it as evidence that audits protect anything, because an invariant that already fires cannot demonstrate protection. So a reported invariant carries its weight only through the counterexample that names the rows it is expected to report; write one.
 
 A reported invariant is deterministic like any other and needs an audit like any other. Say in `parallel_assumption` what it does when its condition cannot be evaluated, because silence is the default and an absent input is a separate question, not a quiet pass.
+
+## A derivation that spans two entities has no label
+
+`derivation.kind` has no value for a computation that reads a fact from another entity of the same job.
+`computed_within_entity` is the closest fit and understates it: `logical.account.is_current` in ownership-history
+is labelled that way while one branch reads the sibling `logical.customer`, because `L1.owner-standing` makes an
+account's standing include its owner's.
+
+Until the vocabulary gains a value for it, write the cross-entity dependency explicitly in the `rule` text, name
+the other entity in the group's `coverage_claim`, and keep both elements in one sufficiency group so the
+dependency is visible to the reviewer who reads it. The L2-to-L3 contract tells Developers that the rule governs
+over the label; that instruction is what currently carries the meaning across the boundary, and it is weaker than
+a label would be.

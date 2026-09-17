@@ -1,15 +1,14 @@
 {
   "groups_selected": [
     "sg.constructed-scenarios",
-    "sg.current-version",
     "sg.history-asof",
     "sg.unknown-codes"
   ],
   "job": "ownership-history",
-  "model_sha256": "16f960d70a6e2f803d8f56955434e8409f1a36228d77f7ffab1e0a03019eb67b",
-  "notes": "see review-13.md and review-14.md",
+  "model_sha256": "91da986447301a1135731c8d61c62b26908f3d6452a82d11d711a8b8078de8c6",
+  "notes": "see review-1..17. Three rounds. review-15 and review-16 both failed the owner-standing cascade: it compared the customer's withdrawal to the account statement's own effective_from, which can never fire because a withdrawal creates no account statement and the account's real statements all predate it, so an owner-withdrawn account went on reporting is_current true while inv.account_asof_carries_customer_asof fired as a must-hold failure for behavior nothing produced. review-17 re-traced the fixture from the element text rather than the Developer's trace and confirmed the fix: account 428's 2012-11-15 statement is_current false, no as-of answer at T=2018, and the carrying invariant agreeing rather than firing. It judged the existence-vs-date asymmetry sound on three grounds recorded in the review, and searched specifically for an invariant asserting current == as-of-at-now, which would have turned the asymmetry into a must-hold contradiction; there is none. It confirmed all seven CDC handoffs remain deferred under L1.hole.change-effective-time, with nothing promoted to make the cycle look exercised. R1, its only new finding, is cleared: type.statement_is_current no longer says exactly one. The prescribed sentence recording why the existence form is sound, and the condition under which it must be revisited, is in place. One limitation is the coordinator's and is recorded in L2-FORMAT and the L2-to-L3 contract rather than in this model: logical.account.is_current is labelled computed_within_entity while one branch reads the sibling logical.customer, because the schema has no value for a derivation spanning two entities of one job.",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 14",
+  "reviewer": "capable-model verification review 17, plus coordinator verification of R1 and the prescribed future-dating assumption",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.ce.account_changes.account_id->logical.account.account_number",
@@ -43,11 +42,14 @@
     "inv.customer_statements_no_overlap",
     "inv.customer_status_matches_producing_source",
     "inv.customer_tier_matches_producing_source",
+    "inv.customer_withdrawal_with_standing_accounts_reported",
     "inv.unknown_codes_held",
+    "inv.withdrawal_never_reaches_account_status",
     "logical.account",
     "logical.account.account_number",
     "logical.account.effective_from",
     "logical.account.is_current",
+    "logical.account.is_withdrawal",
     "logical.account.owning_customer_number",
     "logical.account.provenance",
     "logical.account.status",
@@ -56,6 +58,7 @@
     "logical.customer.customer_number",
     "logical.customer.effective_from",
     "logical.customer.is_current",
+    "logical.customer.is_withdrawal",
     "logical.customer.status",
     "logical.customer.tier",
     "type.account_number",
@@ -67,7 +70,8 @@
     "type.customer_standing_status",
     "type.customer_tier",
     "type.statement_effective_from",
-    "type.statement_is_current"
+    "type.statement_is_current",
+    "type.statement_is_withdrawal"
   ],
   "verdict": "pass"
 }

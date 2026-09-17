@@ -63,6 +63,26 @@ would have settled it.
 
 Deferring to a review is not humility when you hold the evidence. Your job is to be right about your own model.
 
+## The rule text governs, not the derivation's label
+
+Every derivation carries a `kind` and a `rule`. The `kind` is a short label from a fixed vocabulary; the `rule` is
+the sentence that says what to compute. Implement the rule. Where the two disagree about scope, the rule is the
+authority and the label is a category that did not quite fit.
+
+This is not hypothetical. `logical.account.is_current` in ownership-history is labelled
+`computed_within_entity`, and one of its branches reads a fact from the sibling `logical.customer` entity: an
+account has no current statement when its owning customer has been withdrawn, because `L1.owner-standing` says an
+account's standing includes its owner's. The schema offers no label for a computation that spans two entities of
+the same job, so the closest available label understates it. A Developer who implements the label rather than the
+rule will drop that branch, and dropping it is a defect two separate reviews had to find twice: the account goes
+on reporting a current statement and an as-of answer while its owner has none, which is the half answer
+`L1.owner-standing` forbids in as many words.
+
+So: read every `rule` in full before writing the SQL for it, and when a rule names a fact your entity does not
+hold, follow the rule and say so in your report. Do not silently widen the label, and do not silently narrow the
+rule to match it. If a rule and its label disagree in a way you cannot implement faithfully, that is a question
+for the model's authority under the conflict protocol, not something to resolve in SQL.
+
 ## Change contract (CESS working form)
 
 - **Prior policy authority:** `chain/l2/<job>/semantic-model.json`, restricted to `selected_element_ids` in `chain/l2/<job>/review.json`. Deferred elements are not projected; rejected elements never.
