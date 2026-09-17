@@ -48,4 +48,4 @@ Developers receive S, K, and a change contract (`chain/anchors/DEVELOPER-CONTRAC
 
 ## Status
 
-See `.oh/tpcdi-governed-etl.md` for the cycle log. Assumed decisions awaiting business confirmation: what a statement carries (`L1.statement-content`); constructed scenarios never introduce new things (clarification of `L1.constructed-scenarios`).
+See `.oh/tpcdi-governed-etl.md` for the cycle log. Selected: `ownership-history` L2 (nine cycles) and its `duckdb-native` L3 projection (reviewed, 11 audits clean). In flight: `trade-lifecycle` L2, `ownership-history` on `duckdb-sqlmesh`. Not started: `positions`. Assumed decisions awaiting business confirmation, each one hashed clause: what a statement carries (`L1.statement-content`); constructed scenarios never introduce new things (`L1.constructed-scenarios`); the placement moment (`L1.placement-moment`); omitted facts stand as last stated (`L1.omitted-facts-stand`). Proposed and undecided: how a late first encounter differs from a market order that begins at submitted (`chain/ce/proposed/`).

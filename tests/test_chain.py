@@ -198,6 +198,29 @@ class L3ProjectionTests(unittest.TestCase):
         self.assertEqual(sum(1 for r in rows_428 if r["is_current"] == "True"), 1)
 
 
+class L3ProvenanceTests(unittest.TestCase):
+    def test_check_accepts_superseded_sha_when_derived_group_fingerprints_match(self):
+        base = ROOT / "chain/l3/duckdb-native/ownership-history"
+        review = json.loads((ROOT / "chain/l2/ownership-history/review.json").read_text())
+        if review["verdict"] != "pass" or not (base / "manifest.json").exists():
+            self.skipTest("ownership-history not selected or not projected")
+        original = (base / "manifest.json").read_text()
+        try:
+            L3.stamp("duckdb-native", "ownership-history")
+            manifest = json.loads((base / "manifest.json").read_text())
+            manifest["derived_from_model"]["review_sha256"] = "0" * 64
+            (base / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+            report = L3.check("duckdb-native", "ownership-history")
+            self.assertEqual(report["status"], "ok", report.get("problems"))
+            self.assertIn("fingerprint unchanged", report["provenance"] or "")
+            manifest["group_fingerprints"] = {k: "1" * 64 for k in manifest["group_fingerprints"]}
+            (base / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+            report = L3.check("duckdb-native", "ownership-history")
+            self.assertEqual(report["status"], "rejected")
+        finally:
+            (base / "manifest.json").write_text(original)
+
+
 class L3GateTests(unittest.TestCase):
     def test_l3_requires_a_passed_review(self):
         with self.assertRaises(L3.L3Error):
