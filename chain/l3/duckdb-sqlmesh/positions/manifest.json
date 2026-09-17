@@ -4,7 +4,7 @@
   "job": "positions",
   "derived_from_model": {
     "path": "chain/l2/positions/semantic-model.json",
-    "review_sha256": "daa522342a062dc26c3e368fb639edb4b791db1ffdf662343fb060d9e9e784e5"
+    "review_sha256": "26f0fde3836e40f0b2adb6d2211451b4d3c1a2cb91233e2382100c403af4b2aa"
   },
   "artifacts": [
     {
@@ -98,7 +98,39 @@
       "entity": "logical.customer_position",
       "file": "audits/inv.customer_position_key_matches_holding_change.sql",
       "invariant": "inv.customer_position_key_matches_holding_change"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_quantity_change_is_difference.sql",
+      "invariant": "inv.holding_quantity_change_is_difference"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_change_ownership_present.sql",
+      "invariant": "inv.holding_change_ownership_present"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_change_current_trade_known.sql",
+      "invariant": "inv.holding_change_current_trade_known"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_quantities_present.sql",
+      "invariant": "inv.holding_quantities_present"
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "audits/inv.account_position_is_sum_of_changes.sql",
+      "invariant": "inv.account_position_is_sum_of_changes"
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "audits/inv.customer_position_is_sum_of_changes.sql",
+      "invariant": "inv.customer_position_is_sum_of_changes"
     }
   ],
-  "questions_for_authority": []
+  "questions_for_authority": [
+    "A (original_trade_number, current_trade_number) pair whose only raw.holding_history reports carry cdc_flag D is excluded entirely by this job's latest_change selector, so no logical.holding_change row is ever created for it, and it never enters an account_position or customer_position sum. hole.deletions reserves what a D-flagged report means for a holding change, including whether a row should exist for such a pair (e.g. zeroed out, or carrying its last pre-deletion values) rather than being omitted. This is stated as the current, unchanged behavior, decided nowhere but in this job's SQL; it is not resolved here."
+  ]
 }

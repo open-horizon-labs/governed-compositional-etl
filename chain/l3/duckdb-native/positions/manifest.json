@@ -4,13 +4,14 @@
   "job": "positions",
   "derived_from_model": {
     "path": "chain/l2/positions/semantic-model.json",
-    "review_sha256": "daa522342a062dc26c3e368fb639edb4b791db1ffdf662343fb060d9e9e784e5"
+    "review_sha256": "26f0fde3836e40f0b2adb6d2211451b4d3c1a2cb91233e2382100c403af4b2aa"
   },
   "artifacts": [
     {
       "entity": "logical.holding_change",
       "file": "holding_change.sql",
       "strategy": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT",
+      "note": "inv.holding_change_not_constructed (sufficiency_group sg.constructed-scenarios) is deterministic false and has no SQL audit on this target, per the Developer contract's rule that only deterministic invariants get audits.",
       "derived_from": [
         "logical.holding_change",
         "logical.holding_change.original_trade_number",
@@ -110,7 +111,39 @@
       "entity": "logical.customer_position",
       "file": "audits/inv.customer_position_key_matches_holding_change.sql",
       "invariant": "inv.customer_position_key_matches_holding_change"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_quantity_change_is_difference.sql",
+      "invariant": "inv.holding_quantity_change_is_difference"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_quantities_present.sql",
+      "invariant": "inv.holding_quantities_present"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_change_ownership_present.sql",
+      "invariant": "inv.holding_change_ownership_present"
+    },
+    {
+      "entity": "logical.holding_change",
+      "file": "audits/inv.holding_change_current_trade_known.sql",
+      "invariant": "inv.holding_change_current_trade_known"
+    },
+    {
+      "entity": "logical.account_position",
+      "file": "audits/inv.account_position_is_sum_of_changes.sql",
+      "invariant": "inv.account_position_is_sum_of_changes"
+    },
+    {
+      "entity": "logical.customer_position",
+      "file": "audits/inv.customer_position_is_sum_of_changes.sql",
+      "invariant": "inv.customer_position_is_sum_of_changes"
     }
   ],
-  "questions_for_authority": []
+  "questions_for_authority": [
+    "A raw.holding_history pair (original_trade_number, current_trade_number) whose only reports are all cdc_flag D currently produces no logical.holding_change row at all: with no I, U, or historical (null cdc_flag) candidate, before_qty and after_qty (nullable: false) cannot be filled, so the model yields no row rather than a row with null quantities. hole.deletions reserves row existence for such a pair as undecided ('whether a pair whose only reports are D-flagged has a holding_change row at all is undecided here too -- row existence, not only the values within an existing row'). This SQL does not resolve that; it states the question so the current no-row behavior is recognized as one behavior consistent with the hole, not an answer to it. Should a D-only pair (1) never appear, as today, (2) appear with quantities held at some other stated value, or (3) be treated as an error the pipeline should fail on?"
+  ]
 }

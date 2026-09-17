@@ -22,7 +22,11 @@ MODEL (
   ),
   audits (
     "inv.holding_change_ownership_frozen",
-    "inv.holding_quantity_updates_in_place"
+    "inv.holding_quantity_updates_in_place",
+    "inv.holding_quantity_change_is_difference",
+    "inv.holding_change_ownership_present",
+    "inv.holding_change_current_trade_known",
+    "inv.holding_quantities_present"
   ),
   depends_on (governed.trade)
 );

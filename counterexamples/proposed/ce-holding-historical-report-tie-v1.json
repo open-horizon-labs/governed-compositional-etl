@@ -1,0 +1,51 @@
+{
+  "adjacent_not_authorized": [
+    "a tie-break rule between historical reports (hole.batch_identity)"
+  ],
+  "approved_or_rejected_by": "pending: anchor authority for batch identity; the audit alignment needs only the L3 review",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "After L3 cycle 3, simulate on either engine for positions fires no audit; before, exactly one engine fires inv.holding_quantity_updates_in_place.",
+  "expected": {
+    "after_l3_cycle_3": "both engines accept whichever candidate the projection chose; the tie remains hole.batch_identity's case and is not resolved by either audit.",
+    "before_l3_cycle_3": "duckdb-native runs clean (either candidate accepted); duckdb-sqlmesh's inv.holding_quantity_updates_in_place refuses the plan.",
+    "positions": "the pair's quantities are whichever tied report the projection picked; the position sums differ by 25 between candidates, which is exactly what the hole leaves open."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "holding_history": [
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": null,
+          "cdc_flag": null,
+          "hh_after_qty": 5200,
+          "hh_before_qty": 0,
+          "hh_h_t_id": 353232,
+          "hh_t_id": 353232,
+          "note": "Constructed second historical report of the same pair as the fixture's Batch1 row (0 -> 5225), same batch_date, no CDC columns, different after quantity. Not TPC-DI data; labeled by this document."
+        }
+      ]
+    },
+    "raw_anchor": "oracle/fixtures/public/chain-fixture-v1.json"
+  },
+  "id": "ce.l3.holding-historical-report-tie",
+  "labels": [
+    "constructed",
+    "L3",
+    "positions",
+    "hole.batch_identity",
+    "cross-engine"
+  ],
+  "observed": {
+    "2026-09-17 before positions L3 cycle 3": "see coordinator log: run on both engines with this document; recorded in .oh/tpcdi-governed-etl.md"
+  },
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "ce-document/v1",
+  "status": "proposed",
+  "tempting_wrong_repair": [
+    "ordering ties by file position or row order",
+    "summing tied reports"
+  ],
+  "why_constructed": "hole.batch_identity leaves ties between historical reports of one holding change unresolved. The two engines' audits for inv.holding_quantity_updates_in_place read that silence differently: one tolerates any undominated candidate, the other treats a tie with differing quantities as a violation. The fixture has no tie, so compare cannot see it."
+}

@@ -4,7 +4,8 @@ MODEL (
   dialect duckdb,
   audits (
     "inv.account_position_not_negative",
-    "inv.account_position_key_matches_holding_change"
+    "inv.account_position_key_matches_holding_change",
+    "inv.account_position_is_sum_of_changes"
   ),
   depends_on (governed.holding_change)
 );

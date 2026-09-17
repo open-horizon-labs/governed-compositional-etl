@@ -7,10 +7,10 @@
     "sg.trade-shape"
   ],
   "job": "trade-lifecycle",
-  "model_sha256": "fe25c77e5000a970f46f4d42b41818ff0f1bd110f39d294a56fa5dcb4051e750",
-  "notes": "see review-8.md and review-9.md",
+  "model_sha256": "2a7f84a28144f00ce47bd5434c12d007543eb0cae4b9bc975f59eee4aa3d4b71",
+  "notes": "see review-10.md",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 9 after prescribed corrections",
+  "reviewer": "coordinator, bookkeeping review 10 (one necessity sentence)",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
