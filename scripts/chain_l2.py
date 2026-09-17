@@ -410,6 +410,14 @@ def select(job: str, review: dict) -> dict:
     return record
 
 
+HOLE_REF = re.compile(r"L1\.hole\.[a-z0-9-]+")
+
+
+def holes_named(gap: str) -> set[str]:
+    """The L1 holes a group's gap text names. 'none' names nothing."""
+    return set(HOLE_REF.findall(gap or ""))
+
+
 def fingerprints(job: str, l1: dict | None = None, selected: bool = False) -> dict:
     """Per-group fingerprints: hash of the clause fingerprints each group derives from, plus members and the contract version.
     With selected=True, fingerprint the selected snapshot (what L3 compiled from) rather than the working file."""
@@ -420,8 +428,11 @@ def fingerprints(job: str, l1: dict | None = None, selected: bool = False) -> di
     out = {}
     for g in doc.get("sufficiency_groups", []):
         clauses = sorted((c, l1["clause_fingerprints"][c]) for c in g["parent_clauses"] if c in l1["clause_fingerprints"])
-        material = {"contract": L2_CONTRACT_VERSION, "job": job, "group": g["id"], "clauses": clauses, "members": sorted(g["members"])}
+        # a hole named in the gap bounds this group's claim, so answering or amending it is as material as a clause change
+        holes = sorted((h, l1["hole_fingerprints"][h]) for h in holes_named(g["gap"]) if h in l1["hole_fingerprints"])
+        material = {"contract": L2_CONTRACT_VERSION, "job": job, "group": g["id"], "clauses": clauses, "holes": holes, "members": sorted(g["members"])}
         out[g["id"]] = {"fingerprint": sha(json.dumps(material, sort_keys=True)), "derived_from": sorted(g["parent_clauses"]), "members": sorted(g["members"]),
+                        "bounded_by": sorted(h for h in holes_named(g["gap"]) if h in l1["hole_fingerprints"]),
                         "coverage_claim": g["coverage_claim"], "gap": g["gap"],
                         "justifications": {m: {"necessity": steps[m].get("necessity"), "parallel_assumption": steps[m].get("parallel_assumption")} for m in g["members"] if m in steps}}
     return out
@@ -449,12 +460,23 @@ def adjudication_for(group_id: str, clauses: list[str]) -> str | None:
 
 
 def stamped_everywhere(job: str, group_id: str, fingerprint: str) -> bool:
-    """True when every engine target's projection of the job carries this group fingerprint in its accepted manifest."""
+    """True when every engine target's projection of the job attests this group: either its accepted manifest carries the
+    fingerprint, or the projection derives nothing from the group (a group whose only member is a judgement invariant
+    reaches no artifact and no audit, so no projection can attest it and its staleness has no L3 consequence)."""
     targets = [d for d in (ROOT / "chain/l3").iterdir() if d.is_dir()]
     manifests = [t / job / "manifest.json" for t in targets if (t / job / "manifest.json").exists()]
     if not manifests:
         return False
-    return all(json.loads(m.read_text()).get("group_fingerprints", {}).get(group_id) == fingerprint for m in manifests)
+    doc = json.loads((L2_DIR / job / "selected-model.json").read_text()) if (L2_DIR / job / "selected-model.json").exists() else None
+    members = set(next((g["members"] for g in doc.get("sufficiency_groups", []) if g["id"] == group_id), [])) if doc else set()
+    for path in manifests:
+        manifest = json.loads(path.read_text())
+        if manifest.get("group_fingerprints", {}).get(group_id) == fingerprint:
+            continue
+        cited = {d for a in manifest.get("artifacts", []) for d in a.get("derived_from", [])} | {a["invariant"] for a in manifest.get("audits", [])}
+        if members & cited:
+            return False  # this projection does derive from the group and has not stamped the current fingerprint
+    return True
 
 
 def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
@@ -464,8 +486,15 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
     prev_clauses = previous.get("l1", {}).get("clause_fingerprints", {})
     prev_texts = previous.get("l1", {}).get("clauses", {})
     changed_clauses = {c for c, f in l1["clause_fingerprints"].items() if prev_clauses.get(c) != f}
+    prev_holes = previous.get("l1", {}).get("hole_fingerprints", {})
+    prev_hole_texts = previous.get("l1", {}).get("holes", {})
+    # a hole the business answered is gone from L1; a hole reworded has a new fingerprint. Both are policy moves.
+    changed_holes = {h for h, f in l1["hole_fingerprints"].items() if prev_holes.get(h) != f} | {h for h in prev_holes if h not in l1["hole_fingerprints"]}
+    prev_texts = {**prev_hole_texts, **prev_texts}
     JEV = _mod("jev_select", "scripts/jev_select.py") if use_jev else None
-    report = {"l1": {"clauses": l1["clauses"], "clause_fingerprints": l1["clause_fingerprints"], "holes": l1["holes"], "jobs": l1["jobs"]}, "changed_clauses": sorted(changed_clauses), "jobs": {}}
+    report = {"l1": {"clauses": l1["clauses"], "clause_fingerprints": l1["clause_fingerprints"], "holes": l1["holes"], "hole_fingerprints": l1["hole_fingerprints"], "jobs": l1["jobs"]},
+              "changed_clauses": sorted(changed_clauses), "changed_holes": sorted(changed_holes),
+              "answered_holes": sorted(h for h in prev_holes if h not in l1["hole_fingerprints"]), "jobs": {}}
     for job in JOB_ORDER:
         if not (L2_DIR / job / "semantic-model.json").exists():
             report["jobs"][job] = {"status": "no-l2"}
@@ -494,10 +523,11 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
                     continue
                 elements[eid] = {**info, "cache": "hit"}
                 continue
-            touched = [c for c in info["derived_from"] if c in changed_clauses]
+            touched = [c for c in info["derived_from"] if c in changed_clauses] + [h for h in info.get("bounded_by", []) if h in changed_holes]
+            touched += [h for h in changed_holes if h not in l1["hole_fingerprints"] and h in (info.get("gap") or "")]  # a hole answered out of existence
             decision, jev = ("stale-new", None) if before is None else ("stale", None)
             if before is not None and touched and JEV is not None:
-                verdicts = [JEV.invalidation(c, prev_texts.get(c, ""), l1["clauses"][c], {"id": eid, "kind": "sufficiency_group", "statement": info.get("coverage_claim"), "note": json.dumps(info.get("justifications"), sort_keys=True)[:3000]}) for c in touched]
+                verdicts = [JEV.invalidation(c, prev_texts.get(c, ""), l1["clauses"].get(c) or l1["holes"].get(c) or "(answered and removed)", {"id": eid, "kind": "sufficiency_group", "statement": info.get("coverage_claim"), "note": json.dumps(info.get("justifications"), sort_keys=True)[:3000]}) for c in touched]
                 decisions = {v.get("decision") for v in verdicts}
                 decision = "review" if "review" in decisions else ("stale" if "invalidate" in decisions else "hit-by-jev")
                 if decision == "review":

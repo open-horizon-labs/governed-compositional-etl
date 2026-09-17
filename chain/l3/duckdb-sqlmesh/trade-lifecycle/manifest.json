@@ -112,15 +112,15 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "aa96f17f146596ca221934a86212efc7bc3528e34a85c59c54db08539af15fa9"
+    "review_sha256": "ba947c83d724f841726a07a697a2d452e6c8554d3547ff6a9d23216d5b623a8b"
   },
   "group_fingerprints": {
-    "sg.constructed-scenarios": "990997abb5658589c811f6876487e72c9c50fe1d846dd2e041ddf496d22dbad4",
-    "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",
-    "sg.placement-moment": "4748495927a039733f7e0819d4c508cb20b66b28e02de907eac9a16643fce58c",
-    "sg.trade-identity": "aac9f60fd0cb1ca39e5ff833e639308ac579b82eadccd1aed1ecb4131ec2efcc",
-    "sg.trade-shape": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849",
-    "sg.unknown-codes": "e56467b11b92cd9366e5159763f2607fab471a0234f71286364f2ad73de7feeb"
+    "sg.constructed-scenarios": "bc19bc4df49822f826102ef0b0209f1d9e13e35cf16ae1680e88994b77f33ec7",
+    "sg.outcome": "87ed9eecd8a20f3806dc2288a52c50d761356d744f7af18f53a5f7dc6e40653d",
+    "sg.placement-moment": "69c7d5427257e83e6bcd567274e6d9bce1a4d72609cb890c30f17e1007514f52",
+    "sg.trade-identity": "3489a66c0d6c654e9a2b4f304e6b6ffaa241008cf7934cab8d0565a0ad9c4011",
+    "sg.trade-shape": "22d93dbbdc979acef6c1e8d3e59ddcca44c398ca23b13b254dce40606b6fd3e4",
+    "sg.unknown-codes": "c13c1f63bc7d85d45fede6048d666339171a920b1f5bba94101a60314294759a"
   },
   "job": "trade-lifecycle",
   "questions_for_authority": [],

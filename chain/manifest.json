@@ -1,9 +1,12 @@
 {
+  "answered_holes": [],
   "changed_clauses": [],
+  "changed_holes": [],
   "jobs": {
     "ownership-history": {
       "elements": {
         "sg.constructed-scenarios": {
+          "bounded_by": [],
           "cache": "hit",
           "coverage_claim": "The handoffs drawing from the labeled ce.account_changes source that are members of this group establish this account statement's identity, effective time, and constructed label: account_id populates account_number and action_at populates effective_from, satisfying L1.identity's persistent-identity requirement and L1.history/L1.as-of's dated, ordered statement requirement for this source specifically; provenance populates the account statement's own provenance field, and only ever from this source, while no raw-sourced handoff ever populates it, satisfying L1.constructed-scenarios' 'labeled... wherever it appears' and 'never mixed into the received records.' The standing facts this source's rows also carry, status_id and tax_status_id, are populated by handoffs that are members of sg.statement-content instead, since content coverage is the more specific claim owned there; this group's coverage is limited to identity, history/as-of, and labeling for this source.",
           "derived_from": [
@@ -12,7 +15,7 @@
             "L1.history",
             "L1.identity"
           ],
-          "fingerprint": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
+          "fingerprint": "bcb1b3bbce9bd7a546293b56fddf61bfc68102e6ddcb852e49a20685698d6cf1",
           "gap": "none",
           "justifications": {
             "handoff.ce.account_changes.account_id->logical.account.account_number": {
@@ -55,12 +58,16 @@
           ]
         },
         "sg.current-version": {
+          "bounded_by": [
+            "L1.hole.change-effective-time",
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "The is_current flag, true for exactly the statement of a customer or account with no later statement and false for every other, together with the single-current invariants, is a direct restatement of L1.current-version's 'exactly one current statement per customer and per account.' This determination depends on every statement's effective_from being known; where a statement's only source is an incremental CDC file, its order relative to the customer's or account's other statements is not yet resolvable, so its current-ness cannot yet be determined either.",
           "derived_from": [
             "L1.current-version"
           ],
-          "fingerprint": "9b10389debc3ca53e0141d93de60c709c5174419f3ccbf1a85672a5df796af6c",
+          "fingerprint": "3254018af9af1428233232592bb691befef23b5b8042fa677c050221d1e96270",
           "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker means for which statement of a customer or account is current is unresolved.",
           "justifications": {
             "inv.account_single_current": {
@@ -93,13 +100,17 @@
           ]
         },
         "sg.history-asof": {
+          "bounded_by": [
+            "L1.hole.change-effective-time",
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "For every statement whose source carries its own moment of change (the historical action file's action_ts), effective_from is populated and the no-overlap and unique-answer invariants hold over it, satisfying L1.history's 'kept, with the moment it took effect' and L1.as-of's 'the latest one that took effect at or before it.' The labeled constructed account scenario's own effective_from handoff (action_at) is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source. Incremental CDC records carry no moment of their own (a batch date is not an effective moment, per L1.hole.change-effective-time), so no effective_from handoff is created from them.",
           "derived_from": [
             "L1.as-of",
             "L1.history"
           ],
-          "fingerprint": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
+          "fingerprint": "4fdb0a45f5a9dca152657c5a39c6aa42831a0a12a0176c6e8c161a4fcd6dba42",
           "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker in an incremental change file means for a customer's or account's kept history is unresolved.",
           "justifications": {
             "handoff.raw.customer_mgmt_action.action_ts->logical.account.effective_from": {
@@ -152,6 +163,9 @@
           ]
         },
         "sg.identity": {
+          "bounded_by": [
+            "L1.hole.change-effective-time"
+          ],
           "cache": "hit",
           "coverage_claim": "Every source this job reads through a raw feed that reports a customer or account carries its own identity handoff into the customer_number or account_number attribute, typed with the identity mutation role, giving each entity the persistent, non-identity-changing value L1.identity requires. Because a versioned entity's statements must also be kept beside one another and be orderable for as-of resolution, this group also covers the entity-shape-level portion of L1.history and L1.as-of: the historical action file's own action_ts handoff makes both entities projectable as dated, ordered statements now; the incremental CDC files carry the same identity values but supply no effective moment of their own, so their identity handoffs into these versioned entities are deferred. The labeled constructed account scenario's own identity handoff is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source. L1.identity also names a trade number, out of this job's scope (see job:trade-lifecycle). The attribute-level effective_from population and ordering invariants are covered by sg.history-asof; the current-flag mechanics by sg.current-version.",
           "derived_from": [
@@ -159,7 +173,7 @@
             "L1.history",
             "L1.identity"
           ],
-          "fingerprint": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
+          "fingerprint": "07234ab8dcfc8c50611d647c58509537bdca878e7ab5c4a786fec7a91a794f7d",
           "gap": "L1.hole.change-effective-time",
           "justifications": {
             "handoff.raw.account_cdc.ca_id->logical.account.account_number": {
@@ -217,6 +231,11 @@
           ]
         },
         "sg.owner-standing": {
+          "bounded_by": [
+            "L1.hole.change-effective-time",
+            "L1.hole.deletions",
+            "L1.hole.owner-change-reversions-account"
+          ],
           "cache": "hit",
           "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation under L1.omitted-facts-stand, which holds that a constructed change not mentioning the owner leaves it as it last stood. L1.identity and L1.history make 'the account's immediately preceding statement' well defined, and L1.constructed-scenarios together with inv.constructed_account_change_refers_to_known_account guarantee that a preceding statement exists to carry from. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies. The inv.account_owner_matches_producing_source invariant additionally checks that owning_customer_number equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
           "derived_from": [
@@ -228,7 +247,7 @@
             "L1.owner-standing",
             "L1.statement-content"
           ],
-          "fingerprint": "7718f313b24aded61e77ebeffaf7ec1b736e434f25b43a0f47ee1fec9eab5364",
+          "fingerprint": "8b632b2b8014b6ab07525b67c761a2c0d8c8833a67b1329f5da9e8dbd5b6e07c",
           "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment) and L1.hole.deletions (what a deletion marker in that file means for owner-standing is unresolved).",
           "justifications": {
             "handoff.raw.account_cdc.c_id->logical.account.owning_customer_number": {
@@ -266,6 +285,11 @@
           ]
         },
         "sg.statement-content": {
+          "bounded_by": [
+            "L1.hole.change-effective-time",
+            "L1.hole.closed-account-activity",
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes \u2014 the one account source with no pending effective-time hole of its own \u2014 status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred. Four value-correctness invariants (inv.customer_status_matches_producing_source, inv.customer_tier_matches_producing_source, inv.account_status_matches_producing_source, inv.account_tax_treatment_matches_producing_source) additionally check that each populated value equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
           "derived_from": [
@@ -275,7 +299,7 @@
             "L1.omitted-facts-stand",
             "L1.statement-content"
           ],
-          "fingerprint": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95",
+          "fingerprint": "d3ae6dd00ac3f7d4bdb53b638981724bc06ff39775fb27e1113edc2c1b6491e0",
           "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved.",
           "justifications": {
             "handoff.ce.account_changes.status_id->logical.account.status": {
@@ -403,12 +427,15 @@
           ]
         },
         "sg.unknown-codes": {
+          "bounded_by": [
+            "L1.hole.change-effective-time"
+          ],
           "cache": "hit",
           "coverage_claim": "inv.unknown_codes_held is the direct and complete check, for this job, of L1.unknown-codes' requirement that an unnamed code be held for review and reported rather than interpreted, defaulted, or dropped: it covers the one coded field this job reads from a currently-projectable candidate source with an anchored vocabulary (raw.customer_mgmt_action.action_type).",
           "derived_from": [
             "L1.unknown-codes"
           ],
-          "fingerprint": "ed2331f7c6c4b1b22e627a8aac7f46c534ba5c45ec6b140d7d4929965aa46723",
+          "fingerprint": "d072fcbc5098eb14d9bb5d6a0249cc1a0be2d5050e8702023bdb82a011887877",
           "gap": "raw.customer_cdc.c_st_id and raw.account_cdc.ca_st_id are also coded fields this job reads, against the same anchored status_codes vocabulary, but their handoffs remain deferred under L1.hole.change-effective-time and derive no fact yet; this invariant does not yet check them, and must be extended to cover them once those handoffs are undeferred. Listed under hole.change_effective_time.blocks even though it has no deferred member, because that hole's resolution (whether an incremental change file's own status value takes effect at all) bears on whether the deferred c_st_id/ca_st_id handoffs this gap names ever become this group's members.",
           "justifications": {
             "inv.unknown_codes_held": {
@@ -429,12 +456,13 @@
     "positions": {
       "elements": {
         "sg.constructed-scenarios": {
+          "bounded_by": [],
           "cache": "hit",
           "coverage_claim": "Three facts satisfy L1.constructed-scenarios for this job. First, sources-v1.json anchors no labeled constructed source (ce.*) for holding changes, only raw.holding_history, so this job has no handoff that could mix an unlabeled constructed fact into logical.holding_change -- inv.holding_change_not_constructed restates this directly. Second, the (owning_account_number, owning_account_effective_from) pair copied unchanged onto every holding change from trade-lifecycle's logical.trade is the same pair trade-lifecycle itself uses to keep a constructed-scenario account statement's provenance label reachable (its own inv.trade_ownership_provenance_reachable); because this job copies that pair verbatim and never re-derives it, that reachability threads through to every holding change and every account_position built from it, without this job needing a separate provenance attribute of its own. Third, no constructed customer source is anchored anywhere upstream -- ownership-history's logical.customer carries no provenance attribute, and sources-v1.json anchors no ce.customer_* source -- so there is no customer-side provenance for this job to reach or carry either; the copied (owning_customer_number, owning_customer_effective_from) pair labels nothing because there is nothing upstream for it to label.",
           "derived_from": [
             "L1.constructed-scenarios"
           ],
-          "fingerprint": "9a58ba25f2f2924559b4744bbf83743b007e48d4d33f32327f66014b25c5a38a",
+          "fingerprint": "ee9c8b1c14e9f19d10f2c7d439ced920a40713140817fa194cd4536af14a3ea1",
           "gap": "none",
           "justifications": {
             "inv.holding_change_not_constructed": {
@@ -447,6 +475,11 @@
           ]
         },
         "sg.holding-attribution": {
+          "bounded_by": [
+            "L1.hole.batch-identity",
+            "L1.hole.change-effective-time",
+            "L1.hole.owner-change-reversions-account"
+          ],
           "cache": "hit",
           "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward, naming both which account and, 'through it the customer, as they stood,' which customer statement; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution; sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for holding-change reports, anchoring first_encounter_only's ordering directly for this entity rather than by extension from trade reports. inv.holding_change_ownership_frozen restates that all four values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own four attributes resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account or customer statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). Separately, L1.hole.owner-change-reversions-account bounds which account statement -- and hence which customer statement -- a trade's placed_at pins in the first place: if a customer-only change also re-versions the account, a trade placed shortly after such a change could pin a different account (and customer) statement than it does today, which would change what this holding change copies without this job deciding it. A holding change whose current trade's ownership pin does not resolve, for any of these reasons, has no ownership reference for this job to copy. inv.holding_change_ownership_present restates this exclusion as a checkable invariant: every persisted holding change carries all four copied attributes non-null. inv.holding_change_current_trade_known distinguishes the separate, unknown-trade case: an hh_t_id that does not resolve to any logical.trade row at all does not drop out silently the way an unresolved pin does, but fires as a violation instead. The two readings coincide whenever trade-lifecycle's inv.every_received_trade_persisted and inv.trade_ownership_pin_present hold, and an engine that drops an unpinnable trade upstream makes inv.holding_change_current_trade_known fire for the unresolved-pin case too -- two projections that differ in this way differ only in a state trade-lifecycle already reports.",
           "derived_from": [
@@ -454,7 +487,7 @@
             "L1.holdings-follow-trade",
             "L1.identity"
           ],
-          "fingerprint": "8b5a5bce38f1d3dde2f19080203949325a9a8270228b0542b284e7ef0816dba1",
+          "fingerprint": "915490ac7c3f0f45cd3e7b9068b90aae0b119bd669c7dc2bcda7435589b4f76a",
           "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; L1.hole.owner-change-reversions-account bounds which statement is pinned in the first place; see coverage_claim.",
           "justifications": {
             "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from": {
@@ -537,6 +570,9 @@
           ]
         },
         "sg.holding-shape": {
+          "bounded_by": [
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "logical.holding_change's history kind, incremental_by_identity, follows from L1.holdings-follow-trade (a holding change is identified by its original trade and its current trade, and belongs to whoever owned the causing trade), L1.identity (those trade numbers persistently identify the same trades across every report), and L1.attribution-at-placement (the ownership, once fixed on the current trade, is not moved) -- together these entail one row per (original_trade_number, current_trade_number) pair, updated in place. original_trade_number and current_trade_number, handed off unchanged from raw.holding_history's own hh_h_t_id and hh_t_id with the identity mutation role, give this entity exactly the composite identity L1.holdings-follow-trade names. This group's scope is limited to the entity's shape and its two identity attributes; the ownership this entity copies through current_trade_number is the more specific claim covered by sg.holding-attribution instead. inv.eligible_holding_report_persisted makes the row-per-pair half of this grain checkable directly: an eligible pair -- reported, touched by no cdc_flag D report at all, and resolving to a fully pinned current trade -- has exactly one row; a pair touched by any D report, not merely one whose reports are all D-flagged, is the any-D abstention this invariant takes, left to L1.hole.deletions.",
           "derived_from": [
@@ -544,7 +580,7 @@
             "L1.holdings-follow-trade",
             "L1.identity"
           ],
-          "fingerprint": "cb553511f42f03edf2e452665cb5eef2b1b729ba719aa3a985962ed8565dd214",
+          "fingerprint": "12756477e895793362de38cddd7ff729729341b1c80a346ecdbb8bcf05437dda",
           "gap": "L1.hole.deletions bounds this group's own row-per-pair claim: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided.",
           "justifications": {
             "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number": {
@@ -587,6 +623,12 @@
           ]
         },
         "sg.no-phantom-positions": {
+          "bounded_by": [
+            "L1.hole.batch-identity",
+            "L1.hole.change-effective-time",
+            "L1.hole.deletions",
+            "L1.hole.owner-change-reversions-account"
+          ],
           "cache": "hit",
           "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. inv.unknown_codes_held (sg.unknown-codes) now states this selector's candidate set precisely: the anchored codes (I, U, D) or null for a historical row; a cdc_flag value outside that set is reported, and still outside the candidate set: the exclusion is no longer silent, retiring the cdc_flag-vocabulary question the L3 manifests had filed. inv.holding_quantity_change_is_difference makes the after-minus-before computation itself checkable on every row, and inv.holding_quantities_present makes non-null presence of before_qty, after_qty, and quantity_change checkable directly, so a report with no determinable quantity fires rather than silently dropping out of a sum. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total. inv.holding_change_ownership_present (in sg.holding-attribution) restates that drop-out itself as a checkable invariant on the persisted rows this group sums over; inv.holding_change_current_trade_known distinguishes the separate case of an hh_t_id that does not resolve to any logical.trade row at all, which does not drop out silently but fires as a violation instead.",
           "derived_from": [
@@ -595,7 +637,7 @@
             "L1.identity",
             "L1.no-phantom-positions"
           ],
-          "fingerprint": "7398a842554519057435564399746230c4e8f994d214240c91d8476f9b27cc0a",
+          "fingerprint": "df5b1201af77b89a356e3ca69d2f85be7e229e084ba41bd862fac4eb62e621a3",
           "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution.",
           "justifications": {
             "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity": {
@@ -753,12 +795,13 @@
           ]
         },
         "sg.unknown-codes": {
+          "bounded_by": [],
           "cache": "hit",
           "coverage_claim": "L1.unknown-codes requires every job to report, held for review and never interpreted, defaulted, or dropped, a record carrying a code its vocabulary does not name. This job reads exactly one anchored coded field: raw.holding_history's cdc_flag (sources-v1.json's trade_code_meanings.cdc_flag names I, U, and D; historical rows carry no cdc_flag at all, per the same anchor). inv.unknown_codes_held is that report, over every raw.holding_history row this job consumes. No other coded field is read here: this job's own handoffs and derivations draw only from raw.holding_history and from trade-lifecycle's already-resolved logical.trade attributes, never from raw.account_cdc, raw.customer_cdc, raw.customer_mgmt_action, or raw.trade_cdc/raw.trade_history directly.",
           "derived_from": [
             "L1.unknown-codes"
           ],
-          "fingerprint": "eeb63f748a890f897e37b62838cfcd787d23546ac0bb2251f131bd4b7e34e437",
+          "fingerprint": "e8c6a216f8d0e597e59b2c28258b6a1ad41da2045701fe11e539c21e26367ad2",
           "gap": "none",
           "justifications": {
             "inv.unknown_codes_held": {
@@ -779,13 +822,14 @@
     "trade-lifecycle": {
       "elements": {
         "sg.constructed-scenarios": {
+          "bounded_by": [],
           "cache": "hit",
           "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from the two anchored received sources (raw.trade_cdc and raw.trade_history) and, through the frozen ownership reference, ownership-history's logical.account and logical.customer entities. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. The customer pin (owning_customer_number, owning_customer_effective_from) raises no equivalent risk: logical.customer carries no provenance attribute of its own, and sources-v1.json anchors no ce.customer_* source, so there is no labeled constructed customer scenario for the customer pin to fail to relabel or duplicate. This claim is scoped to trades whose pins resolve; a trade whose pins do not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no pinned statements to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
           "derived_from": [
             "L1.attribution-at-placement",
             "L1.constructed-scenarios"
           ],
-          "fingerprint": "990997abb5658589c811f6876487e72c9c50fe1d846dd2e041ddf496d22dbad4",
+          "fingerprint": "bc19bc4df49822f826102ef0b0209f1d9e13e35cf16ae1680e88994b77f33ec7",
           "gap": "none",
           "justifications": {
             "inv.trade_not_constructed": {
@@ -803,12 +847,16 @@
           ]
         },
         "sg.outcome": {
+          "bounded_by": [
+            "L1.hole.batch-identity",
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "L1.lifecycle-mutates-outcome enumerates exactly six outcome facts -- status, executed price, fees, commission, tax, quantity -- that change as a trade moves through its life, describing that change entirely in terms of the trade's four named lifecycle statuses (pending, submitted, completed, cancelled). Each fact is handed off from raw.trade_cdc's own field for that fact (t_st_id, t_trade_price, t_chrg, t_comm, t_tax, t_qty respectively), typed mutable, with selector latest_change ordering candidate reports by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, not a report carrying which file delivered it, which L1.hole.batch-identity leaves open. The anchored trade_code_meanings.cdc_flag states I as newly inserted and U as updating an existing record; both carry one of the clause's four named statuses, so latest_change's candidate set is I- and U-flagged reports, which inv.trade_outcome_updates_in_place restates directly. A cdc_flag D report is not one of these: 'deleted' is not a status the clause names, so latest_change does not select an outcome value from a D-flagged report; what a D-flagged report means for the trade's outcome -- whether it stands, is voided, or something else -- is L1.hole.deletions, not decided by this exclusion. All six facts the clause names are otherwise covered by a member of this group; the clause names no others.",
           "derived_from": [
             "L1.lifecycle-mutates-outcome"
           ],
-          "fingerprint": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",
+          "fingerprint": "87ed9eecd8a20f3806dc2288a52c50d761356d744f7af18f53a5f7dc6e40653d",
           "gap": "L1.hole.deletions bounds what a D-flagged report means for a trade's outcome; L1.hole.batch-identity bounds latest_change's reliance on file production order rather than a report carrying which file delivered it.",
           "justifications": {
             "handoff.raw.trade_cdc.t_chrg->logical.trade.fees": {
@@ -911,6 +959,15 @@
           ]
         },
         "sg.placement-moment": {
+          "bounded_by": [
+            "L1.hole.batch-identity",
+            "L1.hole.change-effective-time",
+            "L1.hole.closed-account-activity",
+            "L1.hole.deletions",
+            "L1.hole.held-first-report-placement",
+            "L1.hole.market-order-seen-pending",
+            "L1.hole.owner-change-reversions-account"
+          ],
           "cache": "hit",
           "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time. placed_at is handed off, under selector first_encounter_only, from whichever anchored source holds that earliest report: raw.trade_cdc's t_dts for a trade whose held reports are Trade change records ordered by trade_code_meanings.report_order's (batch_date, cdc_dsn), or, for a historical-load trade with anchored raw.trade_history rows, raw.trade_history's th_dts on its earliest such row instead, per report_order's statement that such a trade's earliest held report is its earliest TradeHistory row, not its Trade snapshot; inv.trade_placed_at_matches_earliest_report makes this rule itself checkable, not merely that placed_at is set once. Together the two handoffs carry exactly that moment, frozen, across both anchored report sources; owning_account_number still comes only from raw.trade_cdc's t_ca_id regardless of which source supplies placed_at, since raw.trade_history carries no account field (sg.trade-shape). L1.attribution-at-placement requires the trade's ownership reference to be the pair of statements, account and customer, as they stood at that moment -- 'the account, and through it the customer, as they stood at the moment the trade was placed' -- not either one's current statement. L1.as-of defines each such answer as the upstream statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from, owning_customer_number, and owning_customer_effective_from as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account and customer entities they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies the exact account statement. owning_customer_number is handed off directly from that same pinned account statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it; owning_customer_effective_from, handed off from logical.customer.effective_from with selector as_of_event_time (also at or before placed_at), completes the (customer_number, effective_from) pair identifying the exact customer statement, satisfying the 'and through it the customer, as they stood' half of the clause in full -- not just which customer, but which of that customer's dated statements. inv.trade_placement_reference_frozen restates that all four reference attributes are set once, at first encounter, and never replaced. inv.trade_ownership_pin_present restates, as a single checkable fact, that a persisted trade never carries a null in any of these four attributes -- that the pin resolved, not merely that whatever it resolved to is frozen. first_seen_late, using trade_code_meanings.status_order and report_order together with order_type (handed off from raw.trade_cdc.t_tt_id under selector first_encounter_only and anchored, as to which codes exist and which are market or limit, by trade_code_meanings.trade_type_codes), marks a trade whose first-encountered report -- across both anchored sources -- as first seen late when its status (th_st_id or t_st_id) is later than its order type's first lifecycle event: PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage; so a limit order first reported anything other than PNDG is first seen late, a market order first reported SBMT is not, and one first reported CMPT or CNCL is -- a market order first reported PNDG, and an order type outside the anchored four, are left undefined by this rule and are not claimed by inv.trade_first_seen_late_matches_status_order, which otherwise restates it directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account- and customer-statement pins against any upstream statement ownership-history has deferred (a CDC-sourced account or customer update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order) or, for raw.trade_history, th_dts ordering, not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
           "derived_from": [
@@ -921,7 +978,7 @@
             "L1.placement-moment",
             "L1.unknown-codes"
           ],
-          "fingerprint": "4748495927a039733f7e0819d4c508cb20b66b28e02de907eac9a16643fce58c",
+          "fingerprint": "69c7d5427257e83e6bcd567274e6d9bce1a4d72609cb890c30f17e1007514f52",
           "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, L1.hole.market-order-seen-pending, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
           "justifications": {
             "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from": {
@@ -1059,12 +1116,15 @@
           ]
         },
         "sg.trade-identity": {
+          "bounded_by": [
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "Every raw.trade_cdc row carries t_id, the brokerage's own trade number, handed off unchanged into trade_number with the identity mutation role; because this value is identical across every CDC row reporting the same trade, no later report ever produces a 'different' trade, satisfying L1.identity's persistence requirement for the trade entity. inv.every_received_trade_persisted extends this group's claim from consistency to completeness: every trade_number none of whose received reports carries cdc_flag D appears as exactly one logical.trade row, not zero and not more than one.",
           "derived_from": [
             "L1.identity"
           ],
-          "fingerprint": "aac9f60fd0cb1ca39e5ff833e639308ac579b82eadccd1aed1ecb4131ec2efcc",
+          "fingerprint": "3489a66c0d6c654e9a2b4f304e6b6ffaa241008cf7934cab8d0565a0ad9c4011",
           "gap": "L1.hole.deletions bounds this group's completeness claim: a trade_number with any cdc_flag D report is not claimed by inv.every_received_trade_persisted and stays that hole's case.",
           "justifications": {
             "handoff.raw.trade_cdc.t_id->logical.trade.trade_number": {
@@ -1092,6 +1152,10 @@
           ]
         },
         "sg.trade-shape": {
+          "bounded_by": [
+            "L1.hole.batch-identity",
+            "L1.hole.deletions"
+          ],
           "cache": "hit",
           "coverage_claim": "logical.trade's history kind, incremental_by_identity, is the direct consequence of L1.identity (a trade is a persistent identified thing; a later report about the same trade number is the same trade, not a new one), L1.lifecycle-mutates-outcome (a later report updates outcome facts on this same row), and L1.attribution-at-placement (the trade's ownership, once established at placement, is never moved by a later report about the account or customer) -- together these entail one row per trade_number, updated in place, holding a frozen portion beside a mutable portion. The frozen portion's account-identity component is owning_account_number: raw.trade_cdc's t_ca_id, taken only from the trade's first-encountered report and never replaced by a later one, which inv.trade_owning_account_frozen restates directly. This is the part of L1.attribution-at-placement that names which account a trade belongs to, fixed at first encounter; the remaining part -- which dated statement of that account, and through it which customer, stood as of the moment of placement -- is now resolved by L1.placement-moment and covered by sg.placement-moment instead, since that is the more specific claim. This group's own scope is limited to the entity's shape and the account-identity portion. That portion is nonetheless bounded: owning_account_number is taken from the trade's first-encountered raw.trade_cdc report, identified by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order -- not from a report carrying which file delivered it, which L1.hole.batch-identity leaves open. It is also bounded by L1.hole.deletions: what a cdc_flag D row means is undecided, including whether the trade's first-encountered raw.trade_cdc report could itself be D-flagged and what that would mean for owning_account_number.",
           "derived_from": [
@@ -1099,7 +1163,7 @@
             "L1.identity",
             "L1.lifecycle-mutates-outcome"
           ],
-          "fingerprint": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849",
+          "fingerprint": "22d93dbbdc979acef6c1e8d3e59ddcca44c398ca23b13b254dce40606b6fd3e4",
           "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it; L1.hole.deletions bounds what a D-flagged first-encountered report would mean for owning_account_number.",
           "justifications": {
             "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number": {
@@ -1132,12 +1196,13 @@
           ]
         },
         "sg.unknown-codes": {
+          "bounded_by": [],
           "cache": "hit",
           "coverage_claim": "L1.unknown-codes requires every job to report a consumed row whose coded field carries a value its anchored vocabulary does not name, naming the record and the code, and forbids interpreting, defaulting, or dropping it; a held report changes nothing and creates nothing, so a trade known only through held reports is not yet known to this job. This job reads three anchored code vocabularies across its two consumed sources -- cdc_flag and t_tt_id on raw.trade_cdc, and the shared status_codes vocabulary on both t_st_id (raw.trade_cdc) and th_st_id (raw.trade_history) -- and inv.unknown_codes_held is the single checkable restatement of that reporting duty across all of them. Ten handoffs in this job read a coded field, each stating in its own parallel_assumption that a held row or report is not read as a fact by this handoff (a held later report is not a later report for latest_change and the value stands as last derived; a held row is not a first-encountered report for first_encounter_only and a trade known only through held rows is not yet known; an unanchored code on a value-carrying field yields no derived fact) and listing this invariant in its feedback: raw.trade_cdc.t_id->trade_number, raw.trade_cdc.t_ca_id->owning_account_number, and raw.trade_cdc.t_dts->placed_at (selection, reading cdc_flag); raw.trade_cdc.t_tt_id->order_type (its own field) and raw.trade_cdc.t_st_id->status (its own field, and cdc_flag for latest_change); and raw.trade_cdc.t_trade_price->executed_price, t_chrg->fees, t_comm->commission, t_tax->tax, and t_qty->quantity (cdc_flag, for latest_change). Adjacent to this group's own claim, first_seen_late (sg.placement-moment) carries the held case further: a first-encountered report held under this clause makes first_seen_late null, reported by inv.unknown_codes_held together with inv.trade_first_seen_late_defined_or_held; L1.hole.market-order-seen-pending bounds a distinct case -- PNDG is itself an anchored status, so a market order first reported PNDG is not an unknown code, and inv.unknown_codes_held does not report it, inv.trade_market_order_seen_pending_held (sg.placement-moment) does. Neither is a gap of this group's own claim, which is complete over the three vocabularies and their ten readers. This invariant decides nothing about what an unnamed record subsequently means.",
           "derived_from": [
             "L1.unknown-codes"
           ],
-          "fingerprint": "e56467b11b92cd9366e5159763f2607fab471a0234f71286364f2ad73de7feeb",
+          "fingerprint": "c13c1f63bc7d85d45fede6048d666339171a920b1f5bba94101a60314294759a",
           "gap": "none",
           "justifications": {
             "inv.unknown_codes_held": {
@@ -1188,6 +1253,17 @@
       "L1.placement-moment": "A trade is placed at the moment of the earliest report of it held by the brokerage, as that report states its own time. A trade whose earliest held report is not the trade's first lifecycle event is treated as placed at that report and marked as first seen late, so the ownership it fixes can be reviewed. An order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted. (Placement assumed under `issue-8-statement-content-assumed`; the market-order sentence accepted from `ce.l1.first-seen-late-market-orders` on 2026-09-17.)",
       "L1.statement-content": "A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)",
       "L1.unknown-codes": "The brokerage's records speak in a fixed vocabulary of codes (statuses, order types, change flags). A report carrying a code that vocabulary does not name is held for review and is not interpreted: no rule below may read a meaning into it, default it, or silently drop the report. Every job reports such a record as a violation, naming the record and the code. A report is held as a whole: one unknown code holds the record, not the field. A held report keeps its place in the order of reports, so the job can tell which report came first, but nothing else about it may be read. A held report changes nothing and creates nothing: every fact stands as it last stood, and a customer, account or trade known only through held reports is not yet known to the job; the hold itself is what is reported. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)"
+    },
+    "hole_fingerprints": {
+      "L1.hole.batch-identity": "f4ddaff7178afc8744fbc680fe6bdccc6115f44dc4937d4cb0198f4b088a7c4c",
+      "L1.hole.change-effective-time": "0a51d8394ff8ffc788a83f82d90b76365d27be1fa7744582c91c8b0a680be9ee",
+      "L1.hole.closed-account-activity": "87dee45f4fcb4e5ba1be7e18cda33a4e6785a450e4b3a21bb2d97a6cb8d7f544",
+      "L1.hole.deletions": "7eff84620c821a7cfe159213bbf87cc7cffafa3c94c022796ef7a600a00313ea",
+      "L1.hole.held-first-report-placement": "f0686cb01fdf7e407b357d86d237ff1d6aab91b6ce2771081f91f4188d452d4c",
+      "L1.hole.market-order-seen-pending": "20fb81a0a7ebbb9618d32b0af4bd621e2ef4c3b9d649553cac7a3e0484d61361",
+      "L1.hole.owner-change-reversions-account": "91237cb2243c72c6149742dac22640a49ab52ec06b32982a95f69791b2ab55f2",
+      "L1.hole.securities-and-brokers": "599e4a28594d005925ae5777393ef53d0a4babd944f87f6aae95fd5d56a28432",
+      "L1.hole.trade-timestamps": "1f42d838b06622558539b983a26688d8c8593b897fd28a7a6add0875171ae250"
     },
     "holes": {
       "L1.hole.batch-identity": "Does a report need to know which incremental file first delivered a fact?",

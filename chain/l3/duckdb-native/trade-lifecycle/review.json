@@ -1,6 +1,6 @@
 {
   "job": "trade-lifecycle",
-  "manifest_sha256": "59e4c645aaffdda278519a48507c096f48cfcc5b3a0836e48017795206e3fcb6",
+  "manifest_sha256": "1d37aa7b74e529682f4bdeb57abf7466acd6e9f55961e3e103eac0d3830283f0",
   "notes": "see review-1..9",
   "rejected_artifacts": [],
   "reviewer": "coordinator, bookkeeping review 9 after the prescribed fix",

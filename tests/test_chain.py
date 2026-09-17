@@ -172,6 +172,49 @@ class CacheTests(unittest.TestCase):
         self.assertTrue(all("L1.identity" in report["jobs"][JOB]["elements"][g]["derived_from"] for g in stale))
 
 
+class HoleCacheTests(unittest.TestCase):
+    def test_answering_or_amending_a_hole_stales_the_groups_it_bounds(self):
+        """An L1 hole is policy: every element that defers to it leans on it staying open. Amending a hole's text, or
+        answering it out of existence, must stale exactly the groups whose gap names it, and nothing else."""
+        l1 = L2.parse_l1()
+        job, bound = None, None
+        for candidate in ("trade-lifecycle", "ownership-history", "positions"):
+            for gid, info in L2.fingerprints(candidate, l1, selected=True).items():
+                if info["bounded_by"]:
+                    job, bound, hole = candidate, gid, info["bounded_by"][0]
+                    break
+            if job:
+                break
+        self.assertIsNotNone(job, "no group declares a hole in its gap")
+        baseline = {j: L2.fingerprints(j, l1, selected=True) for j in L2.JOB_ORDER}
+        for mutate in ("amend", "answer"):
+            moved = dict(l1)
+            moved["holes"] = {h: (t + " amended." if h == hole else t) for h, t in l1["holes"].items()}
+            if mutate == "answer":
+                moved["holes"] = {h: t for h, t in l1["holes"].items() if h != hole}
+            moved["hole_fingerprints"] = {h: L2.sha(t) for h, t in moved["holes"].items()}
+            for j in L2.JOB_ORDER:
+                after = L2.fingerprints(j, moved, selected=True)
+                for gid, info in after.items():
+                    expected_move = hole in baseline[j][gid]["bounded_by"]
+                    self.assertEqual(info["fingerprint"] != baseline[j][gid]["fingerprint"], expected_move,
+                                     (mutate, j, gid, baseline[j][gid]["bounded_by"]))
+
+    def test_a_group_no_projection_derives_from_cannot_be_l3_stale(self):
+        """A group whose only member is a judgement invariant reaches no artifact and no audit; no projection can attest
+        it, so it must not sit stale forever waiting for a stamp that can never come."""
+        model = json.loads((ROOT / "chain/l2/positions/selected-model.json").read_text())
+        cited = set()
+        for target in ("duckdb-native", "duckdb-sqlmesh"):
+            manifest = json.loads((ROOT / "chain/l3" / target / "positions/manifest.json").read_text())
+            cited |= {a["invariant"] for a in manifest["audits"]}
+            cited |= {d for a in manifest["artifacts"] for d in a["derived_from"]}
+        unprojected = [g["id"] for g in model["sufficiency_groups"] if not set(g["members"]) & cited]
+        self.assertTrue(unprojected, "expected at least one group no projection derives from")
+        for gid in unprojected:
+            self.assertTrue(L2.stamped_everywhere("positions", gid, "a-fingerprint-no-manifest-carries"), gid)
+
+
 class WeaveTests(unittest.TestCase):
     def test_weave_reports_uncovered_clauses_as_gaps(self):
         out = L2.weave()

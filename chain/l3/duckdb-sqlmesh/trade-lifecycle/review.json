@@ -1,6 +1,6 @@
 {
   "job": "trade-lifecycle",
-  "manifest_sha256": "cc03bbe00d3c8b858ee08826550b8de6723f7bb45f80048bd887f50090e28563",
+  "manifest_sha256": "131f3725ccc27c473e8ea92a467b345d778247601a9b783464a38cb9f38077b7",
   "notes": "see review-1..8",
   "rejected_artifacts": [],
   "reviewer": "Opus sketch reviewer, scoped review 8 (both engines)",

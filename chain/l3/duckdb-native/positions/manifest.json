@@ -151,10 +151,10 @@
     "review_sha256": "e3d5796935ac35f2030ec53f8037ce54b2ba04458db0108f57ee58227bf27df4"
   },
   "group_fingerprints": {
-    "sg.holding-attribution": "8b5a5bce38f1d3dde2f19080203949325a9a8270228b0542b284e7ef0816dba1",
-    "sg.holding-shape": "cb553511f42f03edf2e452665cb5eef2b1b729ba719aa3a985962ed8565dd214",
-    "sg.no-phantom-positions": "7398a842554519057435564399746230c4e8f994d214240c91d8476f9b27cc0a",
-    "sg.unknown-codes": "eeb63f748a890f897e37b62838cfcd787d23546ac0bb2251f131bd4b7e34e437"
+    "sg.holding-attribution": "915490ac7c3f0f45cd3e7b9068b90aae0b119bd669c7dc2bcda7435589b4f76a",
+    "sg.holding-shape": "12756477e895793362de38cddd7ff729729341b1c80a346ecdbb8bcf05437dda",
+    "sg.no-phantom-positions": "df5b1201af77b89a356e3ca69d2f85be7e229e084ba41bd862fac4eb62e621a3",
+    "sg.unknown-codes": "e8c6a216f8d0e597e59b2c28258b6a1ad41da2045701fe11e539c21e26367ad2"
   },
   "job": "positions",
   "questions_for_authority": [

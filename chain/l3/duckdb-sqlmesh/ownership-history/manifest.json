@@ -142,13 +142,13 @@
     "review_sha256": "93ad098e0c9231e37c24efae1404c695b7e5d3713bd5e72d1c82c3f91bbf7572"
   },
   "group_fingerprints": {
-    "sg.constructed-scenarios": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
-    "sg.current-version": "9b10389debc3ca53e0141d93de60c709c5174419f3ccbf1a85672a5df796af6c",
-    "sg.history-asof": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
-    "sg.identity": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
-    "sg.owner-standing": "7718f313b24aded61e77ebeffaf7ec1b736e434f25b43a0f47ee1fec9eab5364",
-    "sg.statement-content": "26bd2760a6ff918b87b047370c9b37211ae630286e8b0afd4eedbb37105d0e95",
-    "sg.unknown-codes": "ed2331f7c6c4b1b22e627a8aac7f46c534ba5c45ec6b140d7d4929965aa46723"
+    "sg.constructed-scenarios": "bcb1b3bbce9bd7a546293b56fddf61bfc68102e6ddcb852e49a20685698d6cf1",
+    "sg.current-version": "3254018af9af1428233232592bb691befef23b5b8042fa677c050221d1e96270",
+    "sg.history-asof": "4fdb0a45f5a9dca152657c5a39c6aa42831a0a12a0176c6e8c161a4fcd6dba42",
+    "sg.identity": "07234ab8dcfc8c50611d647c58509537bdca878e7ab5c4a786fec7a91a794f7d",
+    "sg.owner-standing": "8b632b2b8014b6ab07525b67c761a2c0d8c8833a67b1329f5da9e8dbd5b6e07c",
+    "sg.statement-content": "d3ae6dd00ac3f7d4bdb53b638981724bc06ff39775fb27e1113edc2c1b6491e0",
+    "sg.unknown-codes": "d072fcbc5098eb14d9bb5d6a0249cc1a0be2d5050e8702023bdb82a011887877"
   },
   "job": "ownership-history",
   "questions_for_authority": [],
