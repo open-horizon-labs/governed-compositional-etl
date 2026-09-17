@@ -447,8 +447,14 @@ def fingerprints(job: str, l1: dict | None = None, selected: bool = False) -> di
     return out
 
 
-def adjudication_for(group_id: str, clauses: list[str]) -> str | None:
-    """Latest recorded adjudication for a group under one of the changed clauses: 'invalidate', 'keep', or None."""
+def adjudication_for(job: str, group_id: str, clauses: list[str]) -> str | None:
+    """Latest recorded adjudication for one job's group under one of the changed clauses: 'invalidate', 'keep', or None.
+
+    Group ids are not unique across jobs: sg.unknown-codes and sg.constructed-scenarios exist in all three, and a
+    reviewer can reach opposite verdicts for them in different jobs under the same clause change -- one already did,
+    and recorded them under 'trade-lifecycle/sg.unknown-codes' style keys that this job-blind lookup could not read,
+    so every one of those decisions was inert. A qualified '<job>/<group>' key is read first and is the precise form.
+    A bare key still applies to whichever job asks, which is how the earlier single-job entries were written."""
     path = ROOT / "chain/cache-adjudications.jsonl"
     if not path.exists():
         return None
@@ -459,7 +465,8 @@ def adjudication_for(group_id: str, clauses: list[str]) -> str | None:
         entry = json.loads(line)
         if entry.get("clause") not in clauses:
             continue
-        note = entry.get("groups", {}).get(group_id)
+        groups = entry.get("groups", {})
+        note = groups.get(f"{job}/{group_id}", groups.get(group_id))
         text = json.dumps(note).lower() if note is not None else ""
         if "invalidate" in text or "stale" in text:
             verdict = "invalidate"
@@ -541,7 +548,7 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
                 prior = prev.get(eid, {}).get("cache")
                 touched_before = prev.get(eid, {}).get("touched_clauses") or []
                 if prior == "review":
-                    adjudicated = adjudication_for(eid, touched_before)
+                    adjudicated = adjudication_for(job, eid, touched_before)
                     decision = "stale" if adjudicated == "invalidate" else ("hit-by-adjudication" if adjudicated == "keep" else "review")
                     elements[eid] = {**info, "cache": decision, "touched_clauses": touched_before, "jev": prev.get(eid, {}).get("jev")}
                     continue
@@ -559,7 +566,7 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
                 decision = cache_decision({v.get("decision") for v in verdicts})
                 if decision == "review":
                     # a reviewer's recorded adjudication (chain/cache-adjudications.jsonl) settles what Jev could not
-                    adjudicated = adjudication_for(eid, touched)
+                    adjudicated = adjudication_for(job, eid, touched)
                     if adjudicated == "invalidate":
                         decision = "stale"
                     elif adjudicated == "keep":

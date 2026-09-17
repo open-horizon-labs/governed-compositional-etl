@@ -487,6 +487,29 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class AdjudicationIsJobScopedTests(unittest.TestCase):
+    """sg.unknown-codes and sg.constructed-scenarios exist in all three jobs, and one clause change can genuinely
+    warrant opposite verdicts in different jobs. A reviewer recorded exactly that under L1.unknown-codes, writing
+    '<job>/<group>' keys -- and the lookup was job-blind, so it read none of them and every decision was inert."""
+
+    CLAUSE = ["L1.unknown-codes"]
+
+    def test_a_reviewers_per_job_verdicts_are_read_per_job(self):
+        got = {j: L2.adjudication_for(j, "sg.unknown-codes", self.CLAUSE) for j in ("ownership-history", "trade-lifecycle", "positions")}
+        if not any(got.values()):
+            self.skipTest("no adjudication recorded for sg.unknown-codes under this clause")
+        self.assertEqual(got["trade-lifecycle"], "invalidate", got)
+        self.assertEqual(got["ownership-history"], "keep", got)
+        self.assertNotEqual(got["trade-lifecycle"], got["ownership-history"], "a job-blind lookup returns one verdict for both")
+
+    def test_a_bare_key_still_applies_to_the_job_that_asks(self):
+        """Earlier single-job entries were written with bare group ids and must keep working."""
+        self.assertEqual(L2.adjudication_for("trade-lifecycle", "sg.placement-moment", ["L1.placement-moment"]), "invalidate")
+
+    def test_an_unadjudicated_group_returns_none(self):
+        self.assertIsNone(L2.adjudication_for("positions", "sg.no-such-group", self.CLAUSE))
+
+
 class CacheDecisionPrecedenceTests(unittest.TestCase):
     """One group can derive from several clauses, so Jev returns several verdicts and they must be combined. The order
     was wrong: review beat invalidate, so a group Jev was confident about (0.83, high, under an amended

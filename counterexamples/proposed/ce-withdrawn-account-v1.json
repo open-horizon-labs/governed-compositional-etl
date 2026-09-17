@@ -1,0 +1,60 @@
+{
+  "adjacent_not_authorized": [
+    "what a report received after a withdrawal means: that is L1.hole.deletion-reversal and nothing here may answer it",
+    "deleting or hiding the earlier statements of a withdrawn record",
+    "reading a withdrawal as a closure, or as a reopening",
+    "recomputing any position backwards"
+  ],
+  "approved_or_rejected_by": "L1.deletion-withdraws approved 2026-09-17; this document proposed, awaiting the L2 recompile it demands",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "On both engines, with this scenario loaded: account 624 has no current statement and no as-of answer at or after 2017-07-08; its 2008-03-14 and 2010-02-07 statements and every as-of answer before 2017-07-08 match a run without the scenario; no holding_change exists for the pair (372101, 353232); and account 428's statements, trades and holding changes are byte-identical to a run without the scenario. Every must-hold audit is at zero and the two engines agree.",
+  "expected": {
+    "account_624": "Its 2008-03-14 and 2010-02-07 statements stand with their standing facts byte-identical to a run without this scenario. 624 has no current statement. An as-of question at any moment before 2017-07-08 answers exactly as it did without the scenario; an as-of question at or after 2017-07-08 has no answer for 624 rather than the 2010 statement.",
+    "deletion_only_holding": "No logical.holding_change row exists for the pair (372101, 353232), and it contributes to no account or customer position. No audit reports it as a violation: under the clause there was never a holding to withdraw, so its absence is the required behavior and an audit should hold that absence rather than tolerate it.",
+    "everything_else": "Account 428, its two statements plus the counterexample rollover statement, trades 353232 and 372101 with their attribution and outcomes, and the holding changes already derived from them are byte-identical to a run without this scenario. A withdrawal does not reach back through what already followed."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "account_cdc": [
+        {
+          "batch_date": "2017-07-08",
+          "c_id": 238,
+          "ca_b_id": 0,
+          "ca_id": 624,
+          "ca_name": "constructed withdrawal echo",
+          "ca_st_id": "ACTV",
+          "ca_tax_st": 1,
+          "cdc_dsn": 1488500,
+          "cdc_flag": "D",
+          "note": "The withdrawal of account 624. A real CDC delete echoes the row's last values, so this one does too: ca_st_id ACTV and ca_tax_st 1 are 624's standing facts as of its 2010-02-07 statement. They are here precisely so that reading them is a visible error. The clause says a withdrawal creates nothing, so these values must not become a new statement, and must not restate the old one."
+        }
+      ],
+      "holding_history": [
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488501,
+          "cdc_flag": "D",
+          "hh_after_qty": 0,
+          "hh_before_qty": 5225,
+          "hh_h_t_id": 372101,
+          "hh_t_id": 353232,
+          "note": "A holding pair whose only report is a deletion, over two trades the brokerage already has. This is the case the positions Developer raised in questions_for_authority. The quantities are plausible and must not be used: the clause says there was never a holding here to withdraw."
+        }
+      ]
+    }
+  },
+  "id": "ce.withdrawn-account-and-withdrawn-only-holding",
+  "labels": [
+    "L1.deletion-withdraws",
+    "L1.current-version",
+    "L1.hole.deletion-reversal"
+  ],
+  "observed": "Measured on duckdb-native before the L2 recompile, with this scenario loaded: the withdrawal is invisible. Account 624 still carries its 2010-02-07 statement with is_current true and status ACTV, exactly as in a run without the scenario, so an as-of question in 2018 answers with a statement the brokerage has withdrawn. No audit fires and the run reports ok. The deletion-only pair (372101, 353232) does produce no holding_change row, which is the required outcome, but it is reached by the D row supplying no candidate quantity rather than by any rule, so nothing holds it: this is the accident the positions Developer declined to call an answer. governed.trade and the two existing holding changes are unaffected.",
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "counterexample/v1",
+  "status": "proposed",
+  "tempting_wrong_repair": "Three, in increasing subtlety. Physically deleting 624's rows, which erases history the clause says stands. Writing a 2017-07-08 statement for 624 whose standing facts are null, which leaves the record current with empty facts -- an answer where the clause says there is none. And filtering D rows out of the candidate set, which produces the right rows today and is still wrong, because it makes the withdrawal invisible: 624 keeps its 2010 statement as current and an as-of question in 2018 still answers with it.",
+  "why_constructed": "L1.deletion-withdraws was accepted with no received record to exercise it: the TPC-DI fixture carries no D-flagged row in any source, so without a labeled constructed scenario the clause compiles untested and the three jobs can go on disagreeing about what a deletion means while every audit passes. Two cases, one per half of the clause. Account 624 is withdrawn after two real statements, which tests that earlier statements and earlier as-of answers stand while the record has no standing from the withdrawal forward. A holding pair reported only as a deletion tests the half the positions Developer actually asked about: a thing whose only reports are withdrawals was never held. Both use records the brokerage already has, per L1.constructed-scenarios: account 624 and trades 353232 and 372101 are all in the received data, and nothing here introduces a new one."
+}
