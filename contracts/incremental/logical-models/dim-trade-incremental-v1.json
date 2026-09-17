@@ -1,0 +1,114 @@
+{
+  "attributes": [
+    {
+      "name": "trade_id",
+      "nullable": false,
+      "semantic_type": "trade_id",
+      "source_rule": "tpc-di-1.1.0-4.5.8.1"
+    },
+    {
+      "name": "sk_account_id",
+      "nullable": false,
+      "semantic_type": "account_surrogate_key",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "sk_customer_id",
+      "nullable": false,
+      "semantic_type": "customer_surrogate_key",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "status_id",
+      "nullable": false,
+      "semantic_type": "status_id",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "quantity",
+      "nullable": false,
+      "semantic_type": "share_quantity",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "bid_price",
+      "nullable": false,
+      "semantic_type": "usd_per_share",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "trade_price",
+      "nullable": true,
+      "semantic_type": "usd_per_share",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "fee",
+      "nullable": true,
+      "semantic_type": "usd_amount",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "commission",
+      "nullable": true,
+      "semantic_type": "usd_amount",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    },
+    {
+      "name": "tax",
+      "nullable": true,
+      "semantic_type": "usd_amount",
+      "source_rule": "tpc-di-1.1.0-incremental-dimtrade-unverified"
+    }
+  ],
+  "disposition": "partial",
+  "grain": "one warehouse row per trade identifier across historical and incremental batches",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "incremental.authority-locator",
+      "owner_hat": "domain-reviewer",
+      "question": "Which TPC-DI 1.1.0 clause governs incremental DimTrade key binding and the mutable update surface? The rule is presumed under an approved decision until the specification text is read.",
+      "status": "open"
+    },
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "incremental.lifecycle-timestamps",
+      "owner_hat": "domain-reviewer",
+      "question": "How are creation and close timestamps assigned from incremental Trade-only CDC rows without TradeHistory?",
+      "status": "open"
+    },
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "dim-trade-incremental.other-dimension-keys",
+      "owner_hat": "data-product-owner",
+      "question": "How are security, company, and broker surrogate keys bound once those dimensions enter the slice?",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "trade_id"
+  ],
+  "model_id": "logical.dim_trade_incremental",
+  "schema_version": "logical-model/v1",
+  "verification": [
+    "gate.dim_trade_incremental.frozen_keys_bound_once",
+    "guard.dim_trade_incremental.merge_surface",
+    "review.dim_trade_incremental.current_sketch"
+  ]
+}

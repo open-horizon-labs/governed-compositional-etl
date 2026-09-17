@@ -1,0 +1,178 @@
+{
+  "confidence": "reviewed_decision",
+  "consumer": {
+    "contract": "logical.dim_trade_incremental",
+    "grain": "one row per trade_id"
+  },
+  "contract_id": "edge.trade_cdc_to_dim_trade_incremental.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-4.5.8.1",
+      "issue-8-incremental-key-binding-adjudication"
+    ]
+  },
+  "history_policy": {
+    "current_version_predicate": "dim_account.is_current",
+    "mutation_policy_source": "semantic type mutation_role; the edge restates no column list",
+    "ordering": "cdc_sequence ascending within trade_id",
+    "resolution": "one CDC row"
+  },
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "edge.incremental-update-lifecycle-timestamps",
+      "owner_hat": "domain-reviewer",
+      "question": "Which CDC row supplies creation and close timestamps for incremental trades?",
+      "status": "open"
+    }
+  ],
+  "mappings": [
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.1",
+      "from": "stage.trade_cdc.trade_id",
+      "source_semantic_type": "trade_id",
+      "target_semantic_type": "trade_id",
+      "to": "logical.dim_trade_incremental.trade_id"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "reference.dim_account_current.sk_account_id",
+      "selector": "current_account_version_at_first_encounter",
+      "source_semantic_type": "account_surrogate_key",
+      "target_semantic_type": "account_surrogate_key",
+      "to": "logical.dim_trade_incremental.sk_account_id"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "reference.dim_account_current.sk_customer_id",
+      "selector": "current_account_version_at_first_encounter",
+      "source_semantic_type": "customer_surrogate_key",
+      "target_semantic_type": "customer_surrogate_key",
+      "to": "logical.dim_trade_incremental.sk_customer_id"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.status_id",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "status_id",
+      "target_semantic_type": "status_id",
+      "to": "logical.dim_trade_incremental.status_id"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.quantity",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "share_quantity",
+      "target_semantic_type": "share_quantity",
+      "to": "logical.dim_trade_incremental.quantity"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.bid_price",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "usd_per_share",
+      "target_semantic_type": "usd_per_share",
+      "to": "logical.dim_trade_incremental.bid_price"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.trade_price",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "usd_per_share",
+      "target_semantic_type": "usd_per_share",
+      "to": "logical.dim_trade_incremental.trade_price"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.fee",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "usd_amount",
+      "target_semantic_type": "usd_amount",
+      "to": "logical.dim_trade_incremental.fee"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.commission",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "usd_amount",
+      "target_semantic_type": "usd_amount",
+      "to": "logical.dim_trade_incremental.commission"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "from": "stage.trade_cdc.tax",
+      "selector": "latest_cdc_sequence",
+      "source_semantic_type": "usd_amount",
+      "target_semantic_type": "usd_amount",
+      "to": "logical.dim_trade_incremental.tax"
+    }
+  ],
+  "producer": {
+    "contracts": [
+      "stage.trade_cdc.v1"
+    ],
+    "identity_join": "trade_id",
+    "reference": "governed.dim_account current version by account_id"
+  },
+  "rule_order": [
+    "edge.require-identity",
+    "edge.resolve-current-account-at-first-encounter",
+    "edge.bind-frozen-keys-once",
+    "edge.update-mutable-roles-only",
+    "edge.emit-merge-surface-from-roles"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-4.5.8.1",
+      "id": "edge.require-identity",
+      "operation": "match_on_trade_id",
+      "status": "known"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "id": "edge.resolve-current-account-at-first-encounter",
+      "operation": "lookup_current_dimension_version",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "id": "edge.bind-frozen-keys-once",
+      "operation": "insert_only_for_frozen_from_first_encounter_roles",
+      "status": "assumed"
+    },
+    {
+      "authority": "issue-8-incremental-key-binding-adjudication",
+      "id": "edge.update-mutable-roles-only",
+      "operation": "matched_update_set_equals_mutable_roles",
+      "status": "assumed"
+    },
+    {
+      "authority": "sketch.trade-dim-incremental-v1.rule-5",
+      "id": "edge.emit-merge-surface-from-roles",
+      "operation": "derive_merge_from_mutation_roles",
+      "status": "known"
+    }
+  ],
+  "schema_version": "edge-contract/v2",
+  "verification": [
+    {
+      "id": "guard.dim_trade_incremental.merge_surface",
+      "kind": "contract_check"
+    },
+    {
+      "id": "gate.dim_trade_incremental.frozen_keys_bound_once",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "edge.incremental.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

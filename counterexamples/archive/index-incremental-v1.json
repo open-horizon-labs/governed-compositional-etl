@@ -1,0 +1,16 @@
+{
+  "accepted_counterexamples": [
+    {
+      "id": "ce-account-428-rollover-v1",
+      "path": "counterexamples/archive/ce-account-428-rollover-v1.json",
+      "provenance": "constructed",
+      "resolves": [
+        "edge.bind-frozen-keys-once",
+        "edge.update-mutable-roles-only"
+      ]
+    }
+  ],
+  "note": "Phase-1 index-v1.json stays empty and frozen; this index belongs to the incremental slice.",
+  "schema_version": "accepted-ce-archive-index/v1",
+  "slice": "trade-dim-incremental-v1"
+}

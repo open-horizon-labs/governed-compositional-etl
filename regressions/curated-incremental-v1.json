@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "boundary": "edge.trade_cdc_to_dim_trade_incremental.sk_account_id",
+      "fixture": "counterexamples/archive/ce-account-428-rollover-v1.json",
+      "id": "incremental-frozen-key-rebinding-v1",
+      "reason": "Protects the frozen_from_first_encounter boundary against a valid-FK rebind on incremental lifecycle updates."
+    }
+  ],
+  "schema_version": "curated-regression-set/v1",
+  "slice": "trade-dim-incremental-v1"
+}

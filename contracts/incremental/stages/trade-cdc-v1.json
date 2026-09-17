@@ -1,0 +1,161 @@
+{
+  "confidence": "frozen_rule",
+  "contract_id": "stage.trade_cdc.v1",
+  "disposition": "partial",
+  "evidence": {
+    "granularity": "decision_class",
+    "rule_ids": [
+      "tpc-di-1.1.0-2.2.2.17"
+    ]
+  },
+  "grain": "one change record per (cdc_sequence) for a trade identifier within one incremental batch",
+  "holes": [
+    {
+      "fill_policy": "named_authority_or_approved_counterexample",
+      "forbidden_evidence": [
+        "raw_data",
+        "target_schema",
+        "projection"
+      ],
+      "id": "source.incremental-cdc-deletes",
+      "owner_hat": "domain-reviewer",
+      "question": "How is a CDC flag D composed into DimTrade? No delete appears in the bounded slice.",
+      "status": "open"
+    }
+  ],
+  "identifiers": [
+    "trade_id",
+    "cdc_sequence"
+  ],
+  "input": {
+    "entity": "raw.trade_cdc",
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag"
+      },
+      {
+        "name": "cdc_dsn",
+        "semantic_type": "cdc_sequence"
+      },
+      {
+        "name": "t_id",
+        "semantic_type": "trade_id"
+      },
+      {
+        "name": "t_st_id",
+        "semantic_type": "status_id"
+      },
+      {
+        "name": "t_ca_id",
+        "semantic_type": "account_natural_id"
+      },
+      {
+        "name": "t_qty",
+        "semantic_type": "share_quantity"
+      },
+      {
+        "name": "t_bid_price",
+        "semantic_type": "usd_per_share"
+      },
+      {
+        "name": "t_trade_price",
+        "semantic_type": "usd_per_share"
+      },
+      {
+        "name": "t_chrg",
+        "semantic_type": "usd_amount"
+      },
+      {
+        "name": "t_comm",
+        "semantic_type": "usd_amount"
+      },
+      {
+        "name": "t_tax",
+        "semantic_type": "usd_amount"
+      }
+    ]
+  },
+  "output": {
+    "fields": [
+      {
+        "name": "cdc_flag",
+        "semantic_type": "cdc_flag",
+        "source": "cdc_flag"
+      },
+      {
+        "name": "cdc_sequence",
+        "semantic_type": "cdc_sequence",
+        "source": "cdc_dsn"
+      },
+      {
+        "name": "trade_id",
+        "semantic_type": "trade_id",
+        "source": "t_id"
+      },
+      {
+        "name": "status_id",
+        "semantic_type": "status_id",
+        "source": "t_st_id"
+      },
+      {
+        "name": "account_id",
+        "semantic_type": "account_natural_id",
+        "source": "t_ca_id"
+      },
+      {
+        "name": "quantity",
+        "semantic_type": "share_quantity",
+        "source": "t_qty"
+      },
+      {
+        "name": "bid_price",
+        "semantic_type": "usd_per_share",
+        "source": "t_bid_price"
+      },
+      {
+        "name": "trade_price",
+        "semantic_type": "usd_per_share",
+        "source": "t_trade_price"
+      },
+      {
+        "name": "fee",
+        "semantic_type": "usd_amount",
+        "source": "t_chrg"
+      },
+      {
+        "name": "commission",
+        "semantic_type": "usd_amount",
+        "source": "t_comm"
+      },
+      {
+        "name": "tax",
+        "semantic_type": "usd_amount",
+        "source": "t_tax"
+      }
+    ]
+  },
+  "rule_order": [
+    "trade-cdc.structural-copy"
+  ],
+  "rules": [
+    {
+      "authority": "tpc-di-1.1.0-2.2.2.17",
+      "id": "trade-cdc.structural-copy",
+      "operation": "copy_with_semantic_type",
+      "status": "known"
+    }
+  ],
+  "schema_version": "stage-contract/v1",
+  "stage_id": "stage.trade_cdc",
+  "verification": [
+    {
+      "id": "trade-cdc.exact-structural-copy",
+      "kind": "deterministic_gate"
+    },
+    {
+      "id": "trade-cdc.sketch-review",
+      "kind": "sketch_review"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "accepted_by_hat": "domain-reviewer",
+  "accepted_on": "2026-09-16",
+  "constructed_by_hat": "experiment-lead",
+  "diagnosis_when_violated": {
+    "affected_descendants": [
+      "logical.fact_holdings",
+      "metric.position_by_account",
+      "metric.position_by_customer"
+    ],
+    "attempted_write": [
+      "sk_account_id",
+      "sk_customer_id"
+    ],
+    "contract": "FAIL",
+    "fk_validity": "PASS",
+    "grain": "PASS",
+    "semantic_role": "frozen_from_first_encounter",
+    "stage_checks": "PASS"
+  },
+  "expected": {
+    "commission": 7.66,
+    "fee": 7.85,
+    "sk_account_id": 428001,
+    "sk_customer_id": 238001,
+    "status_id": "CMPT",
+    "tax": 5516.66,
+    "trade_id": 372101,
+    "trade_price": 4.01
+  },
+  "fixture": {
+    "dim_account": [
+      {
+        "account_id": 428,
+        "effective_from": "2007-12-29 00:00:00",
+        "effective_to": "2017-07-08 00:58:00",
+        "is_current": false,
+        "note": "version current when trade 372101 was first encountered (Batch1 PNDG 2017-04-10 19:28:01)",
+        "sk_account_id": 428001,
+        "sk_customer_id": 238001
+      },
+      {
+        "account_id": 428,
+        "effective_from": "2017-07-08 00:58:00",
+        "effective_to": "9999-12-31 00:00:00",
+        "is_current": true,
+        "note": "injected rollover between the SBMT and CMPT CDC rows",
+        "sk_account_id": 428002,
+        "sk_customer_id": 238001
+      }
+    ],
+    "dim_trade_first_encounter": [
+      {
+        "bid_price": 4.06,
+        "commission": null,
+        "fee": null,
+        "quantity": 5225,
+        "sk_account_id": 428001,
+        "sk_customer_id": 238001,
+        "source": "Batch1 Trade.txt row 372101|2017-04-10 19:28:01|PNDG|TLS|0|AAAAAAAAAAAABFV|5225|4.06|428|990||||",
+        "status_id": "PNDG",
+        "tax": null,
+        "trade_id": 372101,
+        "trade_price": null
+      }
+    ],
+    "related_holding_change": "Batch2 HoldingHistory I|1488406|353232|372101|5225|0 closes the Batch1 position opened by trade 353232 through current trade 372101; FactHoldings inherits whichever sk_account_id DimTrade carries.",
+    "trade_cdc_batch2": [
+      {
+        "cdc_dsn": 1488405,
+        "cdc_flag": "U",
+        "t_bid_price": 4.06,
+        "t_ca_id": 428,
+        "t_chrg": null,
+        "t_comm": null,
+        "t_dts": "2017-07-08 00:57:49",
+        "t_exec_name": "990",
+        "t_id": 372101,
+        "t_is_cash": false,
+        "t_qty": 5225,
+        "t_s_symb": "AAAAAAAAAAAABFV",
+        "t_st_id": "SBMT",
+        "t_tax": null,
+        "t_trade_price": null,
+        "t_tt_id": "TLS"
+      },
+      {
+        "cdc_dsn": 1488406,
+        "cdc_flag": "U",
+        "t_bid_price": 4.06,
+        "t_ca_id": 428,
+        "t_chrg": 7.85,
+        "t_comm": 7.66,
+        "t_dts": "2017-07-08 00:59:31",
+        "t_exec_name": "990",
+        "t_id": 372101,
+        "t_is_cash": false,
+        "t_qty": 5225,
+        "t_s_symb": "AAAAAAAAAAAABFV",
+        "t_st_id": "CMPT",
+        "t_tax": 5516.66,
+        "t_trade_price": 4.01,
+        "t_tt_id": "TLS"
+      }
+    ]
+  },
+  "general_rule": "A dimension surrogate key carried by a fact-like dimension row has mutation role frozen_from_first_encounter: it is bound from the dimension version current when the natural identity is first encountered and is never rewritten by later lifecycle updates of that identity. The rule names semantic roles, not account or trade identifiers.",
+  "id": "ce-account-428-rollover-v1",
+  "labels": [
+    "controlled_counterexample",
+    "not_generated_by_digen"
+  ],
+  "provenance": "constructed",
+  "schema_version": "accepted-counterexample/v1",
+  "why_constructed": "DIGen scale-factor-3 Batch2 and Batch3 contain no Account CDC row for account 428, so the coincidence of an account version change before a trade completion had to be constructed. The trade rows are real Batch2 records; the account rollover is injected and labeled.",
+  "wrong_composition": "MERGE ... WHEN MATCHED THEN UPDATE SET status_id = src.status_id, ..., sk_account_id = src.sk_account_id, sk_customer_id = src.sk_customer_id; every foreign key stays non-null and valid against the current dimension, grain holds, and historical ownership silently changes."
+}
