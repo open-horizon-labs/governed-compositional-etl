@@ -8,6 +8,7 @@
         "logical.trade.placed_at",
         "logical.trade.owning_account_effective_from",
         "logical.trade.owning_customer_number",
+        "logical.trade.owning_customer_effective_from",
         "logical.trade.first_seen_late",
         "logical.trade.status",
         "logical.trade.executed_price",
@@ -20,6 +21,7 @@
         "type.trade_placed_at",
         "type.trade_owning_account_effective_from",
         "type.trade_owning_customer_reference",
+        "type.trade_owning_customer_effective_from",
         "type.trade_first_seen_late",
         "type.trade_status",
         "type.trade_executed_price",
@@ -30,8 +32,10 @@
         "handoff.raw.trade_cdc.t_id->logical.trade.trade_number",
         "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number",
         "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at",
+        "handoff.raw.trade_history.th_dts->logical.trade.placed_at",
         "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
         "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
+        "handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from",
         "handoff.raw.trade_cdc.t_st_id->logical.trade.status",
         "handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price",
         "handoff.raw.trade_cdc.t_chrg->logical.trade.fees",
@@ -43,7 +47,9 @@
       "file": "trade.sql",
       "reads": [
         "raw.trade_cdc",
-        "governed.account"
+        "raw.trade_history",
+        "governed.account",
+        "governed.customer"
       ],
       "strategy": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT"
     }
@@ -58,6 +64,11 @@
       "entity": "logical.trade",
       "file": "audits/inv.trade_placement_reference_frozen.sql",
       "invariant": "inv.trade_placement_reference_frozen"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.trade_placed_at_matches_earliest_report.sql",
+      "invariant": "inv.trade_placed_at_matches_earliest_report"
     },
     {
       "entity": "logical.trade",
@@ -77,7 +88,7 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "001764ab8483fed37251504c5868525763193e241c5363ec11c96619ba4cd4de"
+    "review_sha256": "fcc77f8450301dc7b03a7817f08008b9d1dd79818475e2c05edff1ebbc88a78e"
   },
   "group_fingerprints": {
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",

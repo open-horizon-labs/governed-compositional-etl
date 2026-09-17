@@ -103,7 +103,7 @@ def check(job: str, l1: dict | None = None) -> dict:
 
     for t in doc.get("types", []):
         cites(t, f"type {t['id']}")
-        if t["mutation_role"] == frozen:
+        if t["mutation_role"] == frozen and t.get("disposition") != "rejected":
             texts = " ".join(l1["clauses"].get(c, "") for c in t["derived_from"]).lower()
             if not any(k in texts for k in ("do not move", "does not change", "leave", "never re-attributed", "as first recorded", "as that trade's ownership was recorded")):
                 problems.append(f"type {t['id']} is frozen but no cited clause says the value does not change after first recording")

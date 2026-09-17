@@ -32,7 +32,17 @@
         ],
         [
           "positions",
+          "holding_owning_customer_effective_from",
+          "frozen_from_first_encounter"
+        ],
+        [
+          "positions",
           "account_position_effective_from_key",
+          "identity"
+        ],
+        [
+          "positions",
+          "customer_position_effective_from_key",
           "identity"
         ]
       ]
@@ -123,6 +133,12 @@
       "to_job": "positions"
     },
     {
+      "from_job": "trade-lifecycle",
+      "handoff": "logical.trade.owning_customer_effective_from->logical.holding_change.owning_customer_effective_from",
+      "relation": "dependency",
+      "to_job": "positions"
+    },
+    {
       "gap": "L1.hole.change-effective-time",
       "group": "sg.identity",
       "job": "ownership-history",
@@ -171,13 +187,13 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; L1.hole.owner-change-reversions-account bounds which statement is pinned in the first place; see coverage_claim.",
       "group": "sg.holding-attribution",
       "job": "positions",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; see coverage_claim.",
+      "gap": "L1.hole.batch-identity bounds the latest_change selector's and the group_key handoffs' reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim.",
       "group": "sg.no-phantom-positions",
       "job": "positions",
       "relation": "named-gap"
@@ -186,7 +202,7 @@
   "schema_version": "l2-weave/v1",
   "summary": {
     "contradiction": 0,
-    "dependency": 6,
+    "dependency": 7,
     "gap": 0,
     "named-gap": 10,
     "overlap": 3
