@@ -9,7 +9,10 @@ MODEL (
     "inv.account_statement_has_content",
     "inv.constructed_scenarios_labeled",
     "inv.constructed_account_change_refers_to_known_account",
-    "inv.account_asof_carries_customer_asof"
+    "inv.account_asof_carries_customer_asof",
+    "inv.account_status_matches_producing_source",
+    "inv.account_tax_treatment_matches_producing_source",
+    "inv.account_owner_matches_producing_source"
   ),
   depends_on (governed.customer)
 );

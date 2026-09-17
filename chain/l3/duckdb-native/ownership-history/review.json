@@ -1,6 +1,6 @@
 {
   "job": "ownership-history",
-  "manifest_sha256": "2536bef459c6b06073b6c49dab62eca7a66e4e9134d8147d56e11bfae5df6ca3",
+  "manifest_sha256": "3f318c55a66a0be0a20dc8ba405b97dfa3afb62a3aa9ad62ca805874749f4f9c",
   "notes": "see review-1..2",
   "rejected_artifacts": [],
   "reviewer": "Opus sketch reviewer, scoped review 2 (cycle-3 audits)",

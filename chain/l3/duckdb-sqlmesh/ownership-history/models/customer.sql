@@ -6,7 +6,9 @@ MODEL (
     "inv.customer_single_current",
     "inv.customer_statements_no_overlap",
     "inv.customer_asof_has_unique_answer",
-    "inv.customer_statement_has_content"
+    "inv.customer_statement_has_content",
+    "inv.customer_status_matches_producing_source",
+    "inv.customer_tier_matches_producing_source"
   )
 );
 
