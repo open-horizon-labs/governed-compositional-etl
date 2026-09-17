@@ -145,25 +145,25 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker in an incremental change file means for a customer's or account's kept history is unresolved.",
+      "gap": "L1.hole.change-effective-time. The no-answer-on-withdrawal behavior the unique-answer invariants now state is fully expressed, but unexercised: this job produces no statement with is_withdrawal true today, because the sources that could carry a withdrawal signal (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) supply no effective-time handoff of their own and stay deferred under the same hole.",
       "group": "sg.history-asof",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker means for which statement of a customer or account is current is unresolved.",
+      "gap": "L1.hole.change-effective-time. The none-once-withdrawn behavior is fully expressed by is_current's derivation rule and the single-current invariants, but unexercised: every statement this job currently produces has is_withdrawal false, because the only sources that could set it true (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) remain deferred under the same hole.",
       "group": "sg.current-version",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment) and L1.hole.deletions (what a deletion marker in that file means for owner-standing is unresolved).",
+      "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment). The owner-standing cascade and the reporting invariant are fully expressed but unexercised for the same reason: no customer statement this job currently produces has is_withdrawal true, so no account has yet been observed losing standing through its owner's withdrawal, or reported for one.",
       "group": "sg.owner-standing",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved.",
+      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected, and is also why the withdrawal narrowing and inv.withdrawal_never_reaches_account_status are unexercised: no source this job reads today can produce a withdrawal statement.",
       "group": "sg.statement-content",
       "job": "ownership-history",
       "relation": "named-gap"

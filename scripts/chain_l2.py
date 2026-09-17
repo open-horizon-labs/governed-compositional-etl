@@ -75,6 +75,22 @@ def parse_l1(path: Path = L1) -> dict:
             "clause_fingerprints": {c: sha(t) for c, t in clauses.items()}, "hole_fingerprints": {h: sha(t) for h, t in holes.items()}}
 
 
+def counterexamples_naming(invariant_id: str) -> list[str]:
+    """Counterexample documents that mention this invariant by id, whether proposed, archived, or accepted at L1.
+    Deliberately a text search over the documents rather than a field in the model: a counterexample is written and
+    revised by reviewers and the business, and requiring the model to point at one would make a Developer responsible
+    for keeping a reference to a document it does not own."""
+    found = []
+    for d in ("counterexamples/proposed", "counterexamples/archive", "chain/ce/accepted"):
+        base = ROOT / d
+        if not base.exists():
+            continue
+        for path in sorted(base.iterdir()):
+            if path.suffix in (".json", ".md") and invariant_id in path.read_text():
+                found.append(str(path.relative_to(ROOT)))
+    return found
+
+
 def check(job: str, l1: dict | None = None) -> dict:
     """Gate G2 for one compiled semantic model. Returns a report; raises nothing for model defects, lists them."""
     l1 = l1 or parse_l1()
@@ -116,6 +132,14 @@ def check(job: str, l1: dict | None = None) -> dict:
                 problems.append(f"invariant {inv['id']} is marked reports but names no reported_because_clause")
             elif because not in inv.get("derived_from", []):
                 problems.append(f"invariant {inv['id']} reports because of {because}, which is not among its derived_from clauses")
+            # L2-FORMAT: a reported invariant carries its weight only through the counterexample that names the rows
+            # it is expected to report, because a report is the one audit result a passing run is allowed to contain.
+            # A Developer had to notice this by reading the format, so the gate says it instead. It is a question and
+            # not a problem: a reported invariant whose behavior is unexercisable -- held behind an open hole, or with
+            # no received record carrying the case -- legitimately has no counterexample yet, and refusing the model
+            # would only push the Developer to weaken the invariant.
+            if not counterexamples_naming(inv["id"]):
+                questions.append(f"invariant {inv['id']} reports rather than holds, but no counterexample document names it, so nothing states the rows it is expected to report; write one, or record why the case cannot yet be exercised")
     entities = {e["id"]: e for e in doc.get("entities", [])}
     for e in doc.get("entities", []):
         cites(e, f"entity {e['id']}")
@@ -295,11 +319,17 @@ def check(job: str, l1: dict | None = None) -> dict:
                 by_attr.setdefault(h["to"].rsplit(".", 1)[1], set()).add(h["from"].rsplit(".", 1)[1])
         for a in e["attributes"]:
             fields = by_attr.get(a["name"], set())
-            if not fields or a["nullable"] or a.get("derivation"):
+            # Nullability used to excuse this rule, and it is not the same question. "Can this fact ever be absent"
+            # and "what happens when an action does not mention it" are two questions, and L1.omitted-facts-stand
+            # answers the second one for every standing fact: it stands at its last stated value. Only a
+            # carried_forward derivation says that. The withdrawal cycle made these attributes nullable, for the good
+            # reason that a withdrawal statement carries no content, and the nullable escape then silently withdrew
+            # the carry-forward requirement from ordinary statements too.
+            if not fields or a.get("derivation"):
                 continue
             omitted_by = sorted(c for c in producing if isinstance(fields_present.get(c), list) and not fields <= set(fields_present[c]) and "action_type" not in fields)
             if omitted_by:
-                problems.append(f"{e['id']}.{a['name']} is handed off from {sorted(fields)}, which actions {omitted_by} omit; declare carried_forward_from_previous_statement, or make it nullable with a note")
+                problems.append(f"{e['id']}.{a['name']} is handed off from {sorted(fields)}, which actions {omitted_by} omit; L1.omitted-facts-stand requires it to stand at its last stated value, so declare carried_forward_from_previous_statement. Making it nullable answers a different question and does not discharge this one")
     for g in groups.values():
         gap = g["gap"].strip()
         if gap.lower() != "none" and not re.search(r"L1\.hole\.[a-z0-9-]+", gap):

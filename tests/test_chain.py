@@ -487,6 +487,47 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class ReportedInvariantNeedsACounterexampleTests(unittest.TestCase):
+    """L2-FORMAT says a reported invariant carries its weight only through the counterexample that names the rows it
+    is expected to report -- a report being the one audit result a passing run may contain. A Developer had to notice
+    that by reading the format and said so in its own report, which is a cross-reference the gate can do instead."""
+
+    def test_an_invariant_named_by_a_counterexample_is_not_flagged(self):
+        named = L2.counterexamples_naming("inv.trade_on_closed_account_reported")
+        if not named:
+            self.skipTest("the closed-account counterexamples are not present")
+        self.assertTrue(any("closed-account" in n for n in named), named)
+
+    def test_an_invariant_no_counterexample_names_is_flagged_as_a_question(self):
+        self.assertEqual(L2.counterexamples_naming("inv.no_counterexample_mentions_this_one"), [])
+
+    def test_the_gate_raises_it_as_a_question_and_never_as_a_problem(self):
+        """It must not refuse the model. A reported invariant held behind an open hole legitimately has no
+        counterexample yet, and refusing would push the Developer to weaken the invariant instead."""
+        for job in ("ownership-history", "trade-lifecycle", "positions"):
+            if not (ROOT / "chain/l2" / job / "semantic-model.json").exists():
+                continue
+            r = L2.check(job)
+            with self.subTest(job=job):
+                self.assertFalse([p for p in r["problems"] if "reports rather than holds" in p], r["problems"])
+
+    def test_every_reported_invariant_in_the_chain_is_either_named_or_explained(self):
+        """The standing invariant this gate rule exists to keep: each reports:true invariant has a counterexample
+        naming it, and where the case cannot be exercised the counterexample says why rather than omitting it."""
+        import json as _json
+        checked = 0
+        for job in ("ownership-history", "trade-lifecycle", "positions"):
+            path = ROOT / "chain/l2" / job / "semantic-model.json"
+            if not path.exists():
+                continue
+            for inv in _json.loads(path.read_text())["invariants"]:
+                if inv.get("reports"):
+                    checked += 1
+                    self.assertTrue(L2.counterexamples_naming(inv["id"]), f"{job}/{inv['id']} has no counterexample naming it")
+        if not checked:
+            self.skipTest("no reported invariant selected anywhere in the chain")
+
+
 class AdjudicationIsJobScopedTests(unittest.TestCase):
     """sg.unknown-codes and sg.constructed-scenarios exist in all three jobs, and one clause change can genuinely
     warrant opposite verdicts in different jobs. A reviewer recorded exactly that under L1.unknown-codes, writing
