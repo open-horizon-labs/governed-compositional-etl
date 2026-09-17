@@ -1,0 +1,3 @@
+# Review 7 (coordinator, enumerated text change): job trade-lifecycle (verdict: pass)
+
+Scope: cycle 7 under change-contract-7. Element-level diff against the last commit: no elements added or removed; changes confined to the eleven listed fields (derived_from on the three customer-pin elements; feedback on placed_at and its two handoffs; the entity's review trigger; the provenance-reachability invariant's parallel assumption and review trigger; sg.constructed-scenarios' coverage claim; hole.change_effective_time's question). Gate ok. Review-6's defect and all six notes addressed. Reviewer: coordinator, for a change whose every field was enumerated by the contract; cycles 5 and 6 were judged by the model reviewer.

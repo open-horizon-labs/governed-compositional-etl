@@ -383,13 +383,278 @@
       "status": "ok"
     },
     "positions": {
-      "status": "no-l2"
+      "elements": {
+        "sg.constructed-scenarios": {
+          "cache": "stale-new",
+          "coverage_claim": "sources-v1.json anchors no labeled constructed source (ce.*) for holding changes, only raw.holding_history, so this job has no handoff that could mix an unlabeled constructed fact into logical.holding_change, which inv.holding_change_not_constructed restates directly. Separately, the (owning_account_number, owning_account_effective_from) pair copied unchanged onto every holding change from trade-lifecycle's logical.trade is the same pair trade-lifecycle itself uses to keep a constructed-scenario account statement's provenance label reachable (its own inv.trade_ownership_provenance_reachable); because this job copies that pair verbatim and never re-derives it, that reachability threads through to every holding change and every position built from it without this job needing a separate provenance attribute of its own.",
+          "derived_from": [
+            "L1.constructed-scenarios"
+          ],
+          "fingerprint": "9a58ba25f2f2924559b4744bbf83743b007e48d4d33f32327f66014b25c5a38a",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "inv.holding_change_not_constructed": {
+              "necessity": "L1.constructed-scenarios requires a constructed scenario to be labeled wherever it appears and never mixed into received records; sources-v1.json anchors no labeled constructed source (ce.*) for holding changes, only raw.holding_history, so this invariant is checkable directly against this job's own handoffs.",
+              "parallel_assumption": "Holds while sources-v1.json continues to anchor no ce.* source for holding changes; if one is added later, this job would need a provenance attribute mirroring ownership-history's own labeling."
+            }
+          },
+          "members": [
+            "inv.holding_change_not_constructed"
+          ],
+          "touched_clauses": []
+        },
+        "sg.holding-attribution": {
+          "cache": "stale-new",
+          "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, and owning_customer_number are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution. inv.holding_change_ownership_frozen restates that these three values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own owning_account_number, owning_account_effective_from, and owning_customer_number resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). A holding change whose current trade's ownership pin does not resolve, for either reason, has no ownership reference for this job to copy.",
+          "derived_from": [
+            "L1.attribution-at-placement",
+            "L1.holdings-follow-trade",
+            "L1.identity"
+          ],
+          "fingerprint": "ca01ac3ffc8e056c93996357df571087c0dcb0b5319279b29b40c80ce39a526b",
+          "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; see coverage_claim.",
+          "jev": null,
+          "justifications": {
+            "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from": {
+              "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership as recorded on the causing trade, which names a specific account statement, not merely an account; trade-lifecycle's logical.trade.owning_account_effective_from is that statement's effective_from, already frozen at the current trade's own first encounter per L1.attribution-at-placement. Copying it directly completes the (owning_account_number, owning_account_effective_from) pair without a second, forbidden resolution against logical.account.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_account_effective_from resolves for the trade_number named by this holding change's current_trade_number."
+            },
+            "handoff.logical.trade.owning_account_number->logical.holding_change.owning_account_number": {
+              "necessity": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing trade, as that trade's ownership was recorded, and forbids re-attributing it by looking the account up again; trade-lifecycle's logical.trade.owning_account_number is exactly that recorded ownership, already frozen at the current trade's own first encounter per L1.attribution-at-placement. Copying it directly, through this holding change's current_trade_number, is the only way to honor the clause without a second, forbidden resolution against logical.account.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_account_number resolves for the trade_number named by this holding change's current_trade_number."
+            },
+            "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number": {
+              "necessity": "L1.holdings-follow-trade requires the holding change to belong, through the account, to the customer as the causing trade recorded it; trade-lifecycle's logical.trade.owning_customer_number is that recorded customer, already frozen at the current trade's own first encounter per L1.attribution-at-placement and drawn from the same account statement owning_account_number and owning_account_effective_from already pin. Copying it directly avoids a second, forbidden resolution against logical.customer or logical.account.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_customer_number resolves for the trade_number named by this holding change's current_trade_number."
+            },
+            "inv.holding_change_ownership_frozen": {
+              "necessity": "L1.holdings-follow-trade states directly that holdings are never re-attributed by looking the account up again later; L1.attribution-at-placement is the clause that fixed this ownership on the current trade in the first place and forbids it moving afterward. This invariant is the restatement of that requirement over the copied reference this entity carries.",
+              "parallel_assumption": "Holds while trade-lifecycle's own owning_account_number, owning_account_effective_from, and owning_customer_number for the current trade do not change after this holding change's first encounter; a contradiction would indicate a data error or an unaddressed business rule, not a value this attribute should adopt."
+            },
+            "logical.holding_change.owning_account_effective_from": {
+              "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership exactly as the current trade recorded it, which names not just an account but the account's specific dated statement; this attribute copies trade-lifecycle's logical.trade.owning_account_effective_from for this holding change's current_trade_number, completing the (owning_account_number, owning_account_effective_from) pair, set once at first encounter and never replaced, per L1.attribution-at-placement and L1.identity.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_account_effective_from is resolved for the current_trade_number named by this holding change's first-encountered report."
+            },
+            "logical.holding_change.owning_account_number": {
+              "necessity": "L1.holdings-follow-trade requires the holding change to belong to whoever owned the current trade, as that trade's ownership was recorded, never re-attributed by looking the account up again; this attribute copies trade-lifecycle's logical.trade.owning_account_number for this holding change's current_trade_number, set once at the holding change's first encounter and never replaced, per L1.attribution-at-placement's requirement that a trade's ownership, once fixed, is not moved, and L1.identity's persistence of the account number being copied.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_account_number is resolved for the current_trade_number named by this holding change's first-encountered report."
+            },
+            "logical.holding_change.owning_customer_number": {
+              "necessity": "L1.holdings-follow-trade requires the holding change to belong to whoever owned the current trade; through the account, that is also the customer, per the same frozen reference. This attribute copies trade-lifecycle's logical.trade.owning_customer_number for this holding change's current_trade_number, set once at first encounter and never replaced, so it can never name a customer inconsistent with the (owning_account_number, owning_account_effective_from) pair already pinned.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_customer_number is resolved for the current_trade_number named by this holding change's first-encountered report."
+            },
+            "type.holding_owning_account_effective_from": {
+              "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership exactly as the causing trade recorded it, not merely which account; this type carries the specific account statement's effective_from copied from the current trade's own frozen owning_account_effective_from (trade-lifecycle, physical_type timestamp, semantic_kind statement_effective_time), matched here so the (account, effective_from) pair that names the exact statement threads through unchanged.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_account_effective_from is resolved for the holding change's current trade at the moment the holding change is first encountered."
+            },
+            "type.holding_owning_account_reference": {
+              "necessity": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing trade, as that trade's ownership was recorded, and forbids re-attributing it by looking the account up again later. This type carries the account number copied from the current trade's own frozen owning_account_number (trade-lifecycle, physical_type integer, semantic_kind trade_owning_account_identity_reference), matched here so the same value threads through unchanged; L1.attribution-at-placement and L1.identity are what made that value frozen and persistent on the trade in the first place.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_account_number is resolved for the holding change's current trade at the moment the holding change is first encountered."
+            },
+            "type.holding_owning_customer_reference": {
+              "necessity": "L1.holdings-follow-trade requires the holding change's ownership to be a copy of what the causing trade recorded, which through the account also names a customer; this type carries the customer number copied from the current trade's own frozen owning_customer_number (trade-lifecycle, physical_type integer, semantic_kind account_owner_identity_reference), matched here so the same value threads through unchanged.",
+              "parallel_assumption": "Credible while trade-lifecycle's logical.trade.owning_customer_number is resolved for the holding change's current trade at the moment the holding change is first encountered."
+            }
+          },
+          "members": [
+            "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from",
+            "handoff.logical.trade.owning_account_number->logical.holding_change.owning_account_number",
+            "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
+            "inv.holding_change_ownership_frozen",
+            "logical.holding_change.owning_account_effective_from",
+            "logical.holding_change.owning_account_number",
+            "logical.holding_change.owning_customer_number",
+            "type.holding_owning_account_effective_from",
+            "type.holding_owning_account_reference",
+            "type.holding_owning_customer_reference"
+          ],
+          "touched_clauses": []
+        },
+        "sg.holding-shape": {
+          "cache": "stale-new",
+          "coverage_claim": "logical.holding_change's history kind, incremental_by_identity, follows from L1.holdings-follow-trade (a holding change is identified by its original trade and its current trade, and belongs to whoever owned the causing trade), L1.identity (those trade numbers persistently identify the same trades across every report), and L1.attribution-at-placement (the ownership, once fixed on the current trade, is not moved) -- together these entail one row per (original_trade_number, current_trade_number) pair, updated in place. original_trade_number and current_trade_number, handed off unchanged from raw.holding_history's own hh_h_t_id and hh_t_id with the identity mutation role, give this entity exactly the composite identity L1.holdings-follow-trade names. This group's scope is limited to the entity's shape and its two identity attributes; the ownership this entity copies through current_trade_number is the more specific claim covered by sg.holding-attribution instead.",
+          "derived_from": [
+            "L1.attribution-at-placement",
+            "L1.holdings-follow-trade",
+            "L1.identity"
+          ],
+          "fingerprint": "50db79b62728cb1b6b3445fbbaa81f8f1edadfe33412580930d0ee12b7e80ee4",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number": {
+              "necessity": "L1.holdings-follow-trade identifies a holding change in part by its original trade; raw.holding_history carries hh_h_t_id as that trade's number on every row reporting the change, per sources-v1.json's natural_identity_hints.",
+              "parallel_assumption": "Credible while hh_h_t_id in this file names a real trade and is not reused for a different one."
+            },
+            "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number": {
+              "necessity": "L1.holdings-follow-trade identifies a holding change in part by its current trade, the one whose recorded ownership the change belongs to; raw.holding_history carries hh_t_id as that trade's number on every row reporting the change.",
+              "parallel_assumption": "Credible while hh_t_id in this file names a real trade and is not reused for a different one."
+            },
+            "logical.holding_change": {
+              "necessity": "L1.holdings-follow-trade defines a holding change as identified by its original trade and its current trade, and requires it to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, never re-attributed by looking the account up again. L1.identity requires those trade numbers to persistently identify the same trades across every report. L1.attribution-at-placement is what fixed that ownership on the current trade in the first place, and requires it not to move afterward. Together these entail one row per (original_trade_number, current_trade_number) pair, updated in place by a later report of the same pair (per raw.holding_history's cdc_flag, anchored the same way as account_cdc, customer_cdc, and trade_cdc's I/U conventions), holding a portion frozen at first encounter (the copied ownership) beside a portion that mutates (the quantities) -- incremental_by_identity, not versioned (which would treat every report as a new dated statement of the pair) and not append_by_identity (which would treat a later report of the same pair as an unrelated new event rather than an update to what is already known).",
+              "parallel_assumption": "Credible while every raw.holding_history row for the same (hh_h_t_id, hh_t_id) pair is a later report about that same holding change rather than a distinct change reusing the pair."
+            },
+            "logical.holding_change.current_trade_number": {
+              "necessity": "L1.holdings-follow-trade identifies a holding change in part by its current trade, and names the current trade as the one whose recorded ownership the change belongs to; L1.identity requires a value that persistently names that trade across every report. This attribute carries raw.holding_history's hh_t_id for exactly that purpose, and is the join key this entity uses to copy the current trade's frozen ownership reference.",
+              "parallel_assumption": "Credible while hh_t_id is stable and unique per trade, per sources-v1.json's natural_identity_hints, and names a trade trade-lifecycle's logical.trade also carries."
+            },
+            "logical.holding_change.original_trade_number": {
+              "necessity": "L1.holdings-follow-trade identifies a holding change in part by its original trade; L1.identity requires a value that persistently names that trade across every report. This attribute carries raw.holding_history's hh_h_t_id for exactly that purpose.",
+              "parallel_assumption": "Credible while hh_h_t_id is stable and unique per trade, per sources-v1.json's natural_identity_hints."
+            },
+            "type.trade_reference": {
+              "necessity": "L1.holdings-follow-trade identifies a holding change by its original trade and its current trade; L1.identity requires each of those trade numbers to persistently identify the same trade across every report. This type carries a trade's persistent number for exactly that identifying purpose, used for both the original and the current trade a holding change names.",
+              "parallel_assumption": "Credible while raw.holding_history's hh_h_t_id and hh_t_id each name a trade the brokerage already identifies (per sources-v1.json's natural_identity_hints) and never a synthetic or reused value."
+            }
+          },
+          "members": [
+            "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number",
+            "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number",
+            "logical.holding_change",
+            "logical.holding_change.current_trade_number",
+            "logical.holding_change.original_trade_number",
+            "type.trade_reference"
+          ],
+          "touched_clauses": []
+        },
+        "sg.no-phantom-positions": {
+          "cache": "stale-new",
+          "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or customer can never go below zero. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change, state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds. logical.account_position.account_number and account_effective_from, and logical.customer_position.customer_number, are computed_within_entity: each equals the single shared value every holding_change grouped into that row already carries (owning_account_number, owning_account_effective_from, or owning_customer_number, all fixed per sg.holding-attribution), read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys, giving each statement's total per L1.no-phantom-positions. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly. This coverage is conditional: latest_change and the aggregation itself rest on the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; and what a cdc_flag D raw.holding_history report means for a holding change's quantities is L1.hole.deletions, not decided here.",
+          "derived_from": [
+            "L1.holdings-follow-trade",
+            "L1.identity",
+            "L1.no-phantom-positions"
+          ],
+          "fingerprint": "4481c8bc46e36c363b9c4c89fe079a9c96dd16220bcc10e605245c40be76d4bf",
+          "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; see coverage_claim.",
+          "jev": null,
+          "justifications": {
+            "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity": {
+              "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of an account; quantity_change is each holding change's own net contribution, and net_quantity is that sum across every holding_change sharing this row's (account_number, account_effective_from) key.",
+              "parallel_assumption": "Credible while every holding_change sharing this statement's key is included exactly once in the sum."
+            },
+            "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity": {
+              "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of a customer; quantity_change is each holding change's own net contribution, and net_quantity is that sum across every holding_change sharing this row's customer_number.",
+              "parallel_assumption": "Credible while every holding_change sharing this customer_number is included exactly once in the sum."
+            },
+            "handoff.raw.holding_history.hh_after_qty->logical.holding_change.after_qty": {
+              "necessity": "L1.holdings-follow-trade's 'change in what an account holds' names an after state; raw.holding_history's hh_after_qty is the brokerage's own recorded quantity held after this change. L1.no-phantom-positions requires this value to be summable per statement.",
+              "parallel_assumption": "Credible while hh_after_qty names the quantity held immediately after this change, as of the latest report of the same holding change."
+            },
+            "handoff.raw.holding_history.hh_before_qty->logical.holding_change.before_qty": {
+              "necessity": "L1.holdings-follow-trade's 'change in what an account holds' names a before state; raw.holding_history's hh_before_qty is the brokerage's own recorded quantity held before this change. L1.no-phantom-positions requires this value to be summable per statement.",
+              "parallel_assumption": "Credible while hh_before_qty names the quantity held immediately before this change, as of the latest report of the same holding change."
+            },
+            "inv.account_position_not_negative": {
+              "necessity": "L1.no-phantom-positions states directly that summing holding changes for any one statement of an account can never go below zero; this invariant is the direct check of that requirement over this entity's own summed value.",
+              "parallel_assumption": "Holds while every holding change opened under this account statement is also closed under it, per L1.holdings-follow-trade's fixed, non-reattributed ownership; a negative sum would mean a holding was opened under one statement and closed under another, which the clauses forbid, per the clause's own words."
+            },
+            "inv.customer_position_not_negative": {
+              "necessity": "L1.no-phantom-positions states directly that summing holding changes for any one statement of a customer can never go below zero; this invariant is the direct check of that requirement over this entity's own summed value.",
+              "parallel_assumption": "Holds while every holding change attributed to this customer_number is also closed under a holding change attributed to the same customer_number, per L1.holdings-follow-trade's fixed, non-reattributed ownership."
+            },
+            "logical.account_position": {
+              "necessity": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account can never go below zero, which requires an entity that performs exactly that sum, per statement. L1.holdings-follow-trade is what attributes each holding change to a specific account statement (via the copied owning_account_number and owning_account_effective_from) rather than to the account as a whole, so the sum must be taken per statement, not per account, to honor the clause's own account-statement granularity. L1.identity underlies the persistence of the account number being grouped on.",
+              "parallel_assumption": "Credible while every holding_change row is grouped into exactly one account_position row, by its own owning_account_number and owning_account_effective_from."
+            },
+            "logical.account_position.account_effective_from": {
+              "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account, not merely per account, so a holding opened under one statement is never netted against one closed under another; this attribute carries the statement half of that identity, the same effective_from every grouped holding_change already carries as owning_account_effective_from.",
+              "parallel_assumption": "Credible while every holding_change grouped into this row carries the same owning_account_effective_from."
+            },
+            "logical.account_position.account_number": {
+              "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account; this attribute carries the account half of that statement's identity, the same persistent account number every grouped holding_change already carries as owning_account_number (already frozen at each holding_change's first encounter per sg.holding-attribution), per L1.identity's persistence requirement.",
+              "parallel_assumption": "Credible while every holding_change grouped into this row carries the same owning_account_number."
+            },
+            "logical.account_position.net_quantity": {
+              "necessity": "L1.no-phantom-positions requires a summed value per account statement that can never go below zero; this attribute is that sum, reusing quantity_change's own type (the per-holding-change net contribution) unchanged, totaled across every holding_change attributed to this (account_number, account_effective_from) statement.",
+              "parallel_assumption": "Credible while every holding_change attributed to this statement is included exactly once in the sum."
+            },
+            "logical.customer_position": {
+              "necessity": "L1.no-phantom-positions requires that summing holding changes for any one statement of a customer can never go below zero, which requires an entity that performs exactly that sum. L1.holdings-follow-trade is what attributes each holding change to a customer (via the copied owning_customer_number) in the first place. L1.identity underlies the persistence of the customer number being grouped on. This job's clause list carries no independent customer-side effective time (L1.owner-standing, which ties a customer's own statement to the account's, is not among positions' listed clauses), so owning_customer_number alone is the derivable grouping key; see logical.customer_position.customer_number.",
+              "parallel_assumption": "Credible while every holding_change row is grouped into exactly one customer_position row, by its own owning_customer_number."
+            },
+            "logical.customer_position.customer_number": {
+              "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer; this attribute carries the only customer-side identity this job's clauses make available, owning_customer_number, per L1.identity.",
+              "parallel_assumption": "Credible while every holding_change grouped into this row carries the same owning_customer_number."
+            },
+            "logical.customer_position.net_quantity": {
+              "necessity": "L1.no-phantom-positions requires a summed value per customer that can never go below zero; this attribute is that sum, reusing quantity_change's own type unchanged, totaled across every holding_change attributed to this customer_number.",
+              "parallel_assumption": "Credible while every holding_change attributed to this customer is included exactly once in the sum."
+            },
+            "logical.holding_change.after_qty": {
+              "necessity": "L1.holdings-follow-trade's 'change in what an account holds' is stated as a before-and-after fact; L1.no-phantom-positions requires summing that change. This attribute carries raw.holding_history's hh_after_qty, the quantity held after this change, replaced by each later report of the same holding change.",
+              "parallel_assumption": "Credible while every raw.holding_history report carries a determinable hh_after_qty for the holding change it reports."
+            },
+            "logical.holding_change.before_qty": {
+              "necessity": "L1.holdings-follow-trade's 'change in what an account holds' is stated as a before-and-after fact; L1.no-phantom-positions requires summing that change. This attribute carries raw.holding_history's hh_before_qty, the quantity held before this change, replaced by each later report of the same holding change.",
+              "parallel_assumption": "Credible while every raw.holding_history report carries a determinable hh_before_qty for the holding change it reports."
+            },
+            "logical.holding_change.quantity_change": {
+              "necessity": "L1.no-phantom-positions requires summing holding changes for a statement, which requires each holding change to contribute a single net quantity; L1.holdings-follow-trade names the holding change itself as 'a change in what an account holds,' which before_qty and after_qty state as a before-and-after pair whose difference is that change. This attribute carries that computed difference so the position entities can sum it directly.",
+              "parallel_assumption": "Credible while a holding change's net contribution is fully determined by its own before_qty and after_qty, with no other quantity affecting it."
+            },
+            "type.account_position_account_key": {
+              "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account; the account half of that statement's identity is the same persistent account number every grouped holding_change carries as owning_account_number (physical_type integer, semantic_kind trade_owning_account_identity_reference, matched here), now playing the role of a grouping identity rather than a frozen reference, per L1.identity's persistence requirement.",
+              "parallel_assumption": "Credible while every holding_change grouped under one account_position row carries the same owning_account_number value."
+            },
+            "type.account_position_effective_from_key": {
+              "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account, not merely per account; the statement half of that identity is the same effective_from every grouped holding_change carries as owning_account_effective_from (physical_type timestamp, semantic_kind statement_effective_time, matched here), now playing the role of a grouping identity rather than a frozen reference. This is what makes two statements of the same account -- reached by trades placed under different account effective dates -- sum separately, so a holding opened under one statement can never be netted against one closed under another.",
+              "parallel_assumption": "Credible while every holding_change grouped under one account_position row carries the same owning_account_effective_from value."
+            },
+            "type.customer_position_key": {
+              "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer as well as per account; this job's only customer-side value, on any holding change, is owning_customer_number (physical_type integer, semantic_kind account_owner_identity_reference, matched here), copied from the current trade with no independent customer effective_from beside it (the job's clause list does not include L1.owner-standing, which is what ties a customer's own statement to the account's). The derivable customer-side grouping identity is therefore owning_customer_number alone, per L1.identity's persistence requirement for the customer.",
+              "parallel_assumption": "Credible only to the extent that owning_customer_number, without its own effective_from, is what this job's clause list makes available for grouping; if the business later supplies a customer-side effective time for this job, this key would need to be composite instead of single-valued."
+            },
+            "type.holding_quantity": {
+              "necessity": "L1.holdings-follow-trade names 'a change in what an account holds' as the thing a holding change reports; raw.holding_history states that change as a before quantity and an after quantity. L1.no-phantom-positions requires summing holding changes, which requires a numeric quantity per report; this type carries that quantity, replaced by each later report of the same holding change (mirroring how a later report of the same trade replaces its outcome facts under the analogous incremental_by_identity history kind).",
+              "parallel_assumption": "Credible while every raw.holding_history report carries both a before and an after quantity for the holding change it reports."
+            },
+            "type.holding_quantity_change": {
+              "necessity": "L1.no-phantom-positions requires summing holding changes for a statement; a holding change's own contribution to that sum is the amount it added to or removed from the holding, which the before and after quantities L1.holdings-follow-trade's 'change in what an account holds' names together define as after minus before. This type carries that net contribution, recomputed whenever a later report replaces before_qty or after_qty.",
+              "parallel_assumption": "Credible while a holding change's net contribution is fully determined by its own before and after quantities, with no other quantity affecting it."
+            }
+          },
+          "members": [
+            "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity",
+            "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity",
+            "handoff.raw.holding_history.hh_after_qty->logical.holding_change.after_qty",
+            "handoff.raw.holding_history.hh_before_qty->logical.holding_change.before_qty",
+            "inv.account_position_not_negative",
+            "inv.customer_position_not_negative",
+            "logical.account_position",
+            "logical.account_position.account_effective_from",
+            "logical.account_position.account_number",
+            "logical.account_position.net_quantity",
+            "logical.customer_position",
+            "logical.customer_position.customer_number",
+            "logical.customer_position.net_quantity",
+            "logical.holding_change.after_qty",
+            "logical.holding_change.before_qty",
+            "logical.holding_change.quantity_change",
+            "type.account_position_account_key",
+            "type.account_position_effective_from_key",
+            "type.customer_position_key",
+            "type.holding_quantity",
+            "type.holding_quantity_change"
+          ],
+          "touched_clauses": []
+        }
+      },
+      "l3_reprojection_required": true,
+      "stale": [
+        "sg.constructed-scenarios",
+        "sg.holding-attribution",
+        "sg.holding-shape",
+        "sg.no-phantom-positions"
+      ],
+      "status": "ok"
     },
     "trade-lifecycle": {
       "elements": {
         "sg.constructed-scenarios": {
           "cache": "hit",
-          "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from raw.trade_cdc alone. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. This claim is scoped to trades whose pin resolves; a trade whose pin does not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no statement to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
+          "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from the two anchored received sources (raw.trade_cdc and raw.trade_history) and, through the frozen ownership reference, ownership-history's logical.account and logical.customer entities. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. The customer pin (owning_customer_number, owning_customer_effective_from) raises no equivalent risk: logical.customer carries no provenance attribute of its own, and sources-v1.json anchors no ce.customer_* source, so there is no labeled constructed customer scenario for the customer pin to fail to relabel or duplicate. This claim is scoped to trades whose pins resolve; a trade whose pins do not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no pinned statements to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
           "derived_from": [
             "L1.attribution-at-placement",
             "L1.constructed-scenarios"
@@ -403,7 +668,7 @@
             },
             "inv.trade_ownership_provenance_reachable": {
               "necessity": "L1.constructed-scenarios requires a constructed scenario to remain labeled wherever it appears; L1.attribution-at-placement is what fixes owning_account_number and owning_account_effective_from as the frozen pair identifying the exact account statement a trade's ownership pins. Together they entail that the referenced statement's own provenance label -- if any -- stays reachable through that pair rather than needing a copy on the trade; this job defines no separate provenance attribute of its own that could omit, duplicate, or contradict it, and this invariant is the checkable restatement of the reachability that makes that omission safe.",
-              "parallel_assumption": "Holds while ownership-history's logical.account entity carries at most one statement per (account_number, effective_from) and continues to be the only source of a trade's ownership reference."
+              "parallel_assumption": "Holds while ownership-history's logical.account entity carries at most one statement per (account_number, effective_from), and while ownership-history's logical.customer entity, which now also feeds the frozen ownership reference through owning_customer_number and owning_customer_effective_from, carries at most one statement per (customer_number, effective_from). The customer pin cannot itself carry an unlabeled constructed fact: logical.customer has no provenance attribute of its own, and chain/anchors/sources-v1.json anchors no ce.customer_* source, so there is no labeled constructed customer scenario for one to be mislabeled or omitted from in the first place."
             }
           },
           "members": [
@@ -520,8 +785,8 @@
           ]
         },
         "sg.placement-moment": {
-          "cache": "hit",
-          "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time: placed_at, handed off from raw.trade_cdc's t_dts with selector first_encounter_only (the earliest report per trade_code_meanings.report_order's (batch_date, cdc_dsn) ordering), carries exactly that moment, frozen. L1.attribution-at-placement requires the trade's ownership to reference the account (and through it the customer) as they stood at that moment, not the account's current statement; L1.as-of defines that answer as the upstream logical.account statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from and owning_customer_number as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account entity they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies that exact statement. owning_customer_number is handed off directly from that same pinned statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it, satisfying the 'and through it the customer' half of the clause. inv.trade_placement_reference_frozen restates that these attributes are set once, at first encounter, and never replaced. first_seen_late, using the anchored trade_code_meanings.status_order and report_order, marks a trade whose first-encountered report's status is not PNDG as first seen late, which inv.trade_first_seen_late_matches_status_order restates directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account-statement pin against any upstream statement ownership-history has deferred (a CDC-sourced account update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order), not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
+          "cache": "stale",
+          "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time. placed_at is handed off, under selector first_encounter_only, from whichever anchored source holds that earliest report: raw.trade_cdc's t_dts for a trade whose held reports are Trade change records ordered by trade_code_meanings.report_order's (batch_date, cdc_dsn), or, for a historical-load trade with anchored raw.trade_history rows, raw.trade_history's th_dts on its earliest such row instead, per report_order's statement that such a trade's earliest held report is its earliest TradeHistory row, not its Trade snapshot; inv.trade_placed_at_matches_earliest_report makes this rule itself checkable, not merely that placed_at is set once. Together the two handoffs carry exactly that moment, frozen, across both anchored report sources; owning_account_number still comes only from raw.trade_cdc's t_ca_id regardless of which source supplies placed_at, since raw.trade_history carries no account field (sg.trade-shape). L1.attribution-at-placement requires the trade's ownership reference to be the pair of statements, account and customer, as they stood at that moment -- 'the account, and through it the customer, as they stood at the moment the trade was placed' -- not either one's current statement. L1.as-of defines each such answer as the upstream statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from, owning_customer_number, and owning_customer_effective_from as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account and customer entities they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies the exact account statement. owning_customer_number is handed off directly from that same pinned account statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it; owning_customer_effective_from, handed off from logical.customer.effective_from with selector as_of_event_time (also at or before placed_at), completes the (customer_number, effective_from) pair identifying the exact customer statement, satisfying the 'and through it the customer, as they stood' half of the clause in full -- not just which customer, but which of that customer's dated statements. inv.trade_placement_reference_frozen restates that all four reference attributes are set once, at first encounter, and never replaced. first_seen_late, using the anchored trade_code_meanings.status_order and report_order, marks a trade whose first-encountered report -- across both anchored sources -- carries a status (th_st_id or t_st_id) other than PNDG as first seen late, which inv.trade_first_seen_late_matches_status_order restates directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account- and customer-statement pins against any upstream statement ownership-history has deferred (a CDC-sourced account or customer update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order) or, for raw.trade_history, th_dts ordering, not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
           "derived_from": [
             "L1.as-of",
             "L1.attribution-at-placement",
@@ -529,8 +794,9 @@
             "L1.lifecycle-mutates-outcome",
             "L1.placement-moment"
           ],
-          "fingerprint": "93c8a21ae3eb68d8900a0dd730366afd1b9e6b5be5949700a37ea5f033dd81ca",
+          "fingerprint": "bd7afd32cf4ec4af7d915ce63ce440f09184540fc2d35ec538321979ddfcabfb",
           "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, and L1.hole.owner-change-reversions-account each bound part of this group's coverage; see coverage_claim.",
+          "jev": null,
           "justifications": {
             "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from": {
               "necessity": "L1.attribution-at-placement requires the trade's ownership reference to name the account as it stood at the moment of placement; L1.as-of defines that answer as the latest statement that took effect at or before the queried moment. This handoff selects, among the upstream ownership-history statements of this trade's owning_account_number, the one whose effective_from is the latest at or before placed_at, and freezes that effective_from as the second half of the (account_number, effective_from) reference identifying the specific account statement -- not the account's current statement.",
@@ -540,33 +806,49 @@
               "necessity": "L1.attribution-at-placement requires that, through the account, the trade also belongs to the customer as that customer stood at the same moment; the account statement already pinned by owning_account_number and owning_account_effective_from carries, as its own owning_customer_number, exactly that customer. This handoff freezes that same value directly off the pinned statement rather than performing an independent as-of lookup, so the customer named can never be inconsistent with the account statement this trade's ownership pins.",
               "parallel_assumption": "Credible wherever the account statement pinned by owning_account_number and owning_account_effective_from itself has a resolvable owning_customer_number."
             },
+            "handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from": {
+              "necessity": "L1.attribution-at-placement requires the trade's ownership reference to name the customer as they stood at the moment of placement, not the customer's current statement -- 'and through it the customer, as they stood'; L1.as-of defines that answer as the latest statement that took effect at or before the queried moment; L1.placement-moment fixes that moment to placed_at. This handoff selects, among ownership-history's logical.customer statements of the customer named by owning_customer_number, the one whose effective_from is the latest at or before placed_at, and freezes that effective_from as the second half of the (customer_number, effective_from) reference identifying the specific customer statement.",
+              "parallel_assumption": "Credible while the upstream logical.customer entity carries a resolvable statement of the customer named by owning_customer_number with an effective_from at or before placed_at."
+            },
             "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at": {
-              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time; raw.trade_cdc's t_dts is that report's own recorded time, and this handoff takes it only from the trade's first-encountered report, never a later one.",
-              "parallel_assumption": "Credible while t_dts on a trade's first-encountered report is the report's own stated time of that event, not a receipt or batch-load time."
+              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. raw.trade_cdc's t_dts is that report's own recorded time; for a trade whose only held reports are Trade change records (every incrementally loaded trade, and any historical-load trade with no anchored TradeHistory rows), t_dts on the first-encountered such row is the earliest report the brokerage holds. For a historical-load trade with anchored raw.trade_history rows, the earliest held report is one of those instead (see the sibling handoff from raw.trade_history.th_dts), so this handoff and that one together, both under selector first_encounter_only, supply placed_at across the two anchored report sources; this handoff never takes a later report's t_dts.",
+              "parallel_assumption": "Credible while t_dts on a trade's first-encountered raw.trade_cdc report is the report's own stated time of that event, not a receipt or batch-load time, and while, for a historical-load trade, any earlier-held raw.trade_history rows are correctly preferred by the sibling handoff instead."
+            },
+            "handoff.raw.trade_history.th_dts->logical.trade.placed_at": {
+              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. For a historical-load trade, the brokerage's held reports include its raw.trade_history rows (per-status reports, one per lifecycle stage) as well as its raw.trade_cdc snapshot row; the anchored trade_code_meanings.report_order states that such a trade's earliest held report is its earliest raw.trade_history row, not the snapshot. th_dts is that row's own recorded time, and this handoff takes it only from the trade's first-encountered raw.trade_history row (the one with the smallest th_dts), never a later one, and only when such rows exist for the trade.",
+              "parallel_assumption": "Credible while th_dts on a trade's first raw.trade_history row is that report's own stated time of that lifecycle event, and while every historical-load trade's per-status reports the brokerage holds are exactly its anchored raw.trade_history rows (none held but unanchored). raw.trade_history's own anchored identifiers are (th_t_id, th_dts, th_st_id), not (th_t_id, th_dts) alone, so the anchors permit two rows of the same trade to share a th_dts with different th_st_id; this handoff assumes that does not happen among a trade's rows, since two rows tied for smallest th_dts would make which one is 'the earliest' -- and hence first_seen_late's status comparison -- ambiguous."
             },
             "inv.trade_first_seen_late_matches_status_order": {
               "necessity": "L1.placement-moment defines first seen late by reference to whether the earliest held report reflects the trade's true earliest lifecycle stage; this invariant is the direct, checkable restatement of first_seen_late's own derivation rule.",
               "parallel_assumption": "Holds while trade_code_meanings.status_order and report_order remain as anchored."
             },
+            "inv.trade_placed_at_matches_earliest_report": {
+              "necessity": "L1.placement-moment defines placement as the moment stated by the earliest report the brokerage holds, and the anchored trade_code_meanings.report_order states which row that is across the two anchored sources; inv.trade_placement_reference_frozen checks only that placed_at is set once and never replaced, not that the value it was set to is the correct earliest-report time. This invariant is the direct, checkable restatement of that correctness: without it, a placed_at wrongly fixed at a later report's time (for example, a historical-load trade's snapshot row instead of its earliest TradeHistory row) would still pass the 'set once' check.",
+              "parallel_assumption": "Holds while trade_code_meanings.report_order remains as anchored and every raw.trade_history row's th_dts and every raw.trade_cdc row's t_dts are each that row's own stated event time."
+            },
             "inv.trade_placement_reference_frozen": {
               "necessity": "L1.placement-moment fixes placement to the earliest held report's own time, and L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the placement-moment reference attributes.",
-              "parallel_assumption": "Holds while a later raw.trade_cdc report of a known trade never carries an earlier event time than the one already recorded as placed_at."
+              "parallel_assumption": "Holds while a later report of a known trade, from either anchored source (raw.trade_cdc or raw.trade_history), never carries an earlier event time than the one already recorded as placed_at."
             },
             "logical.trade.first_seen_late": {
               "necessity": "Under the premise that every trade's lifecycle begins at PNDG (the first status in the anchored trade_code_meanings.status_order), L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; a first-encountered report whose status is not PNDG -- the order's first status -- would then be exactly such a trade (SBMT for a trade never seen pending; CMPT or CNCL for a trade never seen submitted). L1.attribution-at-placement requires this marking, once made, to be fixed at first encounter and not reconsidered by a later report.",
-              "parallel_assumption": "Credible while every trade's lifecycle begins at PNDG, the first status in the anchored status_order, and while trade_code_meanings.status_order and terminal_status_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) with every trade report carrying one of them, and while report_order's (batch_date, cdc_dsn) ordering correctly identifies the first-encountered report. PNDG is anchored as a limit order recorded but not yet submitted; a trade whose life legitimately begins at submitted (for example, a market order) would be mismarked first seen late under this premise, which is not resolved here."
+              "parallel_assumption": "Credible while every trade's lifecycle begins at PNDG, the first status in the anchored status_order, and while trade_code_meanings.status_order and terminal_status_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) with every trade report carrying one of them, and while report_order correctly identifies the first-encountered report across both anchored sources (the earliest raw.trade_history row when any exist for the trade, otherwise raw.trade_cdc's (batch_date, cdc_dsn) ordering). raw.trade_history's anchored identifiers (th_t_id, th_dts, th_st_id) permit two of a trade's rows to share a th_dts with different th_st_id, which would make the earliest row's status -- and so first_seen_late -- ambiguous; this derivation assumes that does not happen. PNDG is anchored as a limit order recorded but not yet submitted; a trade whose life legitimately begins at submitted (for example, a market order) would be mismarked first seen late under this premise, which is not resolved here."
             },
             "logical.trade.owning_account_effective_from": {
               "necessity": "L1.attribution-at-placement requires the account to be referenced as it stood at placement, not merely named; together with owning_account_number, this attribute completes the (account_number, effective_from) pair that identifies the specific account statement in effect at placed_at, per L1.as-of's 'latest statement that took effect at or before' the queried moment.",
               "parallel_assumption": "Credible while the upstream logical.account entity carries a statement of this trade's owning account with an effective_from at or before placed_at; not yet resolvable where the correct statement is one of ownership-history's own deferred CDC-sourced account statements."
+            },
+            "logical.trade.owning_customer_effective_from": {
+              "necessity": "L1.attribution-at-placement requires the trade's ownership to reference the customer as they stood at placement, not merely which customer -- 'and through it the customer, as they stood at the moment the trade was placed'; together with owning_customer_number, this attribute completes the (customer_number, effective_from) pair that identifies the specific customer statement in effect at placed_at, per L1.as-of's 'latest statement that took effect at or before' the queried moment, and L1.placement-moment's fixing of that moment.",
+              "parallel_assumption": "Credible while the upstream logical.customer entity carries a statement of the customer named by owning_customer_number with an effective_from at or before placed_at; not yet resolvable where the correct statement is one of ownership-history's own deferred CDC-sourced customer statements."
             },
             "logical.trade.owning_customer_number": {
               "necessity": "L1.attribution-at-placement requires that, through the account, the trade also belongs to the customer as that customer stood at the same moment; this attribute carries that customer directly from the same account statement owning_account_number and owning_account_effective_from already pin, so it can never name a customer inconsistent with that statement.",
               "parallel_assumption": "Credible while the account statement pinned by owning_account_number and owning_account_effective_from has a resolvable owning_customer_number."
             },
             "logical.trade.placed_at": {
-              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time; this attribute carries that moment, set once at first encounter and never replaced by a later report.",
-              "parallel_assumption": "Credible while the trade's first-encountered report states its own event time."
+              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time; this attribute carries that moment, set once at first encounter and never replaced by a later report. The earliest held report may be a raw.trade_cdc row or, for a historical-load trade with anchored raw.trade_history rows, one of those instead; the two handoffs feeding this attribute together cover both anchored sources.",
+              "parallel_assumption": "Credible while the trade's first-encountered report, across both anchored sources (raw.trade_cdc and raw.trade_history), states its own event time."
             },
             "type.trade_first_seen_late": {
               "necessity": "L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; a dedicated value carrying that marking is required to express it. L1.attribution-at-placement's 'do not move a trade that was already placed' requires this marking, once made at first encounter, never to be reconsidered by a later report -- frozen_from_first_encounter, not mutable.",
@@ -576,30 +858,40 @@
               "necessity": "L1.attribution-at-placement requires the trade's ownership to reference the account as it stood at placement, not merely which account; L1.as-of defines that answer as the account's statement whose effective_from is the latest at or before the queried moment; a dedicated value carrying that specific effective_from is required to complete the (account_number, effective_from) reference that identifies the exact account statement. L1.lifecycle-mutates-outcome states directly that a later report of the same trade 'leaves the ownership as first recorded'; on this entity (incremental_by_identity, not versioned), that reference is fixed once at first encounter and never replaced by a later report, which is exactly the frozen_from_first_encounter role -- not per_statement, which describes a value's own kept-history nature on a versioned entity, a role that belongs to the account entity this value is drawn from, not to how it behaves once pinned here.",
               "parallel_assumption": "Credible while the upstream logical.account entity carries a statement of this trade's owning account whose effective_from is at or before placed_at."
             },
+            "type.trade_owning_customer_effective_from": {
+              "necessity": "L1.attribution-at-placement requires the trade's ownership reference to name the customer as they stood at placement, not merely which customer (already named by owning_customer_number) -- 'and through it the customer, as they stood at the moment the trade was placed'; L1.as-of defines that answer as the customer's statement whose effective_from is the latest at or before the queried moment; L1.placement-moment fixes that moment to placed_at. A dedicated value carrying that specific effective_from is required to complete the (customer_number, effective_from) reference that identifies the exact customer statement, fixed once at first encounter and never replaced by a later report -- frozen_from_first_encounter, not per_statement, which describes the value's own kept-history nature on the customer entity it is drawn from, not how it behaves once pinned here.",
+              "parallel_assumption": "Credible while the upstream logical.customer entity carries a statement of this trade's owning customer whose effective_from is at or before placed_at."
+            },
             "type.trade_owning_customer_reference": {
               "necessity": "L1.attribution-at-placement requires that, through the account, the trade also belongs to the customer as that customer stood at the same moment; a dedicated value naming that customer is required to express that half of the clause. L1.lifecycle-mutates-outcome states directly that a later report of the same trade 'leaves the ownership as first recorded'; on this entity (incremental_by_identity, not versioned), that customer reference is fixed once at first encounter and never replaced by a later report, which is exactly the frozen_from_first_encounter role -- not per_statement, which describes the value's own kept-history nature on the account entity it is drawn from, not how it behaves once pinned here.",
               "parallel_assumption": "Credible while the account statement this trade's ownership pins has a resolvable owning customer."
             },
             "type.trade_placed_at": {
-              "necessity": "L1.placement-moment requires the trade's placement to be the moment stated by the earliest report of it the brokerage holds, in that report's own recorded time. L1.attribution-at-placement requires that a later change does not move a trade that was already placed; since this moment is what selects the account statement the trade references, it must be set once and never replaced, or a later report could shift which statement is selected and move the trade's ownership.",
-              "parallel_assumption": "Credible while the earliest report of a trade the brokerage holds states its own time, and that time is treated as the placement moment even when it is not the trade's true first lifecycle event (the first-seen-late case L1.placement-moment names)."
+              "necessity": "L1.placement-moment requires the trade's placement to be the moment stated by the earliest report of it the brokerage holds, in that report's own recorded time -- across every anchored source of held reports, not only raw.trade_cdc; for a historical-load trade that is its earliest raw.trade_history row. L1.attribution-at-placement requires that a later change does not move a trade that was already placed; since this moment is what selects the account statement the trade references, it must be set once and never replaced, or a later report could shift which statement is selected and move the trade's ownership.",
+              "parallel_assumption": "Credible while the earliest report of a trade the brokerage holds, across both anchored sources, states its own time, and that time is treated as the placement moment even when it is not the trade's true first lifecycle event (the first-seen-late case L1.placement-moment names)."
             }
           },
           "members": [
             "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
             "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
+            "handoff.logical.customer.effective_from->logical.trade.owning_customer_effective_from",
             "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at",
+            "handoff.raw.trade_history.th_dts->logical.trade.placed_at",
             "inv.trade_first_seen_late_matches_status_order",
+            "inv.trade_placed_at_matches_earliest_report",
             "inv.trade_placement_reference_frozen",
             "logical.trade.first_seen_late",
             "logical.trade.owning_account_effective_from",
+            "logical.trade.owning_customer_effective_from",
             "logical.trade.owning_customer_number",
             "logical.trade.placed_at",
             "type.trade_first_seen_late",
             "type.trade_owning_account_effective_from",
+            "type.trade_owning_customer_effective_from",
             "type.trade_owning_customer_reference",
             "type.trade_placed_at"
-          ]
+          ],
+          "touched_clauses": []
         },
         "sg.trade-identity": {
           "cache": "hit",
@@ -631,17 +923,17 @@
         },
         "sg.trade-shape": {
           "cache": "hit",
-          "coverage_claim": "logical.trade's history kind, incremental_by_identity, is the direct consequence of L1.identity (a trade is a persistent identified thing; a later report about the same trade number is the same trade, not a new one), L1.lifecycle-mutates-outcome (a later report updates outcome facts on this same row), and L1.attribution-at-placement (the trade's ownership, once established at placement, is never moved by a later report about the account or customer) -- together these entail one row per trade_number, updated in place, holding a frozen portion beside a mutable portion. The frozen portion's account-identity component is owning_account_number: raw.trade_cdc's t_ca_id, taken only from the trade's first-encountered report and never replaced by a later one, which inv.trade_owning_account_frozen restates directly. This is the part of L1.attribution-at-placement that names which account a trade belongs to, fixed at first encounter; the remaining part -- which dated statement of that account, and through it which customer, stood as of the moment of placement -- is now resolved by L1.placement-moment and covered by sg.placement-moment instead, since that is the more specific claim. This group's own scope is limited to the entity's shape and the account-identity portion. That portion is nonetheless bounded: owning_account_number is taken from the trade's first-encountered report, identified by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order -- not from a report carrying which file delivered it, which L1.hole.batch-identity leaves open.",
+          "coverage_claim": "logical.trade's history kind, incremental_by_identity, is the direct consequence of L1.identity (a trade is a persistent identified thing; a later report about the same trade number is the same trade, not a new one), L1.lifecycle-mutates-outcome (a later report updates outcome facts on this same row), and L1.attribution-at-placement (the trade's ownership, once established at placement, is never moved by a later report about the account or customer) -- together these entail one row per trade_number, updated in place, holding a frozen portion beside a mutable portion. The frozen portion's account-identity component is owning_account_number: raw.trade_cdc's t_ca_id, taken only from the trade's first-encountered report and never replaced by a later one, which inv.trade_owning_account_frozen restates directly. This is the part of L1.attribution-at-placement that names which account a trade belongs to, fixed at first encounter; the remaining part -- which dated statement of that account, and through it which customer, stood as of the moment of placement -- is now resolved by L1.placement-moment and covered by sg.placement-moment instead, since that is the more specific claim. This group's own scope is limited to the entity's shape and the account-identity portion. That portion is nonetheless bounded: owning_account_number is taken from the trade's first-encountered raw.trade_cdc report, identified by the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order -- not from a report carrying which file delivered it, which L1.hole.batch-identity leaves open. It is also bounded by L1.hole.deletions: what a cdc_flag D row means is undecided, including whether the trade's first-encountered raw.trade_cdc report could itself be D-flagged and what that would mean for owning_account_number.",
           "derived_from": [
             "L1.attribution-at-placement",
             "L1.identity",
             "L1.lifecycle-mutates-outcome"
           ],
           "fingerprint": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849",
-          "gap": "L1.hole.batch-identity: owning_account_number comes from the first-encountered report selected by anchored report_order, not from a report carrying which file delivered it.",
+          "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it; L1.hole.deletions bounds what a D-flagged first-encountered report would mean for owning_account_number.",
           "justifications": {
             "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number": {
-              "necessity": "L1.attribution-at-placement requires the trade's own account be named and fixed at first encounter; raw.trade_cdc's t_ca_id is the brokerage's own recorded account number on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_ca_id, per the clause's 'do not move a trade that was already placed.'",
+              "necessity": "L1.attribution-at-placement requires the trade's own account be named and fixed at first encounter; raw.trade_cdc's t_ca_id is the brokerage's own recorded account number on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_ca_id, per the clause's 'do not move a trade that was already placed.' raw.trade_history carries no account field, so this remains the only handoff for owning_account_number even for a historical-load trade whose placed_at is instead pinned from a raw.trade_history row.",
               "parallel_assumption": "Credible while t_ca_id on a trade's first-encountered report names the account the trade was placed under."
             },
             "inv.trade_owning_account_frozen": {
@@ -650,11 +942,11 @@
             },
             "logical.trade": {
               "necessity": "L1.identity requires a trade to be the same persistent identified thing across every report of it, not a new trade each time. L1.lifecycle-mutates-outcome requires that a later report of the same trade update its outcome (status, executed price, fees, commission, tax, quantity) in place. L1.attribution-at-placement requires that a trade's ownership, once established at placement, is never moved by a later change to the account or customer, and that nothing the trade created is moved either. Together these entail exactly one row per identified trade, updated in place by later reports, holding a portion frozen at first encounter beside a portion that mutates -- the incremental_by_identity history kind, not versioned (which would keep every report as a separate dated statement) and not append_by_identity (which would treat every report as a new, unrelated event).",
-              "parallel_assumption": "Credible while every raw.trade_cdc row for the same t_id is understood to be a later report about that same trade rather than a distinct trade reusing the number."
+              "parallel_assumption": "Credible while every raw.trade_cdc row, and every raw.trade_history row, for the same t_id/th_t_id is understood to be a later report about that same trade rather than a distinct trade reusing the number."
             },
             "logical.trade.owning_account_number": {
-              "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under and forbids a later change from moving it; this attribute names that account, set once at first encounter and never replaced by a later report.",
-              "parallel_assumption": "Credible while the account a trade is placed under is settled at the trade's first-encountered report; whether a later report could legitimately correct it is not addressed by the clause and is not assumed here."
+              "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under and forbids a later change from moving it; this attribute names that account, set once at first encounter and never replaced by a later report. raw.trade_history carries no account field (th_t_id, th_dts, th_st_id, batch_date only), so regardless of which anchored source supplies placed_at, this attribute is still, and only, sourced from the trade's first-encountered raw.trade_cdc report's t_ca_id.",
+              "parallel_assumption": "Credible while the account a trade is placed under is settled at the trade's first-encountered raw.trade_cdc report; whether a later report could legitimately correct it is not addressed by the clause and is not assumed here."
             },
             "type.trade_owning_account_reference": {
               "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under, and requires that a later change does not move a trade that was already placed; a value naming that account, set once and never replaced by a later report, is required to express that. L1.identity supplies the account's own persistent number as the value this reference carries. L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is the clause that, alongside L1.attribution-at-placement, makes this value's role frozen_from_first_encounter rather than mutable.",
@@ -670,8 +962,10 @@
           ]
         }
       },
-      "l3_reprojection_required": false,
-      "stale": [],
+      "l3_reprojection_required": true,
+      "stale": [
+        "sg.placement-moment"
+      ],
       "status": "ok"
     }
   },

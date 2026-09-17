@@ -91,7 +91,7 @@
     },
     {
       "id": "trade_owning_customer_effective_from",
-      "derived_from": ["L1.attribution-at-placement", "L1.as-of", "L1.placement-moment"],
+      "derived_from": ["L1.attribution-at-placement", "L1.as-of", "L1.placement-moment", "L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
       "feedback": ["sketch-review"],
       "history_role": "none",
@@ -238,7 +238,7 @@
       "necessity": "L1.identity requires a trade to be the same persistent identified thing across every report of it, not a new trade each time. L1.lifecycle-mutates-outcome requires that a later report of the same trade update its outcome (status, executed price, fees, commission, tax, quantity) in place. L1.attribution-at-placement requires that a trade's ownership, once established at placement, is never moved by a later change to the account or customer, and that nothing the trade created is moved either. Together these entail exactly one row per identified trade, updated in place by later reports, holding a portion frozen at first encounter beside a portion that mutates -- the incremental_by_identity history kind, not versioned (which would keep every report as a separate dated statement) and not append_by_identity (which would treat every report as a new, unrelated event).",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Credible while every raw.trade_cdc row, and every raw.trade_history row, for the same t_id/th_t_id is understood to be a later report about that same trade rather than a distinct trade reusing the number.",
-      "review_trigger": "a later trade_cdc row for a known trade_number is found to describe what the business considers a different trade",
+      "review_trigger": "a later raw.trade_cdc or raw.trade_history row for a known trade_number is found to describe what the business considers a different trade",
       "sufficiency_group": "sg.trade-shape",
       "note": "This entity's frozen portion carries the full reference L1.attribution-at-placement describes: which account (owning_account_number), which of that account's dated statements (owning_account_effective_from, as of placed_at), and through that statement, which customer (owning_customer_number) -- see sg.placement-moment. It also carries first_seen_late, marking a trade whose first-encountered report is not its true earliest lifecycle report, per L1.placement-moment and the anchored trade_code_meanings.status_order and report_order. L1.hole.owner-change-reversions-account is carried because, if its resolution means an owner-side change also re-versions the account, the specific account statement placed_at pins for a given trade could shift.",
       "attributes": [
@@ -273,7 +273,7 @@
           "semantic_type": "trade_placed_at",
           "derived_from": ["L1.placement-moment"],
           "disposition": "candidate",
-          "feedback": ["inv.trade_placement_reference_frozen", "sketch-review"],
+          "feedback": ["inv.trade_placement_reference_frozen", "inv.trade_placed_at_matches_earliest_report", "sketch-review"],
           "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time; this attribute carries that moment, set once at first encounter and never replaced by a later report. The earliest held report may be a raw.trade_cdc row or, for a historical-load trade with anchored raw.trade_history rows, one of those instead; the two handoffs feeding this attribute together cover both anchored sources.",
           "nullable": false,
           "owner_hat": "data-product-owner",
@@ -310,7 +310,7 @@
         {
           "name": "owning_customer_effective_from",
           "semantic_type": "trade_owning_customer_effective_from",
-          "derived_from": ["L1.attribution-at-placement", "L1.as-of", "L1.placement-moment"],
+          "derived_from": ["L1.attribution-at-placement", "L1.as-of", "L1.placement-moment", "L1.lifecycle-mutates-outcome"],
           "disposition": "candidate",
           "feedback": ["inv.trade_placement_reference_frozen", "sketch-review"],
           "necessity": "L1.attribution-at-placement requires the trade's ownership to reference the customer as they stood at placement, not merely which customer -- 'and through it the customer, as they stood at the moment the trade was placed'; together with owning_customer_number, this attribute completes the (customer_number, effective_from) pair that identifies the specific customer statement in effect at placed_at, per L1.as-of's 'latest statement that took effect at or before' the queried moment, and L1.placement-moment's fixing of that moment.",
@@ -449,7 +449,7 @@
       "to": "logical.trade.placed_at",
       "derived_from": ["L1.placement-moment"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_placement_reference_frozen", "sketch-review"],
+      "feedback": ["inv.trade_placement_reference_frozen", "inv.trade_placed_at_matches_earliest_report", "sketch-review"],
       "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. raw.trade_cdc's t_dts is that report's own recorded time; for a trade whose only held reports are Trade change records (every incrementally loaded trade, and any historical-load trade with no anchored TradeHistory rows), t_dts on the first-encountered such row is the earliest report the brokerage holds. For a historical-load trade with anchored raw.trade_history rows, the earliest held report is one of those instead (see the sibling handoff from raw.trade_history.th_dts), so this handoff and that one together, both under selector first_encounter_only, supply placed_at across the two anchored report sources; this handoff never takes a later report's t_dts.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while t_dts on a trade's first-encountered raw.trade_cdc report is the report's own stated time of that event, not a receipt or batch-load time, and while, for a historical-load trade, any earlier-held raw.trade_history rows are correctly preferred by the sibling handoff instead.",
@@ -462,7 +462,7 @@
       "to": "logical.trade.placed_at",
       "derived_from": ["L1.placement-moment"],
       "disposition": "candidate",
-      "feedback": ["inv.trade_placement_reference_frozen", "sketch-review"],
+      "feedback": ["inv.trade_placement_reference_frozen", "inv.trade_placed_at_matches_earliest_report", "sketch-review"],
       "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time. For a historical-load trade, the brokerage's held reports include its raw.trade_history rows (per-status reports, one per lifecycle stage) as well as its raw.trade_cdc snapshot row; the anchored trade_code_meanings.report_order states that such a trade's earliest held report is its earliest raw.trade_history row, not the snapshot. th_dts is that row's own recorded time, and this handoff takes it only from the trade's first-encountered raw.trade_history row (the one with the smallest th_dts), never a later one, and only when such rows exist for the trade.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while th_dts on a trade's first raw.trade_history row is that report's own stated time of that lifecycle event, and while every historical-load trade's per-status reports the brokerage holds are exactly its anchored raw.trade_history rows (none held but unanchored). raw.trade_history's own anchored identifiers are (th_t_id, th_dts, th_st_id), not (th_t_id, th_dts) alone, so the anchors permit two rows of the same trade to share a th_dts with different th_st_id; this handoff assumes that does not happen among a trade's rows, since two rows tied for smallest th_dts would make which one is 'the earliest' -- and hence first_seen_late's status comparison -- ambiguous.",
@@ -499,7 +499,7 @@
     {
       "from": "logical.customer.effective_from",
       "to": "logical.trade.owning_customer_effective_from",
-      "derived_from": ["L1.attribution-at-placement", "L1.as-of", "L1.placement-moment"],
+      "derived_from": ["L1.attribution-at-placement", "L1.as-of", "L1.placement-moment", "L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
       "feedback": ["inv.trade_placement_reference_frozen", "sketch-review"],
       "necessity": "L1.attribution-at-placement requires the trade's ownership reference to name the customer as they stood at the moment of placement, not the customer's current statement -- 'and through it the customer, as they stood'; L1.as-of defines that answer as the latest statement that took effect at or before the queried moment; L1.placement-moment fixes that moment to placed_at. This handoff selects, among ownership-history's logical.customer statements of the customer named by owning_customer_number, the one whose effective_from is the latest at or before placed_at, and freezes that effective_from as the second half of the (customer_number, effective_from) reference identifying the specific customer statement.",
@@ -683,8 +683,8 @@
       "feedback": ["sketch-review"],
       "necessity": "L1.constructed-scenarios requires a constructed scenario to remain labeled wherever it appears; L1.attribution-at-placement is what fixes owning_account_number and owning_account_effective_from as the frozen pair identifying the exact account statement a trade's ownership pins. Together they entail that the referenced statement's own provenance label -- if any -- stays reachable through that pair rather than needing a copy on the trade; this job defines no separate provenance attribute of its own that could omit, duplicate, or contradict it, and this invariant is the checkable restatement of the reachability that makes that omission safe.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds while ownership-history's logical.account entity carries at most one statement per (account_number, effective_from) and continues to be the only source of a trade's ownership reference.",
-      "review_trigger": "the pair (owning_account_number, owning_account_effective_from) for a trade resolves to zero or more than one ownership-history account statement",
+      "parallel_assumption": "Holds while ownership-history's logical.account entity carries at most one statement per (account_number, effective_from), and while ownership-history's logical.customer entity, which now also feeds the frozen ownership reference through owning_customer_number and owning_customer_effective_from, carries at most one statement per (customer_number, effective_from). The customer pin cannot itself carry an unlabeled constructed fact: logical.customer has no provenance attribute of its own, and chain/anchors/sources-v1.json anchors no ce.customer_* source, so there is no labeled constructed customer scenario for one to be mislabeled or omitted from in the first place.",
+      "review_trigger": "the pair (owning_account_number, owning_account_effective_from) for a trade resolves to zero or more than one ownership-history account statement, the pair (owning_customer_number, owning_customer_effective_from) resolves to zero or more than one ownership-history customer statement, or sources-v1.json gains a ce.customer_* source, or logical.customer gains a provenance value",
       "sufficiency_group": "sg.constructed-scenarios"
     }
   ],
@@ -747,7 +747,7 @@
       "parent_clauses": ["L1.constructed-scenarios", "L1.attribution-at-placement"],
       "members": ["inv.trade_not_constructed", "inv.trade_ownership_provenance_reachable"],
       "mode": "all_required",
-      "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from the two anchored received sources (raw.trade_cdc and raw.trade_history) and, through the frozen ownership reference, ownership-history's logical.account and logical.customer entities. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. This claim is scoped to trades whose pin resolves; a trade whose pin does not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no statement to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
+      "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from the two anchored received sources (raw.trade_cdc and raw.trade_history) and, through the frozen ownership reference, ownership-history's logical.account and logical.customer entities. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. The customer pin (owning_customer_number, owning_customer_effective_from) raises no equivalent risk: logical.customer carries no provenance attribute of its own, and sources-v1.json anchors no ce.customer_* source, so there is no labeled constructed customer scenario for the customer pin to fail to relabel or duplicate. This claim is scoped to trades whose pins resolve; a trade whose pins do not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no pinned statements to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
       "gap": "none"
     }
   ],
@@ -769,7 +769,7 @@
     },
     {
       "id": "hole.change_effective_time",
-      "question": "Does a change recorded in an incremental account or customer change file take effect at the file's batch date, or at some other moment? Until answered, some account statements this job's owning_account_effective_from and owning_customer_number handoffs would need to resolve a trade's as-of ownership against remain unavailable, per ownership-history's own deferred handoffs from raw.account_cdc and raw.customer_cdc.",
+      "question": "Does a change recorded in an incremental account or customer change file take effect at the file's batch date, or at some other moment? Until answered, some account and customer statements this job's owning_account_effective_from, owning_customer_number, and owning_customer_effective_from handoffs would need to resolve a trade's as-of ownership against remain unavailable, per ownership-history's own deferred handoffs from raw.account_cdc and raw.customer_cdc.",
       "derived_from_hole": "L1.hole.change-effective-time",
       "owner_hat": "data-product-owner",
       "disposition": "deferred",
