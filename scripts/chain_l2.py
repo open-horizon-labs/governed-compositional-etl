@@ -17,12 +17,13 @@ import sys
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
-L1 = ROOT / "sketches/l1-brokerage-intent-v1.md"
+import os
+L1 = ROOT / os.environ.get("CHAIN_L1", "sketches/l1-brokerage-intent-v1.md")
 SCHEMA = ROOT / "chain/anchors/semantic-model-v2.schema.json"
 WEAVE = ROOT / "chain/weave.json"
 SOURCES = ROOT / "chain/anchors/sources-v1.json"
-L2_DIR = ROOT / "chain/l2"
-MANIFEST = ROOT / "chain/manifest.json"
+L2_DIR = ROOT / os.environ.get("CHAIN_L2_DIR", "chain/l2")
+MANIFEST = ROOT / os.environ.get("CHAIN_MANIFEST", "chain/manifest.json")
 L2_CONTRACT_VERSION = "l1-to-l2/v2"
 JOB_ORDER = ["ownership-history", "trade-lifecycle", "positions"]
 CLAUSE = re.compile(r"^- \*\*(L1\.(?!hole\.)[a-z0-9-]+)\*\* — (.+)$")

@@ -1,0 +1,83 @@
+{
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-native",
+  "job": "trade-lifecycle",
+  "derived_from_model": {
+    "path": "chain/l2/trade-lifecycle/semantic-model.json",
+    "review_sha256": "001764ab8483fed37251504c5868525763193e241c5363ec11c96619ba4cd4de"
+  },
+  "artifacts": [
+    {
+      "file": "trade.sql",
+      "entity": "logical.trade",
+      "strategy": "native MERGE INTO with WHEN MATCHED THEN UPDATE SET limited to mutable-role columns and WHEN NOT MATCHED THEN INSERT",
+      "derived_from": [
+        "logical.trade",
+        "logical.trade.trade_number",
+        "logical.trade.owning_account_number",
+        "logical.trade.placed_at",
+        "logical.trade.owning_account_effective_from",
+        "logical.trade.owning_customer_number",
+        "logical.trade.first_seen_late",
+        "logical.trade.status",
+        "logical.trade.executed_price",
+        "logical.trade.fees",
+        "logical.trade.commission",
+        "logical.trade.tax",
+        "logical.trade.quantity",
+        "type.trade_number",
+        "type.trade_owning_account_reference",
+        "type.trade_placed_at",
+        "type.trade_owning_account_effective_from",
+        "type.trade_owning_customer_reference",
+        "type.trade_first_seen_late",
+        "type.trade_status",
+        "type.trade_executed_price",
+        "type.trade_fees",
+        "type.trade_commission",
+        "type.trade_tax",
+        "type.trade_quantity",
+        "handoff.raw.trade_cdc.t_id->logical.trade.trade_number",
+        "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number",
+        "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at",
+        "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
+        "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
+        "handoff.raw.trade_cdc.t_st_id->logical.trade.status",
+        "handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price",
+        "handoff.raw.trade_cdc.t_chrg->logical.trade.fees",
+        "handoff.raw.trade_cdc.t_comm->logical.trade.commission",
+        "handoff.raw.trade_cdc.t_tax->logical.trade.tax",
+        "handoff.raw.trade_cdc.t_qty->logical.trade.quantity"
+      ],
+      "reads": ["raw.trade_cdc", "governed.account"]
+    }
+  ],
+  "audits": [
+    {
+      "file": "audits/inv.trade_owning_account_frozen.sql",
+      "invariant": "inv.trade_owning_account_frozen",
+      "entity": "logical.trade"
+    },
+    {
+      "file": "audits/inv.trade_placement_reference_frozen.sql",
+      "invariant": "inv.trade_placement_reference_frozen",
+      "entity": "logical.trade"
+    },
+    {
+      "file": "audits/inv.trade_first_seen_late_matches_status_order.sql",
+      "invariant": "inv.trade_first_seen_late_matches_status_order",
+      "entity": "logical.trade"
+    },
+    {
+      "file": "audits/inv.trade_outcome_updates_in_place.sql",
+      "invariant": "inv.trade_outcome_updates_in_place",
+      "entity": "logical.trade"
+    },
+    {
+      "file": "audits/inv.trade_ownership_provenance_reachable.sql",
+      "invariant": "inv.trade_ownership_provenance_reachable",
+      "entity": "logical.trade"
+    }
+  ],
+  "questions_for_authority": []
+}
