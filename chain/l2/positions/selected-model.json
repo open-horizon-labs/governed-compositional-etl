@@ -267,6 +267,7 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.eligible_holding_report_persisted",
         "sketch-review"
       ],
       "grain": "one row per holding change, identified by (original_trade_number, current_trade_number); a later report of the same pair updates before_qty and after_qty in place and leaves the copied ownership reference (owning_account_number, owning_account_effective_from, owning_customer_number, owning_customer_effective_from) unchanged",
@@ -291,6 +292,7 @@
           ],
           "disposition": "candidate",
           "feedback": [
+            "inv.eligible_holding_report_persisted",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade identifies a holding change in part by its original trade; L1.identity requires a value that persistently names that trade across every report. This attribute carries raw.holding_history's hh_h_t_id for exactly that purpose.",
@@ -310,6 +312,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_change_current_trade_known",
+            "inv.eligible_holding_report_persisted",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade identifies a holding change in part by its current trade, and names the current trade as the one whose recorded ownership the change belongs to; L1.identity requires a value that persistently names that trade across every report. This attribute carries raw.holding_history's hh_t_id for exactly that purpose, and is the join key this entity uses to copy the current trade's frozen ownership reference.",
@@ -671,6 +674,7 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.eligible_holding_report_persisted",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade identifies a holding change in part by its original trade; raw.holding_history carries hh_h_t_id as that trade's number on every row reporting the change, per sources-v1.json's natural_identity_hints.",
@@ -689,6 +693,7 @@
       "disposition": "candidate",
       "feedback": [
         "inv.holding_change_current_trade_known",
+        "inv.eligible_holding_report_persisted",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade identifies a holding change in part by its current trade, the one whose recorded ownership the change belongs to; raw.holding_history carries hh_t_id as that trade's number on every row reporting the change.",
@@ -1082,7 +1087,7 @@
       ],
       "necessity": "L1.holdings-follow-trade identifies a holding change by its current trade and requires the change to belong to whoever owned that trade, which presupposes the trade the report names actually resolves; L1.identity requires hh_t_id to persistently identify one real trade. The current_trade_number attribute's own review_trigger and the trade ownership handoffs' own review_triggers already name an hh_t_id that does not resolve to any logical.trade row as a case requiring review; this invariant mechanizes that review trigger as a deterministic, audit-checkable fact, so such a report fires a violation instead of silently vanishing from every position sum.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Credible while hh_t_id in this file names a real trade and is not reused for a different one.",
+      "parallel_assumption": "Credible while hh_t_id in this file names a real trade and is not reused for a different one. 'Resolves to a logical.trade row' and 'resolves to a fully pinned row' (all four ownership values non-null) coincide whenever trade-lifecycle's own inv.every_received_trade_persisted and inv.trade_ownership_pin_present hold, since every persisted trade then already carries a resolved pin; an engine whose projection drops an unpinnable trade upstream, rather than persisting it with null pins, makes this invariant fire for the unresolved-pin case too, alongside the missing-row case. The two engines differ only in a state trade-lifecycle's own invariants already report, not in what this invariant means.",
       "review_trigger": "a raw.holding_history report whose cdc_flag is not D names an hh_t_id that does not resolve to any logical.trade row; the business decides what such a report means, this invariant only makes it visible",
       "sufficiency_group": "sg.holding-attribution"
     },
@@ -1104,6 +1109,25 @@
       "parallel_assumption": "Credible while every raw.holding_history report carries a determinable before and after quantity for the holding change it reports, the same condition before_qty and after_qty's own parallel assumptions already rest on.",
       "review_trigger": "a persisted logical.holding_change row is found with a null before_qty, after_qty, or quantity_change",
       "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.eligible_holding_report_persisted",
+      "entity": "logical.holding_change",
+      "statement": "Every (original_trade_number, current_trade_number) pair reported by raw.holding_history, none of whose reports carries cdc_flag D, whose current_trade_number resolves to a logical.trade row carrying owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from all non-null, has exactly one logical.holding_change row. A pair with any cdc_flag D report is L1.hole.deletions' case and is not claimed by this invariant.",
+      "derived_from": [
+        "L1.identity",
+        "L1.holdings-follow-trade"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.holdings-follow-trade and L1.identity together entail this entity's own grain, already stated in sg.holding-shape's coverage_claim: one row per (original_trade_number, current_trade_number) pair. sg.holding-attribution's coverage_claim already states the converse exclusion -- a holding change whose current trade's ownership pin does not resolve has no ownership reference to copy and so is excluded -- which inv.holding_change_ownership_present and inv.holding_change_current_trade_known make checkable from the excluded side. This invariant is the converse of inv.holding_quantity_updates_in_place's second clause (a persisted pair with no surviving I/U report never surfaces): a pair that is reported, carries no D report, and whose current trade's pin fully resolves is not merely permitted to persist, it must -- exactly one row, neither zero nor more than one. A pair with any D report is excluded from this claim; what a D report means for row existence is L1.hole.deletions, not decided here.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every raw.holding_history report for the pair is either I, U, or a historical row, the same candidate set inv.holding_quantity_updates_in_place and the latest_change selector already use, and while a pair's current trade resolving to a fully pinned logical.trade row is itself stable across the reports considered.",
+      "review_trigger": "an eligible pair -- reported, carrying no D report, with its current trade resolved and all four ownership values non-null -- is found with zero or with more than one logical.holding_change row",
+      "sufficiency_group": "sg.holding-shape"
     }
   ],
   "sufficiency_groups": [
@@ -1120,7 +1144,8 @@
         "logical.holding_change.original_trade_number",
         "logical.holding_change.current_trade_number",
         "handoff.raw.holding_history.hh_h_t_id->logical.holding_change.original_trade_number",
-        "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number"
+        "handoff.raw.holding_history.hh_t_id->logical.holding_change.current_trade_number",
+        "inv.eligible_holding_report_persisted"
       ],
       "mode": "all_required",
       "coverage_claim": "logical.holding_change's history kind, incremental_by_identity, follows from L1.holdings-follow-trade (a holding change is identified by its original trade and its current trade, and belongs to whoever owned the causing trade), L1.identity (those trade numbers persistently identify the same trades across every report), and L1.attribution-at-placement (the ownership, once fixed on the current trade, is not moved) -- together these entail one row per (original_trade_number, current_trade_number) pair, updated in place. original_trade_number and current_trade_number, handed off unchanged from raw.holding_history's own hh_h_t_id and hh_t_id with the identity mutation role, give this entity exactly the composite identity L1.holdings-follow-trade names. This group's scope is limited to the entity's shape and its two identity attributes; the ownership this entity copies through current_trade_number is the more specific claim covered by sg.holding-attribution instead.",
@@ -1151,7 +1176,7 @@
         "inv.holding_change_current_trade_known"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward, naming both which account and, 'through it the customer, as they stood,' which customer statement; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution; sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for holding-change reports, anchoring first_encounter_only's ordering directly for this entity rather than by extension from trade reports. inv.holding_change_ownership_frozen restates that all four values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own four attributes resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account or customer statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). Separately, L1.hole.owner-change-reversions-account bounds which account statement -- and hence which customer statement -- a trade's placed_at pins in the first place: if a customer-only change also re-versions the account, a trade placed shortly after such a change could pin a different account (and customer) statement than it does today, which would change what this holding change copies without this job deciding it. A holding change whose current trade's ownership pin does not resolve, for any of these reasons, has no ownership reference for this job to copy. inv.holding_change_ownership_present restates this exclusion as a checkable invariant: every persisted holding change carries all four copied attributes non-null. inv.holding_change_current_trade_known distinguishes the separate, unknown-trade case: an hh_t_id that does not resolve to any logical.trade row at all does not drop out silently the way an unresolved pin does, but fires as a violation instead.",
+      "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward, naming both which account and, 'through it the customer, as they stood,' which customer statement; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution; sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for holding-change reports, anchoring first_encounter_only's ordering directly for this entity rather than by extension from trade reports. inv.holding_change_ownership_frozen restates that all four values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own four attributes resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account or customer statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). Separately, L1.hole.owner-change-reversions-account bounds which account statement -- and hence which customer statement -- a trade's placed_at pins in the first place: if a customer-only change also re-versions the account, a trade placed shortly after such a change could pin a different account (and customer) statement than it does today, which would change what this holding change copies without this job deciding it. A holding change whose current trade's ownership pin does not resolve, for any of these reasons, has no ownership reference for this job to copy. inv.holding_change_ownership_present restates this exclusion as a checkable invariant: every persisted holding change carries all four copied attributes non-null. inv.holding_change_current_trade_known distinguishes the separate, unknown-trade case: an hh_t_id that does not resolve to any logical.trade row at all does not drop out silently the way an unresolved pin does, but fires as a violation instead. The two cases coincide whenever trade-lifecycle's inv.every_received_trade_persisted and inv.trade_ownership_pin_present hold, and an engine that drops an unpinnable trade upstream makes inv.holding_change_current_trade_known fire for the unresolved-pin case too -- the engines differ only in a state trade-lifecycle already reports.",
       "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; L1.hole.owner-change-reversions-account bounds which statement is pinned in the first place; see coverage_claim."
     },
     {
@@ -1232,7 +1257,7 @@
     },
     {
       "id": "hole.batch_identity",
-      "question": "Does a report need to know which incremental file first delivered it? This job's latest_change selector for before_qty and after_qty, first_encounter_only selector for the copied ownership reference, and this job's computed_within_entity group-key derivation for the aggregate keys all rest on the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, now stated by the anchor's own applies_to as covering holding-change reports directly, not merely trades -- not on a report carrying which file delivered it. That ordering is enough to select a first-encountered or latest report today, but this hole stays open about whether a report also needs to carry its own delivering file, which would matter if production order and delivery order could ever diverge.",
+      "question": "Does a report need to know which incremental file first delivered it? This job's latest_change selector for before_qty and after_qty, first_encounter_only selector for the copied ownership reference, and this job's computed_within_entity group-key derivation for the aggregate keys all rest on the anchored trade_code_meanings.report_order (batch_date, cdc_dsn) -- file production order, now stated by the anchor's own applies_to as covering holding-change reports directly, not merely trades -- not on a report carrying which file delivered it. That ordering is enough to select a first-encountered or latest report today, but this hole stays open about whether a report also needs to carry its own delivering file, which would matter if production order and delivery order could ever diverge. When several historical reports of one pair tie under report_order (same batch_date, no cdc_dsn to break the tie), which candidate's quantities the pair carries is undecided here; a projection adopting any undominated candidate is one behavior consistent with this hole, not a resolution of it.",
       "derived_from_hole": "L1.hole.batch-identity",
       "owner_hat": "data-product-owner",
       "disposition": "deferred",

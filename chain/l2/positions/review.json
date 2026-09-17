@@ -6,10 +6,10 @@
     "sg.no-phantom-positions"
   ],
   "job": "positions",
-  "model_sha256": "26f0fde3836e40f0b2adb6d2211451b4d3c1a2cb91233e2382100c403af4b2aa",
-  "notes": "see review-4.md and review-5.md",
+  "model_sha256": "4e3ccdf59160fc0d3def31650486c3653822b59f18bdbe6890bbda8a4f935bd5",
+  "notes": "see review-6.md",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 5 after prescribed corrections",
+  "reviewer": "Opus sketch reviewer, scoped review 6",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity",
@@ -28,6 +28,7 @@
     "inv.customer_position_is_sum_of_changes",
     "inv.customer_position_key_matches_holding_change",
     "inv.customer_position_not_negative",
+    "inv.eligible_holding_report_persisted",
     "inv.holding_change_current_trade_known",
     "inv.holding_change_not_constructed",
     "inv.holding_change_ownership_frozen",
