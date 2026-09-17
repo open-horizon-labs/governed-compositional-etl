@@ -16,8 +16,8 @@ Each clause has a stable id and is hashed on its own, so changing one clause inv
 
 Each job compiles to its own semantic model. A job lists the clauses it needs.
 
-- **job:ownership-history** — Know how any customer or account stood at any moment, and who owned what. Clauses: L1.identity, L1.history, L1.as-of, L1.current-version, L1.owner-standing, L1.constructed-scenarios
-  - feedback: one current statement per customer and per account; statements of one thing do not overlap; any as-of question has exactly one answer; an account's as-of answer carries its customer's as-of answer
+- **job:ownership-history** — Know how any customer or account stood at any moment, and who owned what. Clauses: L1.identity, L1.history, L1.as-of, L1.current-version, L1.owner-standing, L1.statement-content, L1.constructed-scenarios
+  - feedback: one current statement per customer and per account; statements of one thing do not overlap; any as-of question has exactly one answer with the standing facts of L1.statement-content; an account's as-of answer carries its customer's as-of answer
 - **job:trade-lifecycle** — Know each trade's outcome and who owned it when it happened. Clauses: L1.identity, L1.as-of, L1.attribution-at-placement, L1.lifecycle-mutates-outcome, L1.constructed-scenarios
   - feedback: a later report of a trade changes its outcome fields and leaves its recorded ownership byte-identical; ownership equals the account's as-of statement at placement, not the current one
 - **job:positions** — Know what each account and customer holds, and how it got there. Clauses: L1.identity, L1.attribution-at-placement, L1.holdings-follow-trade, L1.no-phantom-positions, L1.constructed-scenarios
@@ -32,6 +32,7 @@ Each job compiles to its own semantic model. A job lists the clauses it needs.
 - **L1.as-of** — Any question about a customer or account can be asked as of a moment in time, and the answer is the statement in effect at that moment: the latest one that took effect at or before it.
 - **L1.current-version** — The current statement about a customer or account is the one with no later statement. There is exactly one current statement per customer and per account.
 - **L1.owner-standing** — An account's standing includes its owner's standing. When the brokerage says how an account stood at a moment, that includes how its customer stood at that same moment.
+- **L1.statement-content** — A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)
 
 ### Trades and ownership
 
@@ -45,7 +46,7 @@ Each job compiles to its own semantic model. A job lists the clauses it needs.
 
 ### Evidence discipline
 
-- **L1.constructed-scenarios** — Any scenario built to test these rules, rather than received from the brokerage's records, is labeled as constructed wherever it appears and is never mixed into the received records.
+- **L1.constructed-scenarios** — Any scenario built to test these rules, rather than received from the brokerage's records, is labeled as constructed wherever it appears and is never mixed into the received records. A constructed scenario changes something the received records already know; it never introduces a customer, account, or trade the brokerage does not have. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)
 
 ## Holes
 

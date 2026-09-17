@@ -1,0 +1,12 @@
+# Change contract, cycle 3: L1 -> L2, job ownership-history
+
+- **Prior policy authority:** `sketches/l1-brokerage-intent-v1.md`, the clauses listed for `job:ownership-history`.
+- **Exact active change authority:** anchor amendment under the data-architect hat: `chain/anchors/sources-v1.json` now states `action_type_meanings` and `status_codes` (authority: TPC-DI source definitions, locator unverified, adjudicated in the SCD2 decision record). No new clause. No new CE.
+- **Approved outputs covered by that authority:** a customer statement created by a historical action carries status from the action's stated meaning (NEW, UPDCUST: active; INACT: inactive); an account statement carries status from its action (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed). Use a selector such as `status_from_action_meaning` and cite `L1.statement-content` plus the clause that requires the statement.
+- **Authorized corrections from `review-2.md` (projection defects under the current Sketch and the accepted CE):** add candidate handoffs `ce.account_changes.status_id -> logical.account.status` and `ce.account_changes.tax_status_id -> logical.account.tax_treatment` in `sg.statement-content`; add candidate status handoffs from `raw.customer_mgmt_action.action_type` to `logical.customer.status` and `logical.account.status` with selector `status_from_action_meaning`, citing the anchored action meanings; every element that says "see questions_for_authority" must either point at a filed question or stop saying it; every `nullable: false` attribute must have at least one candidate handoff or become nullable with a note, deferred, or rejected with a reason; restate `sg.statement-content` and `sg.constructed-scenarios` coverage claims to say exactly what they cover; record `L1.hole.closed-account-activity` as a hole (an account's status history may be incomplete if a reopening is unrecorded) and record or dismiss `L1.hole.batch-identity` in the model, not only in the report.
+- **Current rules that must be preserved:** all clauses; cycle-2 corrections stand.
+- **Explicit holes that must remain open:** unchanged. In particular, do not derive account re-versioning from INACT or UPDCUST; that is L1.hole.owner-change-reversions-account.
+- **Retained behavior that must not regress:** everything cycle 2 established.
+- **Stable projection contracts:** unchanged.
+- **Forbidden shortcuts:** unchanged. The gate no longer halts on a filed question; if anything remains ambiguous, file it rather than omit.
+- **Conflict protocol:** unchanged.

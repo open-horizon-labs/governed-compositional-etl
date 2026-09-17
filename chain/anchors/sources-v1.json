@@ -1,4 +1,51 @@
 {
+  "action_type_meanings": {
+    "authority": {
+      "adjudication": ".oh/metis/issue-8-scd2-versioning-adjudication.md",
+      "kind": "tpc_di_source_definition",
+      "locator": "CustomerMgmt.xml ActionType definitions (unverified locator)",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf",
+      "status": "assumed"
+    },
+    "codes": {
+      "ADDACCT": "an additional account is opened for an existing customer; the account becomes active",
+      "CLOSEACCT": "an account is closed; the account becomes inactive",
+      "INACT": "a customer becomes inactive",
+      "NEW": "a new customer is recorded together with their first account; both become active",
+      "UPDACCT": "an existing account's details change; the account stays open",
+      "UPDCUST": "an existing customer's details change; the customer stays active"
+    },
+    "entity_subjects": {
+      "logical.account": "account",
+      "logical.customer": "customer"
+    },
+    "note": "What each received CustomerMgmt action code means, as the source defines it. Using this meaning to derive a statement's status is interpreting a named reference, not inventing policy. The clause locator is unverified; see the adjudication.",
+    "status_codes": {
+      "ACTV": "active or open",
+      "INAC": "inactive or closed"
+    },
+    "subjects": {
+      "ADDACCT": [
+        "account"
+      ],
+      "CLOSEACCT": [
+        "account"
+      ],
+      "INACT": [
+        "customer"
+      ],
+      "NEW": [
+        "customer",
+        "account"
+      ],
+      "UPDACCT": [
+        "account"
+      ],
+      "UPDCUST": [
+        "customer"
+      ]
+    }
+  },
   "authority": {
     "kind": "tpc_di_files",
     "note": "TPC-DI 1.1.0 source file layouts; used as a research workload, not a benchmark",

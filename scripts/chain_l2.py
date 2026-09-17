@@ -87,8 +87,7 @@ def check(job: str, l1: dict | None = None) -> dict:
         problems.append(f"schema: {e.message} at {'/'.join(map(str, e.path))}")
     if doc.get("job") != job:
         problems.append(f"job field {doc.get('job')} does not match directory {job}")
-    if doc.get("questions_for_authority"):
-        return {"job": job, "status": "question", "questions": doc["questions_for_authority"], "problems": problems}
+    questions = list(doc.get("questions_for_authority") or [])
     allowed_clauses = set(l1["jobs"].get(job, {}).get("clauses", []))
     types = {t["id"]: t for t in doc.get("types", [])}
     GUARD = _mod("merge_guard", "scripts/merge_guard.py")
@@ -228,6 +227,48 @@ def check(job: str, l1: dict | None = None) -> dict:
                 for h in doc.get("handoffs", []):
                     if h["to"].startswith(e["id"] + ".") and h["from"].startswith(src + ".") and h.get("disposition") == "candidate":
                         problems.append(f"handoff {h['from']}->{h['to']} is candidate but {src} supplies no effective time for {e['id']}; defer it under the hole that blocks it")
+    # review-2 mechanizations: a projectable source must supply every non-nullable attribute; no dangling question references; non-nullable needs a source
+    all_text = json.dumps(doc)
+    if "questions_for_authority" in all_text.replace('"questions_for_authority"', "", 1) and not questions:
+        problems.append("elements refer to questions_for_authority but no question is filed")
+    for e in doc.get("entities", []):
+        candidate_targets = {}
+        for h in doc.get("handoffs", []):
+            if h["to"].startswith(e["id"] + ".") and h.get("disposition") == "candidate":
+                candidate_targets.setdefault(h["from"].rsplit(".", 1)[0], set()).add(h["to"].rsplit(".", 1)[1])
+        any_candidate = set().union(*candidate_targets.values()) if candidate_targets else set()
+        derived = {a["name"] for a in e["attributes"] if a.get("derivation")}
+        for a in e["attributes"]:
+            if not a["nullable"] and a["name"] not in any_candidate and a["name"] not in derived and a.get("disposition") == "candidate":
+                problems.append(f"{e['id']}.{a['name']} is nullable false and candidate but has no candidate handoff from any source and no derivation")
+        if e["history"] == "versioned":
+            effective_attrs = {a["name"] for a in e["attributes"] if a["semantic_type"] in time_types}
+            required = {a["name"] for a in e["attributes"] if not a["nullable"] and a.get("disposition") == "candidate"} - set(e["identifiers"]) - effective_attrs - derived
+            for src, attrs in candidate_targets.items():
+                if attrs & effective_attrs and not required <= attrs:
+                    problems.append(f"source {src} can produce {e['id']} statements but supplies no candidate handoff for required {sorted(required - attrs)}; supply them, make them nullable with a note, or defer/reject with a reason")
+    # review-3 mechanization: action-code enumerations in handoff justifications must agree per entity and match the anchored subjects
+    meanings = sources.get("action_type_meanings", {})
+    codes = set(meanings.get("codes", {}))
+    subjects = meanings.get("subjects", {})
+    entity_subjects = meanings.get("entity_subjects", {})
+    per_entity = {}
+    for h in doc.get("handoffs", []):
+        if not h["from"].startswith("raw.customer_mgmt_action."):
+            continue
+        text = str(h.get("necessity", ""))  # enumerations are claims of necessity; notes and triggers may mention other codes
+        named = {c for c in codes if re.search(rf"\b{c}\b", text)}
+        if named:
+            per_entity.setdefault(h["to"].rsplit(".", 1)[0], []).append((h["from"], named))
+    for ent, items in per_entity.items():
+        subject = entity_subjects.get(ent)
+        sets = {frozenset(n) for _, n in items}
+        if len(sets) > 1:
+            problems.append(f"{ent}: handoffs enumerate different action-code sets {[sorted(n) for _, n in items]}; they must agree")
+        for src, named in items:
+            wrong = sorted(c for c in named if subject and subject not in subjects.get(c, []))
+            if wrong:
+                problems.append(f"handoff {src}->{ent} names {wrong}, which the anchors define as not about a {subject}")
     for g in groups.values():
         gap = g["gap"].strip()
         if gap.lower() != "none" and not re.search(r"L1\.hole\.[a-z0-9-]+", gap):
@@ -245,7 +286,8 @@ def check(job: str, l1: dict | None = None) -> dict:
     covered = {c for g in groups.values() for c in g["parent_clauses"]}
     for c in sorted(allowed_clauses - covered):
         problems.append(f"clause {c} has no sufficiency group in job {job}: gap")
-    return {"job": job, "status": "ok" if not problems else "rejected", "problems": problems, "holes_carried": sorted(carried),
+    status = "rejected" if problems else ("question" if questions else "ok")
+    return {"job": job, "status": status, "problems": problems, "questions": questions, "holes_carried": sorted(carried),
             "groups": {g: {"parents": groups[g]["parent_clauses"], "gap": groups[g]["gap"]} for g in groups},
             "elements": {"types": len(types), "entities": len(entities), "handoffs": len(doc.get("handoffs", [])), "invariants": len(doc.get("invariants", []))}}
 

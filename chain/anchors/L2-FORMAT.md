@@ -52,3 +52,15 @@ Sufficiency is a claim about a set, never about one element. For every clause yo
 - A group's `gap` is `none` or names an L1 hole id. Anchor limitations go in `questions_for_authority`.
 - An element's `derived_from` is a subset of its group's `parent_clauses`.
 - A hole's `blocks` lists every group that contains a deferred member.
+
+## Interpreting received codes is not inventing policy
+
+`chain/anchors/sources-v1.json` states what each received action code and status code means, with its authority. Handing off "the customer is inactive" from an `INACT` action is interpreting a named reference the source defines, and is allowed. Deciding what "standing" consists of is policy, and comes only from the Sketch. When a code's meaning is not stated in the anchors, that is a question for authority.
+
+## Questions never block the gate
+
+Filing a question in `questions_for_authority` marks the model `question` and omits the affected elements; the gate still validates everything else. File the question. Do not resolve an ambiguity by omission.
+
+## Derived attributes are not handoffs
+
+Some statement values are not received from any source. The current flag follows from there being no later statement. A constructed change that omits the owner carries the owner forward from the previous statement of the same account. Declare these with `derivation` on the attribute (`computed_within_entity` or `carried_forward_from_previous_statement`) and a rule a reader can check, and cite the clause that makes the rule follow. The gate does not require a handoff for a derived attribute. Do not invent a source handoff for a value the sources do not carry.

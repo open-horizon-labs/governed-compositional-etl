@@ -1,0 +1,481 @@
+{
+  "changed_clauses": [
+    "L1.constructed-scenarios"
+  ],
+  "jobs": {
+    "ownership-history": {
+      "elements": {
+        "sg.constructed-scenarios": {
+          "cache": "stale",
+          "coverage_claim": "The handoffs drawing from the labeled ce.account_changes source that are members of this group establish this account statement's identity, effective time, and constructed label: account_id populates account_number and action_at populates effective_from, satisfying L1.identity's persistent-identity requirement and L1.history/L1.as-of's dated, ordered statement requirement for this source specifically; provenance populates the account statement's own provenance field, and only ever from this source, while no raw-sourced handoff ever populates it, satisfying L1.constructed-scenarios' 'labeled... wherever it appears' and 'never mixed into the received records.' The standing facts this source's rows also carry, status_id and tax_status_id, are populated by handoffs that are members of sg.statement-content instead, since content coverage is the more specific claim owned there; this group's coverage is limited to identity, history/as-of, and labeling for this source.",
+          "derived_from": [
+            "L1.as-of",
+            "L1.constructed-scenarios",
+            "L1.history",
+            "L1.identity"
+          ],
+          "fingerprint": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "handoff.ce.account_changes.account_id->logical.account.account_number": {
+              "necessity": "the account this labeled scenario is about must carry the same identity role as any received account statement; account_id is this constructed source's account number.",
+              "parallel_assumption": "Credible while account_id in a constructed scenario names an account_number already or separately established as identity."
+            },
+            "handoff.ce.account_changes.action_at->logical.account.effective_from": {
+              "necessity": "unlike incremental CDC files, this labeled constructed source carries its own explicit moment of change (action_at), so the effective_from this job requires under L1.history and L1.as-of is directly available without resolving the change-effective-time hole.",
+              "parallel_assumption": "Credible while action_at records the moment the constructed scenario asserts the change takes effect."
+            },
+            "handoff.ce.account_changes.provenance->logical.account.provenance": {
+              "necessity": "the clause requires a constructed scenario be labeled wherever it appears; this source's own provenance field is the label to carry through.",
+              "parallel_assumption": "Credible while every row from this source carries a non-empty provenance label."
+            },
+            "inv.constructed_account_change_refers_to_known_account": {
+              "necessity": "L1.constructed-scenarios' authorized clarification states a constructed scenario changes something the received records already know and never introduces a customer, account, or trade the brokerage does not have; this invariant is the direct check of that requirement for ce.account_changes. It is also what guarantees that logical.account.owning_customer_number's carried_forward_from_previous_statement derivation always has a previous statement to carry from for a constructed change.",
+              "parallel_assumption": "Holds while every constructed scenario used to test this job's rules is authored against an account already present in the received records, per the authorized clarification of L1.constructed-scenarios."
+            },
+            "inv.constructed_scenarios_labeled": {
+              "necessity": "the clause requires constructed scenarios to be labeled wherever they appear and never mixed into received records; this invariant is the direct check of that requirement at the attribute level.",
+              "parallel_assumption": "Holds as long as constructed scenarios are only ever loaded through the labeled ce.account_changes source and never through a raw source."
+            },
+            "logical.account.provenance": {
+              "necessity": "the clause requires a constructed scenario be labeled wherever it appears; this attribute carries that label on the account statement so it is never mistaken for a received record.",
+              "parallel_assumption": "Credible while the only anchored constructed-scenario source for this job is account-level; no equivalent labeled source exists yet for customer statements."
+            },
+            "type.constructed_scenario_label": {
+              "necessity": "the clause requires any constructed scenario be labeled wherever it appears and never mixed into received records; a dedicated provenance value is indispensable to carry that label through the model. It belongs to one dated statement and is never replaced in place, which is the per_statement mutation role.",
+              "parallel_assumption": "Credible while every constructed scenario is loaded only through its labeled source and every received record is loaded only through raw sources."
+            }
+          },
+          "members": [
+            "handoff.ce.account_changes.account_id->logical.account.account_number",
+            "handoff.ce.account_changes.action_at->logical.account.effective_from",
+            "handoff.ce.account_changes.provenance->logical.account.provenance",
+            "inv.constructed_account_change_refers_to_known_account",
+            "inv.constructed_scenarios_labeled",
+            "logical.account.provenance",
+            "type.constructed_scenario_label"
+          ],
+          "touched_clauses": [
+            "L1.constructed-scenarios"
+          ]
+        },
+        "sg.current-version": {
+          "cache": "hit",
+          "coverage_claim": "The is_current flag, true for exactly the statement of a customer or account with no later statement and false for every other, together with the single-current invariants, is a direct restatement of L1.current-version's 'exactly one current statement per customer and per account.' This determination depends on every statement's effective_from being known; where a statement's only source is an incremental CDC file, its order relative to the customer's or account's other statements is not yet resolvable, so its current-ness cannot yet be determined either.",
+          "derived_from": [
+            "L1.current-version"
+          ],
+          "fingerprint": "9b10389debc3ca53e0141d93de60c709c5174419f3ccbf1a85672a5df796af6c",
+          "gap": "L1.hole.change-effective-time",
+          "justifications": {
+            "inv.account_single_current": {
+              "necessity": "L1.current-version states there is exactly one current statement per account; this invariant is the direct restatement of that requirement over the is_current flag.",
+              "parallel_assumption": "Holds as long as every statement of an account is recorded with a determinable order; two statements claiming the same effective moment would make the current one undecidable."
+            },
+            "inv.customer_single_current": {
+              "necessity": "L1.current-version states there is exactly one current statement per customer; this invariant is the direct restatement of that requirement over the is_current flag.",
+              "parallel_assumption": "Holds as long as every statement of a customer is recorded with a determinable order; two statements claiming the same effective moment would make the current one undecidable."
+            },
+            "logical.account.is_current": {
+              "necessity": "L1.current-version requires exactly one current statement per account, defined as the one with no later statement; this attribute exposes that fact directly.",
+              "parallel_assumption": "Credible once every account statement has a known effective_from to order it against the others."
+            },
+            "logical.customer.is_current": {
+              "necessity": "L1.current-version requires exactly one current statement per customer, defined as the one with no later statement; this attribute exposes that fact directly.",
+              "parallel_assumption": "Credible once every customer statement has a known effective_from to order it against the others."
+            },
+            "type.statement_is_current": {
+              "necessity": "L1.current-version defines the current statement as the one with no later statement and requires exactly one per customer or account; a flag recording that fact is indispensable to expose it without recomputation. It is a fact about that dated statement relative to the others, never edited in place on an existing statement, which is the per_statement mutation role, not mutable.",
+              "parallel_assumption": "Credible as long as effective moments are known and ordered for every statement of a thing; if effective moments are missing, the current flag cannot be determined either."
+            }
+          },
+          "members": [
+            "inv.account_single_current",
+            "inv.customer_single_current",
+            "logical.account.is_current",
+            "logical.customer.is_current",
+            "type.statement_is_current"
+          ]
+        },
+        "sg.history-asof": {
+          "cache": "hit",
+          "coverage_claim": "For every statement whose source carries its own moment of change (the historical action file's action_ts), effective_from is populated and the no-overlap and unique-answer invariants hold over it, satisfying L1.history's 'kept, with the moment it took effect' and L1.as-of's 'the latest one that took effect at or before it.' The labeled constructed account scenario's own effective_from handoff (action_at) is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source. Incremental CDC records carry no moment of their own (a batch date is not an effective moment, per L1.hole.change-effective-time), so no effective_from handoff is created from them.",
+          "derived_from": [
+            "L1.as-of",
+            "L1.history"
+          ],
+          "fingerprint": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
+          "gap": "L1.hole.change-effective-time",
+          "justifications": {
+            "handoff.raw.customer_mgmt_action.action_ts->logical.account.effective_from": {
+              "necessity": "L1.history requires the moment an account change took effect; action_ts is this file's own recorded moment for the action, unlike incremental change files which carry none of their own.",
+              "parallel_assumption": "Credible while action_ts records the moment the brokerage considers the change to have taken effect, not merely when it was received into this file."
+            },
+            "handoff.raw.customer_mgmt_action.action_ts->logical.customer.effective_from": {
+              "necessity": "L1.history requires the moment a customer change took effect; action_ts is this file's own recorded moment for the action, unlike incremental change files which carry none of their own.",
+              "parallel_assumption": "Credible while action_ts records the moment the brokerage considers the change to have taken effect, not merely when it was received into this file."
+            },
+            "inv.account_asof_has_unique_answer": {
+              "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping.",
+              "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review."
+            },
+            "inv.account_statements_no_overlap": {
+              "necessity": "L1.history requires a later statement to sit beside the earlier one rather than overlapping it, and L1.as-of's requirement that any as-of question have exactly one answer holds only if statements partition time without overlap; this invariant is the direct restatement of that non-overlap requirement.",
+              "parallel_assumption": "Holds while effective_from values are strictly ordered per account; a duplicate or out-of-order effective_from would break the partition and should trigger review."
+            },
+            "inv.customer_asof_has_unique_answer": {
+              "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping.",
+              "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review."
+            },
+            "inv.customer_statements_no_overlap": {
+              "necessity": "L1.history requires a later statement to sit beside the earlier one rather than overlapping it, and L1.as-of's requirement that any as-of question have exactly one answer holds only if statements partition time without overlap; this invariant is the direct restatement of that non-overlap requirement.",
+              "parallel_assumption": "Holds while effective_from values are strictly ordered per customer; a duplicate or out-of-order effective_from would break the partition and should trigger review."
+            },
+            "logical.account.effective_from": {
+              "necessity": "L1.history requires the moment a change took effect be kept with the statement; L1.as-of requires that moment to determine which statement answers a query as of any time.",
+              "parallel_assumption": "Credible where the source of this statement supplies its own moment of change; not yet derivable for incremental account change records."
+            },
+            "logical.customer.effective_from": {
+              "necessity": "L1.history requires the moment a change took effect be kept with the statement; L1.as-of requires that moment to determine which statement answers a query as of any time.",
+              "parallel_assumption": "Credible where the source of this statement supplies its own moment of change; not yet derivable for incremental customer change records."
+            },
+            "type.statement_effective_from": {
+              "necessity": "L1.history requires the moment a change took effect be kept beside the statement, and L1.as-of requires ordering statements by that moment to answer any as-of question; a dedicated effective-time value is indispensable to both. It belongs to one dated statement and is never replaced in place, which is exactly the per_statement mutation role.",
+              "parallel_assumption": "Credible while every statement's effective moment can be determined at all; where a source supplies no moment of its own, this value cannot yet be assigned and as-of answers for that statement are unavailable."
+            }
+          },
+          "members": [
+            "handoff.raw.customer_mgmt_action.action_ts->logical.account.effective_from",
+            "handoff.raw.customer_mgmt_action.action_ts->logical.customer.effective_from",
+            "inv.account_asof_has_unique_answer",
+            "inv.account_statements_no_overlap",
+            "inv.customer_asof_has_unique_answer",
+            "inv.customer_statements_no_overlap",
+            "logical.account.effective_from",
+            "logical.customer.effective_from",
+            "type.statement_effective_from"
+          ]
+        },
+        "sg.identity": {
+          "cache": "hit",
+          "coverage_claim": "Every source this job reads through a raw feed that reports a customer or account carries its own identity handoff into the customer_number or account_number attribute, typed with the identity mutation role, giving each entity the persistent, non-identity-changing value L1.identity requires. Because a versioned entity's statements must also be kept beside one another and be orderable for as-of resolution, this group also covers the entity-shape-level portion of L1.history and L1.as-of: the historical action file's own action_ts handoff makes both entities projectable as dated, ordered statements now; the incremental CDC files carry the same identity values but supply no effective moment of their own, so their identity handoffs into these versioned entities are deferred. The labeled constructed account scenario's own identity handoff is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source. L1.identity also names a trade number, out of this job's scope (see job:trade-lifecycle). The attribute-level effective_from population and ordering invariants are covered by sg.history-asof; the current-flag mechanics by sg.current-version.",
+          "derived_from": [
+            "L1.as-of",
+            "L1.history",
+            "L1.identity"
+          ],
+          "fingerprint": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
+          "gap": "L1.hole.change-effective-time",
+          "justifications": {
+            "handoff.raw.account_cdc.ca_id->logical.account.account_number": {
+              "necessity": "identity of the account a change applies to must be carried even where the change's effective moment is not yet resolvable; ca_id is this file's account number.",
+              "parallel_assumption": "Credible while ca_id in this file matches the same numbering as the historical load."
+            },
+            "handoff.raw.customer_cdc.c_id->logical.customer.customer_number": {
+              "necessity": "identity of the customer a change applies to must be carried even where the change's effective moment is not yet resolvable; c_id is this file's customer number.",
+              "parallel_assumption": "Credible while c_id values in this file match the same numbering as the historical load."
+            },
+            "handoff.raw.customer_mgmt_action.c_id->logical.customer.customer_number": {
+              "necessity": "L1.identity requires the customer's own number as its identity; this file's customer actions (NEW, UPDCUST, INACT) carry c_id as the brokerage's customer number on each such record.",
+              "parallel_assumption": "Credible while c_id values in this file are the brokerage's real customer numbers and not reused for different customers."
+            },
+            "handoff.raw.customer_mgmt_action.ca_id->logical.account.account_number": {
+              "necessity": "L1.identity requires the account's own number as its identity; this file's account actions (NEW, ADDACCT, UPDACCT, CLOSEACCT) carry ca_id as that number.",
+              "parallel_assumption": "Credible while ca_id values in this file are the brokerage's real account numbers."
+            },
+            "logical.account": {
+              "necessity": "L1.identity, L1.history, and L1.as-of require the same versioned-and-identified shape as the customer entity: a persistent identified account with dated, kept, orderable statements. The single-current-statement requirement, the owning-customer link, and the standing facts each statement carries are further specified, at the attribute level, by L1.current-version, L1.owner-standing, and L1.statement-content respectively.",
+              "parallel_assumption": "Credible while every recorded change to an account is delivered as a new statement rather than an overwrite of a prior one."
+            },
+            "logical.account.account_number": {
+              "necessity": "L1.identity requires a value that identifies which account a statement is about and stays the same across that account's changes; this attribute carries the identity type for exactly that purpose.",
+              "parallel_assumption": "Credible while the brokerage's account number is stable and unique per account."
+            },
+            "logical.customer": {
+              "necessity": "L1.identity requires the customer to be a persistent identified thing rather than a row that changes identity; L1.history requires every change kept beside the earlier one with its effective moment; L1.as-of requires the kept statements be ordered so any moment resolves to one of them \u2014 together these entail a versioned entity of dated statements about one identified customer. The single-current-statement requirement and the standing facts each statement carries are further specified, at the attribute level, by L1.current-version and L1.statement-content respectively.",
+              "parallel_assumption": "Credible while every recorded change to a customer is delivered as a new statement rather than an overwrite of a prior one."
+            },
+            "logical.customer.customer_number": {
+              "necessity": "L1.identity requires a value that identifies which customer a statement is about and stays the same across that customer's changes; this attribute carries the identity type for exactly that purpose.",
+              "parallel_assumption": "Credible while the brokerage's customer number is stable and unique per customer."
+            },
+            "type.account_number": {
+              "necessity": "L1.identity requires that a change to an account does not make it a different account; a value invariant across all of an account's dated statements is required to express that persistence, which is exactly the identity mutation role.",
+              "parallel_assumption": "Credible while the brokerage's account number is never reassigned to a different account; if an account number were reused for a different account this role would misidentify statements, which should trigger review."
+            },
+            "type.customer_number": {
+              "necessity": "L1.identity requires that a change to a customer does not make it a different customer; a value invariant across all of a customer's dated statements is required to express that persistence, which is exactly the identity mutation role.",
+              "parallel_assumption": "Credible while the brokerage's customer number is never reassigned to a different customer; if a customer number were reused for a different customer this role would misidentify statements, which should trigger review."
+            }
+          },
+          "members": [
+            "handoff.raw.account_cdc.ca_id->logical.account.account_number",
+            "handoff.raw.customer_cdc.c_id->logical.customer.customer_number",
+            "handoff.raw.customer_mgmt_action.c_id->logical.customer.customer_number",
+            "handoff.raw.customer_mgmt_action.ca_id->logical.account.account_number",
+            "logical.account",
+            "logical.account.account_number",
+            "logical.customer",
+            "logical.customer.customer_number",
+            "type.account_number",
+            "type.customer_number"
+          ]
+        },
+        "sg.owner-standing": {
+          "cache": "stale",
+          "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation, which continues the owner recorded on the account's immediately preceding statement because L1.identity holds that a later statement is about the same account and L1.history holds that an unstated fact is not overwritten but carried beside the earlier statement. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies.",
+          "derived_from": [
+            "L1.as-of",
+            "L1.constructed-scenarios",
+            "L1.history",
+            "L1.identity",
+            "L1.owner-standing",
+            "L1.statement-content"
+          ],
+          "fingerprint": "3994630db469f0875234399bc92bd2bdb7fcf5ede4e90c3cfd2f2c30892f7f42",
+          "gap": "L1.hole.owner-change-reversions-account",
+          "jev": null,
+          "justifications": {
+            "handoff.raw.account_cdc.c_id->logical.account.owning_customer_number": {
+              "necessity": "L1.owner-standing requires the owning customer be carried on the account's statement; this incremental file's c_id supplies that value even while the statement's own effective moment is unresolved.",
+              "parallel_assumption": "Credible while c_id on an account change record names the customer who owns the account as of that change, independent of when the change is deemed to take effect."
+            },
+            "handoff.raw.customer_mgmt_action.c_id->logical.account.owning_customer_number": {
+              "necessity": "L1.owner-standing requires the account's statement to name the customer whose standing it includes; this file's account actions (NEW, ADDACCT, UPDACCT, CLOSEACCT) carry c_id as the owning customer at the moment of the action.",
+              "parallel_assumption": "Credible while an account action in this file always reports the customer who owns the account at that same moment."
+            },
+            "inv.account_asof_carries_customer_asof": {
+              "necessity": "L1.owner-standing requires that an account's standing at a moment include how its customer stood at that same moment; L1.as-of supplies the same-moment lookup rule for both entities.",
+              "parallel_assumption": "Holds as long as the account's owning_customer_number is known for the statement in question; where it is not yet derivable, the paired customer as-of answer cannot be produced either."
+            },
+            "logical.account.owning_customer_number": {
+              "necessity": "L1.owner-standing requires that an account's standing include its owner's standing, and L1.statement-content names 'which customer owns it' as part of what an account statement carries; this attribute names which customer that is so the customer's as-of statement can be looked up for the same moment. Where a statement's source does not supply this fact directly, this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.identity and L1.history.",
+              "parallel_assumption": "Credible for whatever account statements exist; whether a change to the customer alone produces a new account statement carrying this same value is unresolved. The carried-forward derivation is credible while a change that does not mention the owner is understood to leave the owner unchanged rather than unknown; if the business intends otherwise, this derivation must be revisited."
+            },
+            "type.account_owner_reference": {
+              "necessity": "L1.owner-standing requires that an account's standing include its owner's standing, and L1.statement-content names 'which customer owns it' as part of what an account's dated statement carries; the account's statement must therefore carry which customer it belongs to so that customer's as-of statement can be found for the same moment. This value belongs to one dated statement and is never replaced in place, which is the per_statement mutation role.",
+              "parallel_assumption": "Credible while every account statement's owning customer is knowable at the moment the statement is recorded; whether a change to the owner alone creates a new account statement is unresolved."
+            }
+          },
+          "members": [
+            "handoff.raw.account_cdc.c_id->logical.account.owning_customer_number",
+            "handoff.raw.customer_mgmt_action.c_id->logical.account.owning_customer_number",
+            "inv.account_asof_carries_customer_asof",
+            "logical.account.owning_customer_number",
+            "type.account_owner_reference"
+          ],
+          "touched_clauses": [
+            "L1.constructed-scenarios"
+          ]
+        },
+        "sg.statement-content": {
+          "cache": "stale",
+          "coverage_claim": "For every customer statement sourced from the historical action file, this job hands off tier directly from c_tier and, from the same row's action_type, derives active/inactive status using the anchored action_type_meanings (NEW, UPDCUST: active; INACT: inactive), so both standing facts L1.statement-content names for a customer are populated wherever this source supplies a statement. For every account statement sourced from the historical action file, this job hands off tax treatment directly from ca_tax_st and derives open/closed status from action_type (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed), populating both facts L1.statement-content names for an account; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes \u2014 the one account source with no pending effective-time hole of its own \u2014 this job hands off status and tax treatment directly from that source's own status_id and tax_status_id fields, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred.",
+          "derived_from": [
+            "L1.constructed-scenarios",
+            "L1.history",
+            "L1.statement-content"
+          ],
+          "fingerprint": "5922a01467a5b3dae3c289ea981a53a4e08a13c6eab86d31469b056fbed4a8cb",
+          "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action.",
+          "jev": null,
+          "justifications": {
+            "handoff.ce.account_changes.status_id->logical.account.status": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this labeled constructed source's own status_id field supplies that fact directly for scenarios built to test these rules, per L1.constructed-scenarios.",
+              "parallel_assumption": "Credible while status_id on a constructed account-change row states the open/closed status the scenario asserts the account holds as of that row's action_at, using the anchored status_codes (ACTV: active or open; INAC: inactive or closed)."
+            },
+            "handoff.ce.account_changes.tax_status_id->logical.account.tax_treatment": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this labeled constructed source's own tax_status_id field supplies that value directly for scenarios built to test these rules, per L1.constructed-scenarios.",
+              "parallel_assumption": "Credible while tax_status_id on a constructed account-change row states the tax-treatment code the scenario asserts the account holds as of that row's action_at."
+            },
+            "handoff.raw.account_cdc.ca_st_id->logical.account.status": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this incremental file's ca_st_id is the brokerage's own recorded status value, supplying that fact even while the statement's own effective moment is unresolved.",
+              "parallel_assumption": "Credible while ca_st_id on an account change record names the open/closed status the brokerage considers the account to hold as of that change."
+            },
+            "handoff.raw.account_cdc.ca_tax_st->logical.account.tax_treatment": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this incremental file's ca_tax_st supplies that value even while the statement's own effective moment is unresolved.",
+              "parallel_assumption": "Credible while ca_tax_st on an account change record names the tax treatment the brokerage considers the account to hold as of that change, independent of when the change is deemed to take effect."
+            },
+            "handoff.raw.customer_cdc.c_st_id->logical.customer.status": {
+              "necessity": "L1.statement-content requires a customer's dated statement to carry whether the customer is active or inactive; this incremental file's c_st_id is the brokerage's own recorded status value, supplying that fact even while the statement's own effective moment is unresolved.",
+              "parallel_assumption": "Credible while c_st_id on a customer change record names the active/inactive status the brokerage considers the customer to hold as of that change."
+            },
+            "handoff.raw.customer_cdc.c_tier->logical.customer.tier": {
+              "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this incremental file's c_tier supplies that value even while the statement's own effective moment is unresolved.",
+              "parallel_assumption": "Credible while c_tier on a customer change record names the tier the brokerage considers the customer to hold as of that change, independent of when the change is deemed to take effect."
+            },
+            "handoff.raw.customer_mgmt_action.action_type->logical.account.status": {
+              "necessity": "L1.history requires every change to an account be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, ADDACCT, UPDACCT, CLOSEACCT); L1.statement-content requires that statement carry whether the account is open or closed. chain/anchors/sources-v1.json states what each code means (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
+              "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. Whether a CLOSEACCT statement's closed status remains accurate if the account is later found active again (activity recorded after closure with no reopening action) is bounded by L1.hole.closed-account-activity, not resolved by this handoff."
+            },
+            "handoff.raw.customer_mgmt_action.action_type->logical.customer.status": {
+              "necessity": "L1.history requires every change to a customer be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, UPDCUST, INACT); L1.statement-content requires that statement carry whether the customer is active or inactive. chain/anchors/sources-v1.json states what each code means (NEW, UPDCUST: active; INACT: inactive) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
+              "parallel_assumption": "Credible while the anchored action_type_meanings (assumed authority, locator unverified; see sources-v1.json) correctly and exhaustively state NEW and UPDCUST as active and INACT as inactive for a customer statement; if the business states a different meaning for any of these codes, or a code outside this enumeration is observed, this handoff must be revisited."
+            },
+            "handoff.raw.customer_mgmt_action.c_tier->logical.customer.tier": {
+              "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this file is where a customer is first recorded or later actioned, and c_tier is the brokerage's own recorded tier value on each such record.",
+              "parallel_assumption": "Credible while c_tier on this file's rows records the tier the brokerage considers the customer to hold as of that row's action_ts."
+            },
+            "handoff.raw.customer_mgmt_action.ca_tax_st->logical.account.tax_treatment": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this file's account actions carry ca_tax_st as the brokerage's own recorded tax-treatment value on each such record.",
+              "parallel_assumption": "Credible while ca_tax_st on this file's rows records the tax treatment the brokerage considers the account to hold as of that row's action_ts."
+            },
+            "inv.account_statement_has_content": {
+              "necessity": "L1.statement-content requires a dated statement to carry the enumerated standing facts, not merely exist as an empty shell; this invariant is the direct check that status and tax_treatment are populated wherever the source supplies them.",
+              "parallel_assumption": "Holds for statements sourced from a feed that supplies tax_treatment directly and supplies or, through the anchored action_type_meanings, entails status; the historical action file now satisfies both, through ca_tax_st and the interpreted action_type, and the labeled constructed scenario ce.account_changes satisfies both directly through status_id and tax_status_id. Does not yet hold for a statement whose only source is an incremental account change record, since that record's effective moment is not yet resolvable (L1.hole.change-effective-time) and its content handoffs remain deferred."
+            },
+            "inv.customer_statement_has_content": {
+              "necessity": "L1.statement-content requires a dated statement to carry the enumerated standing facts, not merely exist as an empty shell; this invariant is the direct check that status and tier are populated wherever the source supplies them.",
+              "parallel_assumption": "Holds for statements sourced from a feed that supplies tier directly and supplies or, through the anchored action_type_meanings, entails status; the historical action file now satisfies both, through c_tier and the interpreted action_type. Does not yet hold for a statement whose only source is an incremental customer change record, since that record's effective moment is not yet resolvable (L1.hole.change-effective-time) and its content handoffs remain deferred."
+            },
+            "logical.account.status": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this attribute carries that fact directly on the statement.",
+              "parallel_assumption": "Credible where the source of this statement supplies its open/closed fact directly, or entails it through a stated code meaning: the historical action file entails it through the anchored meaning of action_type (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed), the labeled constructed scenario supplies it directly through status_id, and an incremental account change record supplies it directly through ca_st_id though its effective moment is not yet resolvable (L1.hole.change-effective-time). Whether a CLOSEACCT-derived closed status remains accurate after any later, unrecorded reopening is bounded by L1.hole.closed-account-activity, not resolved by any handoff."
+            },
+            "logical.account.tax_treatment": {
+              "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this attribute carries that fact directly on the statement.",
+              "parallel_assumption": "Credible where the source of this statement supplies its own tax-treatment fact."
+            },
+            "logical.customer.status": {
+              "necessity": "L1.statement-content requires a customer's dated statement to carry whether the customer is active or inactive; this attribute carries that fact directly on the statement.",
+              "parallel_assumption": "Credible where the source of this statement supplies its active/inactive fact directly, or entails it through a stated code meaning: the historical action file entails it through the anchored meaning of action_type (NEW, UPDCUST: active; INACT: inactive), and an incremental customer change record supplies it directly through c_st_id, though the latter's effective moment is not yet resolvable (L1.hole.change-effective-time)."
+            },
+            "logical.customer.tier": {
+              "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this attribute carries that fact directly on the statement.",
+              "parallel_assumption": "Credible where the source of this statement supplies its own tier fact."
+            },
+            "type.account_standing_status": {
+              "necessity": "L1.statement-content enumerates 'whether the account is open or closed' as part of the standing facts an account's dated statement carries; a dedicated status value is indispensable to express that specific enumerated fact, distinct from tax treatment and ownership.",
+              "parallel_assumption": "Credible while the brokerage's own status coding distinguishes exactly open and closed states for an account at the moment of a statement."
+            },
+            "type.account_tax_treatment": {
+              "necessity": "L1.statement-content enumerates 'its tax treatment' as part of the standing facts an account's dated statement carries; a dedicated tax-treatment value is indispensable to express that specific enumerated fact.",
+              "parallel_assumption": "Credible while the brokerage records a single tax-treatment value per account statement, consistent with a per_statement fact."
+            },
+            "type.customer_standing_status": {
+              "necessity": "L1.statement-content enumerates 'whether the customer is active or inactive' as part of the standing facts a customer's dated statement carries; a dedicated status value is indispensable to express that specific enumerated fact, distinct from tier. It belongs to one dated statement and is never replaced in place.",
+              "parallel_assumption": "Credible while the brokerage's own status coding distinguishes exactly active and inactive states for a customer at the moment of a statement; a source that reports additional intermediate states would require this type to be reassessed."
+            },
+            "type.customer_tier": {
+              "necessity": "L1.statement-content enumerates 'the customer's tier' as part of the standing facts a customer's dated statement carries; a dedicated tier value is indispensable to express that specific enumerated fact.",
+              "parallel_assumption": "Credible while the brokerage records a single tier value per customer statement, consistent with a per_statement fact rather than a running total."
+            }
+          },
+          "members": [
+            "handoff.ce.account_changes.status_id->logical.account.status",
+            "handoff.ce.account_changes.tax_status_id->logical.account.tax_treatment",
+            "handoff.raw.account_cdc.ca_st_id->logical.account.status",
+            "handoff.raw.account_cdc.ca_tax_st->logical.account.tax_treatment",
+            "handoff.raw.customer_cdc.c_st_id->logical.customer.status",
+            "handoff.raw.customer_cdc.c_tier->logical.customer.tier",
+            "handoff.raw.customer_mgmt_action.action_type->logical.account.status",
+            "handoff.raw.customer_mgmt_action.action_type->logical.customer.status",
+            "handoff.raw.customer_mgmt_action.c_tier->logical.customer.tier",
+            "handoff.raw.customer_mgmt_action.ca_tax_st->logical.account.tax_treatment",
+            "inv.account_statement_has_content",
+            "inv.customer_statement_has_content",
+            "logical.account.status",
+            "logical.account.tax_treatment",
+            "logical.customer.status",
+            "logical.customer.tier",
+            "type.account_standing_status",
+            "type.account_tax_treatment",
+            "type.customer_standing_status",
+            "type.customer_tier"
+          ],
+          "touched_clauses": [
+            "L1.constructed-scenarios"
+          ]
+        }
+      },
+      "l3_reprojection_required": true,
+      "stale": [
+        "sg.constructed-scenarios",
+        "sg.owner-standing",
+        "sg.statement-content"
+      ],
+      "status": "ok"
+    },
+    "positions": {
+      "status": "no-l2"
+    },
+    "trade-lifecycle": {
+      "status": "no-l2"
+    }
+  },
+  "l1": {
+    "clause_fingerprints": {
+      "L1.as-of": "7f977b11ec0c23a2a6451cdb26eed324351dfe74f3a6257381ab7a93deb73497",
+      "L1.attribution-at-placement": "fb640b56767819300b2afb0b0b273a5721d0dac107781e1206cd902348f8629a",
+      "L1.constructed-scenarios": "ac25a19eb47db34affde7a55f552b57918351bb482a73b049916153d02223063",
+      "L1.current-version": "f688745957f55c9e81160335ceb1a0a05fa5fae84d4ab13151131a00abdc48db",
+      "L1.history": "65cdb4dd3d18c4bb6132d25a4ad26a1adecb1f499c0a7c89f270325a12234a7d",
+      "L1.holdings-follow-trade": "1765e728e3dccf5d54d10cdcdb250894940bdf37d376f1e643cd39c0e5f24ebf",
+      "L1.identity": "fcbdbdaa0b056238053af66315320949a5c80b82039620a9fc58a185db9442c6",
+      "L1.lifecycle-mutates-outcome": "d8edfe2e475d63f7d6a6117f509d046bc0e823b7c90fbdcb6c7bff8fa843b770",
+      "L1.no-phantom-positions": "31c8d8e18fbef917b3e4dd0f034e610b535a923b510861aacfdfbe29440b28d9",
+      "L1.owner-standing": "359f28444e3ad773ac1595cbb99e37a79da83272b710d25a8accceff7a3150f0",
+      "L1.statement-content": "b203489f09eb80ac13b30834cc1e81510ff0a3adb52fbcae68ad78e8594d6c6a"
+    },
+    "clauses": {
+      "L1.as-of": "Any question about a customer or account can be asked as of a moment in time, and the answer is the statement in effect at that moment: the latest one that took effect at or before it.",
+      "L1.attribution-at-placement": "A trade belongs to the account, and through it the customer, as they stood at the moment the trade was placed. Later changes to that account or customer do not move a trade that was already placed, and do not move anything that trade created.",
+      "L1.constructed-scenarios": "Any scenario built to test these rules, rather than received from the brokerage's records, is labeled as constructed wherever it appears and is never mixed into the received records. A constructed scenario changes something the received records already know; it never introduces a customer, account, or trade the brokerage does not have. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)",
+      "L1.current-version": "The current statement about a customer or account is the one with no later statement. There is exactly one current statement per customer and per account.",
+      "L1.history": "Every change to a customer or an account is kept, with the moment it took effect. Nothing about a customer or account is overwritten; a later statement sits beside the earlier one.",
+      "L1.holdings-follow-trade": "A change in what an account holds is caused by a trade. The holding change belongs to whoever owned the trade that caused it, as that trade's ownership was recorded. Holdings are never re-attributed by looking the account up again later.",
+      "L1.identity": "Customers, accounts, and trades are the things the brokerage already identifies: a customer number, an account number, a trade number. A change to a customer or an account does not make it a different customer or account; it makes a new dated statement about the same one.",
+      "L1.lifecycle-mutates-outcome": "As a trade moves through its life (pending, submitted, completed, cancelled), its outcome changes: status, executed price, fees, commission, tax, quantity. Its ownership does not change. A later report of the same trade updates the outcome and leaves the ownership as first recorded.",
+      "L1.no-phantom-positions": "Summing holding changes for any one statement of an account or customer can never go below zero. A negative result means a holding was opened under one statement and closed under another, which the clauses above forbid.",
+      "L1.owner-standing": "An account's standing includes its owner's standing. When the brokerage says how an account stood at a moment, that includes how its customer stood at that same moment.",
+      "L1.statement-content": "A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)"
+    },
+    "holes": {
+      "L1.hole.batch-identity": "Does a report need to know which incremental file first delivered a fact?",
+      "L1.hole.change-effective-time": "Incremental change files carry no time of their own. Does a change in such a file take effect at the file's batch date, or at some other moment?",
+      "L1.hole.closed-account-activity": "Trades appear on accounts the brokerage recorded as closed years earlier (account 428 closed in 2012, trades in 2017). Is that a data error, a reopening the records omit, or does a closed account still own trades?",
+      "L1.hole.deletions": "Incremental files can mark a record deleted. What does deleting a trade or account mean for history, ownership, and holdings?",
+      "L1.hole.owner-change-reversions-account": "When a customer's standing changes, does the brokerage consider every account of that customer to have a new statement at that moment, or only the customer? The source data shows customer changes without matching account changes.",
+      "L1.hole.securities-and-brokers": "Securities, companies, and brokers are named in the records but not yet part of any job. When they are, the attribution rule must be restated for them.",
+      "L1.hole.trade-timestamps": "Which moment counts as \"when the trade was placed\" and \"when it completed\" when a later report of a trade arrives without its full history?"
+    },
+    "jobs": {
+      "ownership-history": {
+        "clauses": [
+          "L1.identity",
+          "L1.history",
+          "L1.as-of",
+          "L1.current-version",
+          "L1.owner-standing",
+          "L1.statement-content",
+          "L1.constructed-scenarios"
+        ],
+        "description": "Know how any customer or account stood at any moment, and who owned what.",
+        "feedback": "one current statement per customer and per account; statements of one thing do not overlap; any as-of question has exactly one answer with the standing facts of L1.statement-content; an account's as-of answer carries its customer's as-of answer"
+      },
+      "positions": {
+        "clauses": [
+          "L1.identity",
+          "L1.attribution-at-placement",
+          "L1.holdings-follow-trade",
+          "L1.no-phantom-positions",
+          "L1.constructed-scenarios"
+        ],
+        "description": "Know what each account and customer holds, and how it got there.",
+        "feedback": "every holding change carries the ownership recorded on its causing trade; no statement of an account or customer sums below zero"
+      },
+      "trade-lifecycle": {
+        "clauses": [
+          "L1.identity",
+          "L1.as-of",
+          "L1.attribution-at-placement",
+          "L1.lifecycle-mutates-outcome",
+          "L1.constructed-scenarios"
+        ],
+        "description": "Know each trade's outcome and who owned it when it happened.",
+        "feedback": "a later report of a trade changes its outcome fields and leaves its recorded ownership byte-identical; ownership equals the account's as-of statement at placement, not the current one"
+      }
+    }
+  }
+}

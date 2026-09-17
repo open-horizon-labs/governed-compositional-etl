@@ -1,0 +1,39 @@
+---
+id: issue-8-statement-content-assumed
+title: "Assume what a customer or account statement carries, pending business confirmation"
+outcome: governed-compositional-etl-repair
+status: assumed-pending-business-confirmation
+---
+
+# Statement content: assumed decision
+
+**Date:** 2026-09-17
+
+**Decision hat:** data-product-owner, acting as business authority under the repository's review-trigger protocol (AGENTS.md: present evidence and choices, select a reasonable assumed choice, record it, continue).
+
+## Trigger
+
+Cycle 1 of the L1 -> L2 compile for job `ownership-history`. The sketch reviewer found that the L1 Sketch says a change creates "a new dated statement" but never says what a statement carries, so the compiled customer and account entities had no standing facts. CE proposal `ce.l1.statement-content`. The business authority was asked and declined the dialog, instructing the work to continue.
+
+## Choices presented
+
+1. Standing and tier: customer active or inactive plus tier; account open or closed, tax treatment, owning customer. (Recommended.)
+2. Status only: customer active or inactive; account open or closed and owning customer; tier and tax treatment left as holes.
+3. Everything the records carry: every attribute versions the statement, pulling names, addresses, and tax identifiers into scope.
+
+## Decision
+
+Assume choice 1. It matches the brokerage vocabulary already used in the Sketch (standing, owner) and the jobs' purposes, and it keeps personal data out of scope. Recorded as clause `L1.statement-content`, marked assumed in the Sketch text.
+
+## Assumptions and justification
+
+- The facts named are the ones the brokerage means by "standing" in its own language. If the business means more or less, the clause changes and only the sufficiency groups under it re-project.
+- The tempting wrong repair, deriving the facts from anchored field names, is what this decision replaces with a stated clause; the coincidence with those fields is not the justification.
+
+## Review trigger
+
+The business confirms or amends the enumeration. On amendment, the clause fingerprint changes, the Jev invalidation selector is consulted for each dependent sufficiency group, and only stale groups recompile.
+
+## Addendum, 2026-09-17: constructed scenarios never introduce new things
+
+Cycle 4 of `ownership-history` filed one question: what determines an account's owner when a constructed change is the account's first statement. No clause settled it. Under the same hat and protocol, clarify `L1.constructed-scenarios`: a constructed scenario changes something the received records already know and never introduces a customer, account, or trade the brokerage does not have. This is evidence discipline, not business policy; it settles no open hole. Consequence: the carried-forward owner always has a previous received statement to carry from, and a constructed change naming an unknown account is a labeling error to reject. Review trigger: business confirmation.
