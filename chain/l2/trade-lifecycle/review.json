@@ -8,10 +8,10 @@
     "sg.unknown-codes"
   ],
   "job": "trade-lifecycle",
-  "model_sha256": "153309314e831c40440b6f9edb597c00eb86dba46d4db8e9daaa724d306f99f7",
-  "notes": "see review-13.md and review-14.md",
+  "model_sha256": "c7ae3b58aba6b9ef99fdd2efe4d05f5749e6ee5b8d2f75e3edf34e9047623c2c",
+  "notes": "see review-15.md",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 14 after prescribed corrections",
+  "reviewer": "coordinator, bookkeeping review 15",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
