@@ -1,0 +1,3 @@
+# Projection review 3 (coordinator, audit null sensitivity): trade-lifecycle on duckdb-native (verdict: pass)
+
+Scope: the audit-only change review-2 authorized. Verified deterministically: check ok, run ok with six audits clean, and the mutation harness reports seven mutations with zero unprotected (the three null mutations that escaped now fire). trade.sql and manifest untouched. inv.trade_ownership_provenance_reachable correctly left as is (compares a COUNT, never null). Reviewer: coordinator, on a change whose acceptance criterion is a deterministic harness result the projection reviewer specified.

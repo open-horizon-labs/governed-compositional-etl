@@ -13,4 +13,4 @@ SELECT
 FROM raw.trade_cdc AS tc
 JOIN governed.trade AS t
   ON t.trade_number = tc.t_id
-WHERE tc.t_ca_id <> t.owning_account_number;
+WHERE tc.t_ca_id IS DISTINCT FROM t.owning_account_number;

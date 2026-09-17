@@ -25,4 +25,4 @@ first_report AS (
 SELECT t.trade_number, t.first_seen_late, fr.first_status AS first_encountered_status
 FROM governed.trade AS t
 JOIN first_report AS fr ON fr.trade_number = t.trade_number
-WHERE t.first_seen_late <> (fr.first_status <> 'PNDG');
+WHERE t.first_seen_late IS DISTINCT FROM (fr.first_status IS DISTINCT FROM 'PNDG');

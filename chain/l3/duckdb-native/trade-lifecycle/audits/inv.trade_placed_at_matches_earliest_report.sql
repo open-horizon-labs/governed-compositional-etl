@@ -24,4 +24,4 @@ expected AS (
 SELECT t.trade_number, t.placed_at, e.expected_placed_at
 FROM governed.trade AS t
 JOIN expected AS e ON e.trade_number = t.trade_number
-WHERE t.placed_at <> e.expected_placed_at;
+WHERE t.placed_at IS DISTINCT FROM e.expected_placed_at;

@@ -57,7 +57,7 @@ recomputed_pin AS (
 SELECT t.trade_number, 'frozen_reference_mismatch' AS problem
 FROM governed.trade t
 JOIN recomputed_pin rp ON rp.trade_number = t.trade_number
-WHERE rp.placed_at <> t.placed_at
+WHERE rp.placed_at IS DISTINCT FROM t.placed_at
    OR rp.owning_account_effective_from IS DISTINCT FROM t.owning_account_effective_from
    OR rp.owning_customer_number IS DISTINCT FROM t.owning_customer_number
    OR rp.owning_customer_effective_from IS DISTINCT FROM t.owning_customer_effective_from
@@ -67,11 +67,11 @@ UNION ALL
 SELECT tc.t_id AS trade_number, 'later_cdc_report_earlier_event_time' AS problem
 FROM raw.trade_cdc tc
 JOIN governed.trade t ON t.trade_number = tc.t_id
-WHERE tc.t_dts < t.placed_at
+WHERE t.placed_at IS NULL OR tc.t_dts < t.placed_at
 
 UNION ALL
 
 SELECT th.th_t_id AS trade_number, 'later_history_report_earlier_event_time' AS problem
 FROM raw.trade_history th
 JOIN governed.trade t ON t.trade_number = th.th_t_id
-WHERE th.th_dts < t.placed_at;
+WHERE t.placed_at IS NULL OR th.th_dts < t.placed_at;

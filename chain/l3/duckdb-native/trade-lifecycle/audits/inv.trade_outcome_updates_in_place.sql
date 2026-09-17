@@ -16,9 +16,9 @@ WITH latest_outcome AS (
 SELECT t.trade_number
 FROM governed.trade AS t
 JOIN latest_outcome AS lo ON lo.t_id = t.trade_number
-WHERE t.status <> lo.t_st_id
+WHERE t.status IS DISTINCT FROM lo.t_st_id
    OR t.executed_price IS DISTINCT FROM lo.t_trade_price
    OR t.fees IS DISTINCT FROM lo.t_chrg
    OR t.commission IS DISTINCT FROM lo.t_comm
    OR t.tax IS DISTINCT FROM lo.t_tax
-   OR t.quantity <> lo.t_qty;
+   OR t.quantity IS DISTINCT FROM lo.t_qty;
