@@ -781,16 +781,18 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.account_position_key_matches_holding_change",
         "inv.account_position_not_negative",
         "sketch-review"
       ],
-      "necessity": "L1.no-phantom-positions requires the sum to be grouped per account statement; owning_account_number, already fixed per holding_change under L1.holdings-follow-trade, is the account half of that grouping key. This handoff carries it into the aggregate's own identity, a grouping key rather than a frozen reference, per L1.identity's persistence of the value being grouped on.",
+      "necessity": "Conversion clause: L1.no-phantom-positions requires the sum to be grouped per account statement; owning_account_number, already fixed per holding_change under L1.holdings-follow-trade, is the account half of that grouping key. This handoff carries it into the aggregate's own identity, a grouping key rather than a frozen reference, per L1.identity's persistence of the value being grouped on.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while owning_account_number is resolved, and identical across every holding_change row grouped into one account_position row.",
       "review_trigger": "a holding_change row with an unresolved owning_account_number is found contributing to an account_position aggregate, or two rows grouped together disagree on it",
       "selector": "group_key",
       "sufficiency_group": "sg.no-phantom-positions",
-      "note": "Conversion clause: this handoff converts holding_owning_account_reference (mutation_role frozen_from_first_encounter on logical.holding_change) into account_position_account_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match."
+      "note": "Conversion clause: this handoff converts holding_owning_account_reference (mutation_role frozen_from_first_encounter on logical.holding_change) into account_position_account_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match.",
+      "rejected_because": "not rejected; conversion clause: role changes from frozen_from_first_encounter to identity because this is now a grouping key, not a copied reference; physical_type and semantic_kind unchanged."
     },
     {
       "from": "logical.holding_change.owning_account_effective_from",
@@ -801,16 +803,18 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.account_position_key_matches_holding_change",
         "inv.account_position_not_negative",
         "sketch-review"
       ],
-      "necessity": "L1.no-phantom-positions requires the sum to be grouped per statement of an account, not merely per account; owning_account_effective_from, already fixed per holding_change under L1.holdings-follow-trade, is the statement half of that grouping key. This handoff carries it into the aggregate's own identity, per L1.identity's persistence of the value being grouped on.",
+      "necessity": "Conversion clause: L1.no-phantom-positions requires the sum to be grouped per statement of an account, not merely per account; owning_account_effective_from, already fixed per holding_change under L1.holdings-follow-trade, is the statement half of that grouping key. This handoff carries it into the aggregate's own identity, per L1.identity's persistence of the value being grouped on.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while owning_account_effective_from is resolved, and identical across every holding_change row grouped into one account_position row.",
       "review_trigger": "a holding_change row with an unresolved owning_account_effective_from is found contributing to an account_position aggregate, or two rows grouped together disagree on it",
       "selector": "group_key",
       "sufficiency_group": "sg.no-phantom-positions",
-      "note": "Conversion clause: this handoff converts holding_owning_account_effective_from (mutation_role frozen_from_first_encounter on logical.holding_change) into account_position_effective_from_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match."
+      "note": "Conversion clause: this handoff converts holding_owning_account_effective_from (mutation_role frozen_from_first_encounter on logical.holding_change) into account_position_effective_from_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match.",
+      "rejected_because": "not rejected; conversion clause: role changes from frozen_from_first_encounter to identity because this is now a grouping key, not a copied reference; physical_type and semantic_kind unchanged."
     },
     {
       "from": "logical.holding_change.quantity_change",
@@ -839,16 +843,18 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.customer_position_key_matches_holding_change",
         "inv.customer_position_not_negative",
         "sketch-review"
       ],
-      "necessity": "L1.no-phantom-positions requires the sum to be grouped per statement of a customer; owning_customer_number, already fixed per holding_change under L1.holdings-follow-trade, is the customer half of that grouping key. This handoff carries it into the aggregate's own identity, per L1.identity's persistence of the value being grouped on.",
+      "necessity": "Conversion clause: L1.no-phantom-positions requires the sum to be grouped per statement of a customer; owning_customer_number, already fixed per holding_change under L1.holdings-follow-trade, is the customer half of that grouping key. This handoff carries it into the aggregate's own identity, per L1.identity's persistence of the value being grouped on.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while owning_customer_number is resolved, and identical across every holding_change row grouped into one customer_position row.",
       "review_trigger": "a holding_change row with an unresolved owning_customer_number is found contributing to a customer_position aggregate, or two rows grouped together disagree on it",
       "selector": "group_key",
       "sufficiency_group": "sg.no-phantom-positions",
-      "note": "Conversion clause: this handoff converts holding_owning_customer_reference (mutation_role frozen_from_first_encounter on logical.holding_change) into customer_position_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match."
+      "note": "Conversion clause: this handoff converts holding_owning_customer_reference (mutation_role frozen_from_first_encounter on logical.holding_change) into customer_position_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match.",
+      "rejected_because": "not rejected; conversion clause: role changes from frozen_from_first_encounter to identity because this is now a grouping key, not a copied reference; physical_type and semantic_kind unchanged."
     },
     {
       "from": "logical.holding_change.owning_customer_effective_from",
@@ -859,16 +865,18 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.customer_position_key_matches_holding_change",
         "inv.customer_position_not_negative",
         "sketch-review"
       ],
-      "necessity": "L1.no-phantom-positions requires the sum to be grouped per statement of a customer, not merely per customer, so a holding opened under one customer statement is never netted against one closed under another; owning_customer_effective_from, already fixed per holding_change under L1.holdings-follow-trade, is the statement half of that grouping key. This handoff carries it into the aggregate's own identity.",
+      "necessity": "Conversion clause: L1.no-phantom-positions requires the sum to be grouped per statement of a customer, not merely per customer, so a holding opened under one customer statement is never netted against one closed under another; owning_customer_effective_from, already fixed per holding_change under L1.holdings-follow-trade, is the statement half of that grouping key. This handoff carries it into the aggregate's own identity.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while owning_customer_effective_from is resolved, and identical across every holding_change row grouped into one customer_position row.",
       "review_trigger": "a holding_change row with an unresolved owning_customer_effective_from is found contributing to a customer_position aggregate, or two rows grouped together disagree on it",
       "selector": "group_key",
       "sufficiency_group": "sg.no-phantom-positions",
-      "note": "Conversion clause: this handoff converts holding_owning_customer_effective_from (mutation_role frozen_from_first_encounter on logical.holding_change) into customer_position_effective_from_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match."
+      "note": "Conversion clause: this handoff converts holding_owning_customer_effective_from (mutation_role frozen_from_first_encounter on logical.holding_change) into customer_position_effective_from_key (mutation_role identity on this aggregate); physical_type and semantic_kind are unchanged, only the mutation_role changes, because role belongs to the consuming entity's lifecycle (an aggregate's grouping key, not a copied reference), per L2-FORMAT's own rule that the mutation role may differ when semantic_kind and physical_type match.",
+      "rejected_because": "not rejected; conversion clause: role changes from frozen_from_first_encounter to identity because this is now a grouping key, not a copied reference; physical_type and semantic_kind unchanged."
     },
     {
       "from": "logical.holding_change.quantity_change",
@@ -981,6 +989,44 @@
       "parallel_assumption": "Holds while every I- or U-flagged raw.holding_history row for a given (original_trade_number, current_trade_number) pair is a later report about that same holding change rather than an unrelated new change reusing the pair.",
       "review_trigger": "two I- or U-flagged raw.holding_history rows with the same (original_trade_number, current_trade_number) pair are found to disagree in a way that suggests they describe different holding changes",
       "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.account_position_key_matches_holding_change",
+      "entity": "logical.account_position",
+      "statement": "account_number and account_effective_from equal the owning_account_number and owning_account_effective_from shared by every logical.holding_change row grouped into this row; the group_key handoff converts holding_change's frozen_from_first_encounter reference into this aggregate's own identity without altering the value.",
+      "derived_from": [
+        "L1.identity",
+        "L1.no-phantom-positions"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.identity requires the account number carried into this aggregate to be the same persistent value every grouped holding_change already carries, not a re-derived one; L1.no-phantom-positions requires the grouping itself to be exact so no holding change is summed under the wrong statement. This invariant is the checkable restatement of that exactness for the group_key conversion.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while every holding_change row grouped into one account_position row shares the same owning_account_number and owning_account_effective_from by construction of the grouping itself.",
+      "review_trigger": "an account_position row is found whose account_number or account_effective_from differs from a holding_change row grouped into it",
+      "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.customer_position_key_matches_holding_change",
+      "entity": "logical.customer_position",
+      "statement": "customer_number and customer_effective_from equal the owning_customer_number and owning_customer_effective_from shared by every logical.holding_change row grouped into this row; the group_key handoff converts holding_change's frozen_from_first_encounter reference into this aggregate's own identity without altering the value.",
+      "derived_from": [
+        "L1.identity",
+        "L1.no-phantom-positions"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.identity requires the customer number and statement carried into this aggregate to be the same persistent values every grouped holding_change already carries, not re-derived ones; L1.no-phantom-positions requires the grouping itself to be exact so no holding change is summed under the wrong statement. This invariant is the checkable restatement of that exactness for the group_key conversion.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while every holding_change row grouped into one customer_position row shares the same owning_customer_number and owning_customer_effective_from by construction of the grouping itself.",
+      "review_trigger": "a customer_position row is found whose customer_number or customer_effective_from differs from a holding_change row grouped into it",
+      "sufficiency_group": "sg.no-phantom-positions"
     }
   ],
   "sufficiency_groups": [
@@ -1065,7 +1111,9 @@
         "handoff.logical.holding_change.owning_customer_effective_from->logical.customer_position.customer_effective_from",
         "handoff.logical.holding_change.quantity_change->logical.customer_position.net_quantity",
         "inv.account_position_not_negative",
-        "inv.customer_position_not_negative"
+        "inv.customer_position_not_negative",
+        "inv.account_position_key_matches_holding_change",
+        "inv.customer_position_key_matches_holding_change"
       ],
       "mode": "conditional",
       "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. The account half: logical.account_position.account_number and account_effective_from are handed off, with a group_key selector, from the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- a group_key selector because every row sharing that pair is, by L1.identity and L1.holdings-follow-trade, the same statement, so the value is carried unchanged into the aggregate's own identity rather than re-derived. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are handed off the same way from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change and the group_key handoffs rest on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total.",

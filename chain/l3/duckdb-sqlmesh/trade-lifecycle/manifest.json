@@ -1,16 +1,6 @@
 {
-  "schema_version": "l3-manifest/v1",
-  "target": "duckdb-sqlmesh",
-  "job": "trade-lifecycle",
-  "derived_from_model": {
-    "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "fcc77f8450301dc7b03a7817f08008b9d1dd79818475e2c05edff1ebbc88a78e"
-  },
   "artifacts": [
     {
-      "file": "models/trade.sql",
-      "entity": "logical.trade",
-      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key trade_number; frozen_columns (owning_account_number, placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from, first_seen_late) computed from each trade's first report and written only on insert; mutable_columns (status, executed_price, fees, commission, tax, quantity) computed from the latest I- or U-flagged raw.trade_cdc report and refreshed on match. placed_at (and the status used for first_seen_late) prefer the trade's earliest raw.trade_history row where one exists, else the earliest raw.trade_cdc row by report_order; owning_account_number is always the earliest raw.trade_cdc row's t_ca_id (raw.trade_history carries no account). owning_account_effective_from/owning_customer_number resolved via as_of_event_time against governed.account at placed_at; owning_customer_effective_from resolved via as_of_event_time against governed.customer, for the customer named by that pinned account statement, at placed_at.",
       "derived_from": [
         "logical.trade",
         "logical.trade.trade_number",
@@ -40,45 +30,61 @@
         "handoff.raw.trade_cdc.t_tax->logical.trade.tax",
         "handoff.raw.trade_cdc.t_qty->logical.trade.quantity"
       ],
+      "entity": "logical.trade",
+      "file": "models/trade.sql",
       "reads": [
         "raw.trade_cdc",
         "raw.trade_history",
         "governed.account",
         "governed.customer"
-      ]
+      ],
+      "strategy": "incremental_by_identity via the governed_merge custom materialization: unique_key trade_number; frozen_columns (owning_account_number, placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from, first_seen_late) computed from each trade's first report and written only on insert; mutable_columns (status, executed_price, fees, commission, tax, quantity) computed from the latest I- or U-flagged raw.trade_cdc report and refreshed on match. placed_at (and the status used for first_seen_late) prefer the trade's earliest raw.trade_history row where one exists, else the earliest raw.trade_cdc row by report_order; owning_account_number is always the earliest raw.trade_cdc row's t_ca_id (raw.trade_history carries no account). owning_account_effective_from/owning_customer_number resolved via as_of_event_time against governed.account at placed_at; owning_customer_effective_from resolved via as_of_event_time against governed.customer, for the customer named by that pinned account statement, at placed_at."
     }
   ],
   "audits": [
     {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_owning_account_frozen.sql",
-      "invariant": "inv.trade_owning_account_frozen",
-      "entity": "logical.trade"
+      "invariant": "inv.trade_owning_account_frozen"
     },
     {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_placement_reference_frozen.sql",
-      "invariant": "inv.trade_placement_reference_frozen",
-      "entity": "logical.trade"
+      "invariant": "inv.trade_placement_reference_frozen"
     },
     {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_first_seen_late_matches_status_order.sql",
-      "invariant": "inv.trade_first_seen_late_matches_status_order",
-      "entity": "logical.trade"
+      "invariant": "inv.trade_first_seen_late_matches_status_order"
     },
     {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_placed_at_matches_earliest_report.sql",
-      "invariant": "inv.trade_placed_at_matches_earliest_report",
-      "entity": "logical.trade"
+      "invariant": "inv.trade_placed_at_matches_earliest_report"
     },
     {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_outcome_updates_in_place.sql",
-      "invariant": "inv.trade_outcome_updates_in_place",
-      "entity": "logical.trade"
+      "invariant": "inv.trade_outcome_updates_in_place"
     },
     {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_ownership_provenance_reachable.sql",
-      "invariant": "inv.trade_ownership_provenance_reachable",
-      "entity": "logical.trade"
+      "invariant": "inv.trade_ownership_provenance_reachable"
     }
   ],
-  "questions_for_authority": []
+  "derived_from_model": {
+    "path": "chain/l2/trade-lifecycle/semantic-model.json",
+    "review_sha256": "fcc77f8450301dc7b03a7817f08008b9d1dd79818475e2c05edff1ebbc88a78e"
+  },
+  "group_fingerprints": {
+    "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",
+    "sg.placement-moment": "bd7afd32cf4ec4af7d915ce63ce440f09184540fc2d35ec538321979ddfcabfb",
+    "sg.trade-identity": "6b52f9f4ab8b68689702ab59805148623986477305549e876d702457b4851253",
+    "sg.trade-shape": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849"
+  },
+  "job": "trade-lifecycle",
+  "questions_for_authority": [],
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-sqlmesh"
 }
