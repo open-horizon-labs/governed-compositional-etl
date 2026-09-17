@@ -404,13 +404,18 @@ def select(job: str, review: dict) -> dict:
               "notes": review.get("notes", ""), "rejected_element_ids": sorted(rejected), "selected_element_ids": selected,
               "groups_selected": sorted(g["id"] for g in doc.get("sufficiency_groups", []) if all(m in selected for m in g["members"]))}
     (L2_DIR / job / "review.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+    if review["verdict"] == "pass":
+        # the selected snapshot is what L3 compiles from; later working-file edits do not move it until the next selection
+        (L2_DIR / job / "selected-model.json").write_text((L2_DIR / job / "semantic-model.json").read_text())
     return record
 
 
-def fingerprints(job: str, l1: dict | None = None) -> dict:
-    """Per-element fingerprints: hash of the clause fingerprints each element derives from, plus the contract version."""
+def fingerprints(job: str, l1: dict | None = None, selected: bool = False) -> dict:
+    """Per-group fingerprints: hash of the clause fingerprints each group derives from, plus members and the contract version.
+    With selected=True, fingerprint the selected snapshot (what L3 compiled from) rather than the working file."""
     l1 = l1 or parse_l1()
-    doc = json.loads((L2_DIR / job / "semantic-model.json").read_text())
+    path = L2_DIR / job / ("selected-model.json" if selected and (L2_DIR / job / "selected-model.json").exists() else "semantic-model.json")
+    doc = json.loads(path.read_text())
     steps = element_steps(doc)
     out = {}
     for g in doc.get("sufficiency_groups", []):

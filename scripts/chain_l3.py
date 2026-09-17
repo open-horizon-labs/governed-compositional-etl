@@ -44,10 +44,11 @@ class L3Error(ValueError):
 
 
 def load_job(job: str) -> tuple[dict, dict]:
-    model_path = L2_DIR / job / "semantic-model.json"
+    snapshot = L2_DIR / job / "selected-model.json"
+    model_path = snapshot if snapshot.exists() else L2_DIR / job / "semantic-model.json"
     if not model_path.exists():
         raise L3Error(f"{job} has no L2 model; L3 compiles only from a selected L2")
-    model = json.loads(model_path.read_text())
+    model = json.loads(model_path.read_text())  # L3 compiles from the selected snapshot, not from a model mid-cycle
     review_path = L2_DIR / job / "review.json"
     if not review_path.exists():
         raise L3Error(f"{job} has no review; L3 compiles only from a selected L2")
@@ -99,7 +100,7 @@ def stamp(target: str, job: str) -> dict:
     base = L3_DIR / target / job
     manifest = json.loads((base / "manifest.json").read_text())
     derived = groups_of(model, [d for a in manifest["artifacts"] for d in a["derived_from"]])
-    current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job).items() if gid in derived}
+    current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items() if gid in derived}
     manifest["group_fingerprints"] = current
     manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]
     (base / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
@@ -129,7 +130,7 @@ def check(target: str, job: str) -> dict:
     provenance_note = None
     if manifest.get("derived_from_model", {}).get("review_sha256") != review["model_sha256"]:
         stamped = manifest.get("group_fingerprints") or {}
-        current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job).items()}
+        current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items()}
         derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]])
         if stamped and derived_groups and all(stamped.get(gid) == current.get(gid) for gid in derived_groups):
             provenance_note = "review sha superseded by an L2 change that left every derived group's fingerprint unchanged; projection remains valid"

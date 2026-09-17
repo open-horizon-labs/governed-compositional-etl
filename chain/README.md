@@ -5,8 +5,8 @@ A CESS chain is a chain of compilations, not a data pipeline. Each level's revie
 ```text
 L1  intent Sketch (business language, hashed clauses, holes)       sketches/l1-brokerage-intent-v1.md
  |   compiled per job by a Developer under a change contract
-L2  semantic models: S&T steps with necessity, assumption,          chain/l2/<job>/semantic-model.json
- |   feedback, disposition, sufficiency groups; reviewed, selected   chain/l2/<job>/review.json
+L2  semantic models: S&T steps with necessity, assumption,          chain/l2/<job>/semantic-model.json (working)
+ |   feedback, disposition, sufficiency groups; reviewed, selected   chain/l2/<job>/review.json, selected-model.json (snapshot L3 compiles from)
  |   compiled per engine target by a Developer under a change contract
 L3  projections: SQL + audits per entity, provenance to L2 ids      chain/l3/<target>/<job>/
 ```
