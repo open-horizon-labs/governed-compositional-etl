@@ -44,7 +44,7 @@ def _insert(con, table: str, rows: list[dict]) -> None:
         con.execute(f"INSERT INTO {table} VALUES ({', '.join('?' for _ in cols)})", [row.get(c) for c in cols])
 
 
-def load_fixture(database: Path, fixture: dict, phase: str, ce_changes: list[dict] | None = None) -> None:
+def load_fixture(database: Path, fixture: dict, phase: str, ce_changes: list[dict] | None = None, raw_additions: dict[str, list[dict]] | None = None) -> None:
     """Rebuild raw from the fixture for one phase. CE rows load only when the phase applies the counterexample."""
     spec = fixture["phases"][phase]
     batches = {fixture["batch_dates"][b] for b in spec["include_batches"]}
@@ -59,11 +59,22 @@ def load_fixture(database: Path, fixture: dict, phase: str, ce_changes: list[dic
                 if row.get("provenance") != "controlled_counterexample":
                     raise ValueError("counterexample rows must be labeled controlled_counterexample")
             _insert(con, "ce.account_changes", ce_changes)
+        if spec["apply_counterexample"] and raw_additions:
+            _insert_raw_additions(con, raw_additions, batches)
     finally:
         con.close()
 
 
-def reload_sources(database: Path, fixture: dict, phase: str, ce_changes: list[dict] | None = None) -> None:
+def _insert_raw_additions(con, raw_additions: dict[str, list[dict]], batches: set[str]) -> None:
+    """Constructed received reports a counterexample adds to raw tables. Raw tables carry no provenance column, so the
+    label lives on the counterexample document; rows outside the phase's batches are not loaded."""
+    for table, rows in raw_additions.items():
+        if f"raw.{table}" not in COLUMNS:
+            raise ValueError(f"counterexample adds rows to unknown raw table {table}")
+        _insert(con, f"raw.{table}", [r for r in rows if r.get("batch_date") in batches])
+
+
+def reload_sources(database: Path, fixture: dict, phase: str, ce_changes: list[dict] | None = None, raw_additions: dict[str, list[dict]] | None = None) -> None:
     """Replace raw.* and ce.* tables for a phase, keeping governed.* intact: the second half of a two-phase simulation."""
     spec = fixture["phases"][phase]
     batches = {fixture["batch_dates"][b] for b in spec["include_batches"]}
@@ -77,6 +88,8 @@ def reload_sources(database: Path, fixture: dict, phase: str, ce_changes: list[d
             _insert(con, f"raw.{table}", [r for r in fixture["raw"].get(table, []) if r["batch_date"] in batches])
         if spec["apply_counterexample"] and ce_changes:
             _insert(con, "ce.account_changes", ce_changes)
+        if spec["apply_counterexample"] and raw_additions:
+            _insert_raw_additions(con, raw_additions, batches)
     finally:
         con.close()
 

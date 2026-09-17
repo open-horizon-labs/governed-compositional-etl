@@ -373,13 +373,27 @@ def run_sqlmesh_replan(target: str, job: str, database: Path, report: dict) -> d
     return report
 
 
-def run(target: str, job: str, phase: str = "rollover", database: Path | None = None) -> dict:
+DEFAULT_CE = "counterexamples/archive/ce-account-428-rollover-v1.json"
+
+
+def ce_rows(ce: dict) -> tuple[list[dict], dict[str, list[dict]]]:
+    """A counterexample document's constructed rows: labeled ce.account_changes rows and any raw additions."""
+    changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"].get("ce_account_changes", [])]
+    additions = {t: [{k: v for k, v in r.items() if k != "note"} for r in rows] for t, rows in ce["fixture"].get("raw_additions", {}).items()}
+    # ce.account_changes rows carry their own provenance column (the loader checks it); raw tables do not, so raw
+    # additions are admitted only from a document labeled controlled_counterexample at the top level
+    if additions and ce.get("provenance") != "controlled_counterexample":
+        raise L3Error("a counterexample document that adds raw rows must be labeled controlled_counterexample")
+    return changes, additions
+
+
+def run(target: str, job: str, phase: str = "rollover", database: Path | None = None, ce: dict | None = None) -> dict:
     """Load the fixture (and labeled CE rows for the rollover phase), run upstream jobs' projections, then this job, then audits."""
     fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
-    ce = json.loads((ROOT / "counterexamples/archive/ce-account-428-rollover-v1.json").read_text())
-    changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"]["ce_account_changes"]]
+    ce = ce if ce is not None else json.loads((ROOT / DEFAULT_CE).read_text())
+    changes, additions = ce_rows(ce)
     database = database or ROOT / f"build/chain-{target}.duckdb"
-    LOADER.load_fixture(database, fixture, phase, changes if phase == "rollover" else None)
+    LOADER.load_fixture(database, fixture, phase, changes if phase == "rollover" else None, additions if phase == "rollover" else None)
     report = {"target": target, "job": job, "phase": phase, "upstream": [], "audits": {}, "samples": {}}
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
     if is_sqlmesh(profile):
@@ -406,6 +420,19 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
         con.close()
     report["ok"] = all(v["violations"] == 0 for v in report["audits"].values())
     return report
+
+
+def simulate(target: str, job: str, ce_path: Path) -> dict:
+    """Run one counterexample document against a projection: fixture plus the CE's constructed rows, then report which
+    audits fire and on what. A proposed CE runs the same way as an accepted one; acceptance changes the archive, not the harness."""
+    ce = json.loads((ROOT / ce_path).read_text())
+    database = ROOT / f"build/chain-{target}-sim-{Path(ce_path).stem}.duckdb"
+    if database.exists():
+        database.unlink()
+    report = run(target, job, "rollover", database=database, ce=ce)
+    fired = {inv: info for inv, info in report["audits"].items() if info["violations"]}
+    return {"target": target, "job": job, "counterexample": ce.get("id", Path(ce_path).stem), "status": ce.get("status"), "ok": report["ok"],
+            "fired": fired, "silent": not fired, "deterministic_assertion": ce.get("deterministic_assertion"), "samples": {t: s["count"] for t, s in report["samples"].items()}}
 
 
 def mutate(target: str, job: str, database: Path | None = None) -> dict:
@@ -519,7 +546,8 @@ def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=("check", "run", "stamp", "compare", "twophase", "mutate"))
+    p.add_argument("command", choices=("check", "run", "stamp", "compare", "twophase", "mutate", "simulate"))
+    p.add_argument("--ce", type=Path, help="simulate: a counterexample document (fixture.ce_account_changes and/or fixture.raw_additions)")
     p.add_argument("target")
     p.add_argument("job")
     p.add_argument("--against", help="compare: the second target")
@@ -530,6 +558,10 @@ def main() -> int:
             r = check(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["status"] == "ok" else 3
         if a.command == "stamp":
             print(json.dumps(stamp(a.target, a.job), indent=2)); return 0
+        if a.command == "simulate":
+            if not a.ce:
+                raise L3Error("simulate needs --ce <counterexample document>")
+            r = simulate(a.target, a.job, a.ce); print(json.dumps(r, indent=2)); return 0 if not r["silent"] else 4
         if a.command == "mutate":
             r = mutate(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if not r["unprotected"] else 3
         if a.command == "twophase":

@@ -1,0 +1,68 @@
+{
+  "adjacent_not_authorized": [
+    "which statement such a trade should pin",
+    "how positions treat it"
+  ],
+  "approved_or_rejected_by": "pending: business authority for the disposition; the invariants need only the L2 review",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "After trade-lifecycle cycle 8 and the L3 audits it demands, simulate on either engine fires exactly one audit naming trade 900001, and the two engines' governed tables otherwise agree.",
+  "expected": {
+    "after_cycle_8": "Exactly one violation on each engine naming trade 900001: inv.trade_ownership_pin_present on native, inv.every_received_trade_persisted on SQLMesh.",
+    "before_cycle_8": "Silent on both engines: native persists trade 900001 with null owning_account_effective_from, owning_customer_number, owning_customer_effective_from; SQLMesh has no row for 900001; no audit fires on either.",
+    "positions": "Unaffected: no holding change names trade 900001."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "trade_cdc": [
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed. A historical-load report of a trade placed for account 428 half a year before the account's first statement (NEW 2007-12-29 14:22:12). Not TPC-DI data; labeled by this document.",
+          "t_bid_price": 6.5,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2007-06-01 10:00:00",
+          "t_exec_name": "constructed",
+          "t_id": 900001,
+          "t_is_cash": true,
+          "t_qty": 100,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "PNDG",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TMB"
+        }
+      ],
+      "trade_history": [
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed, the trade's only history row; placed_at derives from it.",
+          "th_dts": "2007-06-01 10:00:00",
+          "th_st_id": "PNDG",
+          "th_t_id": 900001
+        }
+      ]
+    },
+    "raw_anchor": "oracle/fixtures/public/chain-fixture-v1.json"
+  },
+  "id": "ce.l2.trade-before-account-statement",
+  "labels": [
+    "constructed",
+    "L2",
+    "trade-lifecycle",
+    "cross-engine"
+  ],
+  "proposal": "chain/ce/proposed/ce.l2.trade-before-account-statement.md",
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "ce-document/v1",
+  "status": "proposed",
+  "tempting_wrong_repair": [
+    "pin the account's earliest statement",
+    "label the trade constructed"
+  ],
+  "why_constructed": "Both engine projections of trade-lifecycle pass every audit and agree on the fixture, yet they disagree about a trade whose ownership pin does not resolve: native persists it with null pins, SQLMesh drops it. No fixture row exercises the case. This document makes the case runnable."
+}

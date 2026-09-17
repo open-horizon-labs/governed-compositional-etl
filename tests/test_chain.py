@@ -274,6 +274,29 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class CounterexampleDocumentTests(unittest.TestCase):
+    CE = Path("counterexamples/proposed/ce-trade-before-account-statement-v1.json")
+
+    def test_trade_before_account_statement_is_visible_or_caught_on_both_engines(self):
+        """The constructed trade placed before its account's first statement must never be silently agreed on: before the
+        L2 admits the two invariants the engines disagree (native keeps it with null pins, SQLMesh drops it); after, an
+        audit fires on each engine. Silent and identical would mean the counterexample stopped doing its job."""
+        if not (ROOT / self.CE).exists():
+            self.skipTest("counterexample document not present")
+        reports, counts = {}, {}
+        for target in ("duckdb-native", "duckdb-sqlmesh"):
+            if not (ROOT / "chain/l3" / target / "trade-lifecycle/manifest.json").exists():
+                self.skipTest(f"trade-lifecycle not projected on {target}")
+            reports[target] = L3.simulate(target, "trade-lifecycle", self.CE)
+            counts[target] = reports[target]["samples"]["governed.trade"]
+        all_fired = all(not r["silent"] for r in reports.values())
+        engines_disagree = len(set(counts.values())) > 1
+        self.assertTrue(all_fired or engines_disagree, {t: (r["silent"], counts[t]) for t, r in reports.items()})
+        for r in reports.values():
+            if not r["silent"]:
+                self.assertTrue(set(r["fired"]) <= {"inv.trade_ownership_pin_present", "inv.every_received_trade_persisted"}, r["fired"])
+
+
 class L3GateTests(unittest.TestCase):
     def test_a_newly_selected_deterministic_invariant_demands_an_audit(self):
         """The L2-to-L3 seam: when a re-selected L2 adds a deterministic invariant, the L3 gate rejects every projection
