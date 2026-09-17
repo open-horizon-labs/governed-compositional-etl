@@ -181,9 +181,21 @@
       "relation": "named-gap"
     },
     {
+      "gap": "L1.hole.deletions bounds this group's completeness claim: a trade_number with any cdc_flag D report is not claimed by inv.every_received_trade_persisted and stays that hole's case.",
+      "group": "sg.trade-identity",
+      "job": "trade-lifecycle",
+      "relation": "named-gap"
+    },
+    {
       "gap": "L1.hole.deletions bounds what a D-flagged report means for a trade's outcome; L1.hole.batch-identity bounds latest_change's reliance on file production order rather than a report carrying which file delivered it.",
       "group": "sg.outcome",
       "job": "trade-lifecycle",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.deletions bounds this group's own row-per-pair claim: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided.",
+      "group": "sg.holding-shape",
+      "job": "positions",
       "relation": "named-gap"
     },
     {
@@ -204,7 +216,7 @@
     "contradiction": 0,
     "dependency": 7,
     "gap": 0,
-    "named-gap": 10,
+    "named-gap": 12,
     "overlap": 3
   }
 }

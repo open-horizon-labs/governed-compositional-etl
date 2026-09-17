@@ -128,6 +128,8 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.holding_quantities_present",
+        "inv.holding_quantity_change_is_difference",
         "sketch-review"
       ],
       "history_role": "none",
@@ -150,6 +152,8 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.holding_quantities_present",
+        "inv.holding_quantity_change_is_difference",
         "sketch-review"
       ],
       "history_role": "none",
@@ -305,6 +309,7 @@
           ],
           "disposition": "candidate",
           "feedback": [
+            "inv.holding_change_current_trade_known",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade identifies a holding change in part by its current trade, and names the current trade as the one whose recorded ownership the change belongs to; L1.identity requires a value that persistently names that trade across every report. This attribute carries raw.holding_history's hh_t_id for exactly that purpose, and is the join key this entity uses to copy the current trade's frozen ownership reference.",
@@ -325,6 +330,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_change_ownership_frozen",
+            "inv.holding_change_ownership_present",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade requires the holding change to belong to whoever owned the current trade, as that trade's ownership was recorded, never re-attributed by looking the account up again; this attribute copies trade-lifecycle's logical.trade.owning_account_number for this holding change's current_trade_number, set once at the holding change's first encounter and never replaced, per L1.attribution-at-placement's requirement that a trade's ownership, once fixed, is not moved, and L1.identity's persistence of the account number being copied.",
@@ -345,6 +351,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_change_ownership_frozen",
+            "inv.holding_change_ownership_present",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership exactly as the current trade recorded it, which names not just an account but the account's specific dated statement; this attribute copies trade-lifecycle's logical.trade.owning_account_effective_from for this holding change's current_trade_number, completing the (owning_account_number, owning_account_effective_from) pair, set once at first encounter and never replaced, per L1.attribution-at-placement and L1.identity.",
@@ -365,6 +372,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_change_ownership_frozen",
+            "inv.holding_change_ownership_present",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade requires the holding change to belong to whoever owned the current trade; through the account, that is also the customer, per the same frozen reference. This attribute copies trade-lifecycle's logical.trade.owning_customer_number for this holding change's current_trade_number, set once at first encounter and never replaced, so it can never name a customer inconsistent with the (owning_account_number, owning_account_effective_from) pair already pinned.",
@@ -385,6 +393,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_change_ownership_frozen",
+            "inv.holding_change_ownership_present",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership exactly as the current trade recorded it, which -- per L1.attribution-at-placement's 'and through it the customer, as they stood' -- names the customer's specific dated statement, not merely which customer; this attribute copies trade-lifecycle's logical.trade.owning_customer_effective_from for this holding change's current_trade_number, completing the (owning_customer_number, owning_customer_effective_from) pair, set once at first encounter and never replaced.",
@@ -404,6 +413,8 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_quantity_updates_in_place",
+            "inv.holding_quantity_change_is_difference",
+            "inv.holding_quantities_present",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade's 'change in what an account holds' is stated as a before-and-after fact; L1.no-phantom-positions requires summing that change. This attribute carries raw.holding_history's hh_before_qty, the quantity held before this change, replaced by each later report of the same holding change.",
@@ -423,6 +434,8 @@
           "disposition": "candidate",
           "feedback": [
             "inv.holding_quantity_updates_in_place",
+            "inv.holding_quantity_change_is_difference",
+            "inv.holding_quantities_present",
             "sketch-review"
           ],
           "necessity": "L1.holdings-follow-trade's 'change in what an account holds' is stated as a before-and-after fact; L1.no-phantom-positions requires summing that change. This attribute carries raw.holding_history's hh_after_qty, the quantity held after this change, replaced by each later report of the same holding change.",
@@ -441,6 +454,8 @@
           ],
           "disposition": "candidate",
           "feedback": [
+            "inv.holding_quantity_change_is_difference",
+            "inv.holding_quantities_present",
             "sketch-review"
           ],
           "derivation": {
@@ -490,6 +505,7 @@
           "feedback": [
             "inv.account_position_not_negative",
             "inv.account_position_key_matches_holding_change",
+            "inv.account_position_is_sum_of_changes",
             "sketch-review"
           ],
           "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account; this attribute carries the account half of that statement's identity, the same persistent account number every grouped holding_change already carries as owning_account_number (already frozen at each holding_change's first encounter per sg.holding-attribution), per L1.identity's persistence requirement. inv.account_position_key_matches_holding_change makes this exactness checkable.",
@@ -514,6 +530,7 @@
           "feedback": [
             "inv.account_position_not_negative",
             "inv.account_position_key_matches_holding_change",
+            "inv.account_position_is_sum_of_changes",
             "sketch-review"
           ],
           "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of an account, not merely per account, so a holding opened under one statement is never netted against one closed under another; this attribute carries the statement half of that identity, the same effective_from every grouped holding_change already carries as owning_account_effective_from. inv.account_position_key_matches_holding_change makes this exactness checkable.",
@@ -536,6 +553,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.account_position_not_negative",
+            "inv.account_position_is_sum_of_changes",
             "sketch-review"
           ],
           "necessity": "L1.no-phantom-positions requires a summed value per account statement that can never go below zero; this attribute is that sum, reusing quantity_change's own type (the per-holding-change net contribution) unchanged, totaled across every holding_change attributed to this (account_number, account_effective_from) statement.",
@@ -582,6 +600,7 @@
           "feedback": [
             "inv.customer_position_not_negative",
             "inv.customer_position_key_matches_holding_change",
+            "inv.customer_position_is_sum_of_changes",
             "sketch-review"
           ],
           "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer; this attribute carries the customer half of that statement's identity, the same persistent customer number every grouped holding_change already carries as owning_customer_number. inv.customer_position_key_matches_holding_change makes this exactness checkable.",
@@ -606,6 +625,7 @@
           "feedback": [
             "inv.customer_position_not_negative",
             "inv.customer_position_key_matches_holding_change",
+            "inv.customer_position_is_sum_of_changes",
             "sketch-review"
           ],
           "necessity": "L1.no-phantom-positions requires the sum to be taken per statement of a customer, not merely per customer, so a holding opened under one customer statement is never netted against one closed under another; this attribute carries the statement half of that identity, the same effective_from every grouped holding_change already carries as owning_customer_effective_from. inv.customer_position_key_matches_holding_change makes this exactness checkable.",
@@ -628,6 +648,7 @@
           "disposition": "candidate",
           "feedback": [
             "inv.customer_position_not_negative",
+            "inv.customer_position_is_sum_of_changes",
             "sketch-review"
           ],
           "necessity": "L1.no-phantom-positions requires a summed value per customer statement that can never go below zero; this attribute is that sum, reusing quantity_change's own type unchanged, totaled across every holding_change attributed to this (customer_number, customer_effective_from) statement.",
@@ -667,6 +688,7 @@
       ],
       "disposition": "candidate",
       "feedback": [
+        "inv.holding_change_current_trade_known",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade identifies a holding change in part by its current trade, the one whose recorded ownership the change belongs to; raw.holding_history carries hh_t_id as that trade's number on every row reporting the change.",
@@ -721,6 +743,8 @@
       "disposition": "candidate",
       "feedback": [
         "inv.holding_change_ownership_frozen",
+        "inv.holding_change_ownership_present",
+        "inv.holding_change_current_trade_known",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing trade, as that trade's ownership was recorded, and forbids re-attributing it by looking the account up again; trade-lifecycle's logical.trade.owning_account_number is exactly that recorded ownership, already frozen at the current trade's own first encounter per L1.attribution-at-placement. Copying it directly, through this holding change's current_trade_number, is the only way to honor the clause without a second, forbidden resolution against logical.account.",
@@ -740,6 +764,8 @@
       "disposition": "candidate",
       "feedback": [
         "inv.holding_change_ownership_frozen",
+        "inv.holding_change_ownership_present",
+        "inv.holding_change_current_trade_known",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade requires the holding change to carry the ownership as recorded on the causing trade, which names a specific account statement, not merely an account; trade-lifecycle's logical.trade.owning_account_effective_from is that statement's effective_from, already frozen at the current trade's own first encounter per L1.attribution-at-placement. Copying it directly completes the (owning_account_number, owning_account_effective_from) pair without a second, forbidden resolution against logical.account.",
@@ -759,6 +785,8 @@
       "disposition": "candidate",
       "feedback": [
         "inv.holding_change_ownership_frozen",
+        "inv.holding_change_ownership_present",
+        "inv.holding_change_current_trade_known",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade requires the holding change to belong, through the account, to the customer as the causing trade recorded it; trade-lifecycle's logical.trade.owning_customer_number is that recorded customer, already frozen at the current trade's own first encounter per L1.attribution-at-placement and drawn from the same account statement owning_account_number and owning_account_effective_from already pin. Copying it directly avoids a second, forbidden resolution against logical.customer or logical.account.",
@@ -778,6 +806,8 @@
       "disposition": "candidate",
       "feedback": [
         "inv.holding_change_ownership_frozen",
+        "inv.holding_change_ownership_present",
+        "inv.holding_change_current_trade_known",
         "sketch-review"
       ],
       "necessity": "L1.holdings-follow-trade requires the holding change to belong, through the account, to the customer as the causing trade recorded it, and -- per L1.attribution-at-placement's 'and through it the customer, as they stood' -- as that customer's own dated statement, not merely which customer; trade-lifecycle's logical.trade.owning_customer_effective_from is that statement's effective_from, already frozen at the current trade's own first encounter. Copying it directly completes the (owning_customer_number, owning_customer_effective_from) pair without a second, forbidden resolution against logical.customer or logical.account.",
@@ -796,6 +826,7 @@
       "disposition": "candidate",
       "feedback": [
         "inv.account_position_not_negative",
+        "inv.account_position_is_sum_of_changes",
         "sketch-review"
       ],
       "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of an account; quantity_change is each holding change's own net contribution, and net_quantity is that sum across every holding_change sharing this row's (account_number, account_effective_from) key.",
@@ -814,6 +845,7 @@
       "disposition": "candidate",
       "feedback": [
         "inv.customer_position_not_negative",
+        "inv.customer_position_is_sum_of_changes",
         "sketch-review"
       ],
       "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of a customer; quantity_change is each holding change's own net contribution, and net_quantity is that sum across every holding_change sharing this row's (customer_number, customer_effective_from) key.",
@@ -954,6 +986,124 @@
       "parallel_assumption": "Holds while every holding_change row grouped into one customer_position row shares the same owning_customer_number and owning_customer_effective_from by construction of the grouping itself.",
       "review_trigger": "a customer_position row is found whose customer_number or customer_effective_from differs from a holding_change row grouped into it",
       "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.holding_quantity_change_is_difference",
+      "entity": "logical.holding_change",
+      "statement": "On every logical.holding_change row, quantity_change equals after_qty minus before_qty.",
+      "derived_from": [
+        "L1.holdings-follow-trade",
+        "L1.no-phantom-positions"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.holdings-follow-trade names a holding change as 'a change in what an account holds,' which this entity states as a before-and-after pair, before_qty and after_qty; quantity_change's own computed_within_entity derivation defines it as their difference. This invariant restates that derivation as a fact an audit can check directly on every row, rather than leaving it implicit in the derivation prose alone.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while a holding change's net contribution is fully determined by its own before_qty and after_qty, with no other quantity affecting it -- the same condition quantity_change's own derivation already rests on.",
+      "review_trigger": "a persisted logical.holding_change row is found whose quantity_change does not equal after_qty minus before_qty, or the business states some other quantity affects a holding change's contribution to a position",
+      "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.account_position_is_sum_of_changes",
+      "entity": "logical.account_position",
+      "statement": "Each logical.account_position row's net_quantity equals the sum of quantity_change over every logical.holding_change row whose owning_account_number and owning_account_effective_from equal this row's account_number and account_effective_from; every (owning_account_number, owning_account_effective_from) pair that appears among holding_change rows has exactly one account_position row.",
+      "derived_from": [
+        "L1.no-phantom-positions",
+        "L1.holdings-follow-trade",
+        "L1.identity"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of an account; the handoff from logical.holding_change.quantity_change to net_quantity, selector sum_of_deltas, is exactly that sum, and L1.identity requires the account number and statement grouped on to be the same persistent values every holding change already carries, per L1.holdings-follow-trade's own account-statement attribution. This invariant restates the sum_of_deltas handoff as a checkable fact -- the sum is exact, and every key present among holding changes is represented by exactly one row, neither omitted nor duplicated.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every holding_change row is grouped into exactly one account_position row, by its own owning_account_number and owning_account_effective_from, the same condition the entity's own grain already rests on.",
+      "review_trigger": "a computed account_position.net_quantity does not equal the sum of quantity_change over the holding_change rows sharing its key, or a (owning_account_number, owning_account_effective_from) pair among holding_change rows is found with zero or more than one account_position row",
+      "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.customer_position_is_sum_of_changes",
+      "entity": "logical.customer_position",
+      "statement": "Each logical.customer_position row's net_quantity equals the sum of quantity_change over every logical.holding_change row whose owning_customer_number and owning_customer_effective_from equal this row's customer_number and customer_effective_from; every (owning_customer_number, owning_customer_effective_from) pair that appears among holding_change rows has exactly one customer_position row.",
+      "derived_from": [
+        "L1.no-phantom-positions",
+        "L1.holdings-follow-trade",
+        "L1.attribution-at-placement",
+        "L1.identity"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.no-phantom-positions requires summing holding changes for a statement of a customer; the handoff from logical.holding_change.quantity_change to net_quantity, selector sum_of_deltas, is exactly that sum. L1.attribution-at-placement's 'and through it the customer, as they stood' is what makes the customer's own dated statement, not merely the customer, the unit grouped on, and L1.identity requires that statement's key to be the same persistent values every holding change already carries. This invariant restates the sum_of_deltas handoff as a checkable fact -- the sum is exact, and every key present among holding changes is represented by exactly one row, neither omitted nor duplicated.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every holding_change row is grouped into exactly one customer_position row, by its own owning_customer_number and owning_customer_effective_from, the same condition the entity's own grain already rests on.",
+      "review_trigger": "a computed customer_position.net_quantity does not equal the sum of quantity_change over the holding_change rows sharing its key, or a (owning_customer_number, owning_customer_effective_from) pair among holding_change rows is found with zero or more than one customer_position row",
+      "sufficiency_group": "sg.no-phantom-positions"
+    },
+    {
+      "id": "inv.holding_change_ownership_present",
+      "entity": "logical.holding_change",
+      "statement": "Every persisted logical.holding_change row carries owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from non-null.",
+      "derived_from": [
+        "L1.holdings-follow-trade",
+        "L1.attribution-at-placement",
+        "L1.identity"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing trade, as recorded, never with a partial or re-derived ownership; L1.attribution-at-placement is what fixed that ownership on the current trade in the first place, and L1.identity underlies the persistence of the account and customer numbers copied. sg.holding-attribution's own coverage_claim already states that a holding change whose current trade's ownership pin does not resolve has no ownership reference for this job to copy and so is excluded from this entity; this invariant lifts that exclusion rule into an audit-checkable fact by asserting non-null on all four copied attributes for every row that is in fact persisted.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while this entity's own construction excludes, rather than persists with gaps, any holding change whose current trade's ownership pin does not resolve: such a change is excluded from this entity entirely rather than persisted with a null ownership reference; a persisted row with a null ownership attribute would mean that exclusion was not honored, not a value this attribute should adopt.",
+      "review_trigger": "a persisted logical.holding_change row is found with a null owning_account_number, owning_account_effective_from, owning_customer_number, or owning_customer_effective_from",
+      "sufficiency_group": "sg.holding-attribution"
+    },
+    {
+      "id": "inv.holding_change_current_trade_known",
+      "entity": "logical.holding_change",
+      "statement": "Every raw.holding_history report whose cdc_flag is not D names an hh_t_id that resolves to a logical.trade row in trade-lifecycle's model.",
+      "derived_from": [
+        "L1.holdings-follow-trade",
+        "L1.identity"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.holdings-follow-trade identifies a holding change by its current trade and requires the change to belong to whoever owned that trade, which presupposes the trade the report names actually resolves; L1.identity requires hh_t_id to persistently identify one real trade. The current_trade_number attribute's own review_trigger and the trade ownership handoffs' own review_triggers already name an hh_t_id that does not resolve to any logical.trade row as a case requiring review; this invariant mechanizes that review trigger as a deterministic, audit-checkable fact, so such a report fires a violation instead of silently vanishing from every position sum.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while hh_t_id in this file names a real trade and is not reused for a different one.",
+      "review_trigger": "a raw.holding_history report whose cdc_flag is not D names an hh_t_id that does not resolve to any logical.trade row; the business decides what such a report means, this invariant only makes it visible",
+      "sufficiency_group": "sg.holding-attribution"
+    },
+    {
+      "id": "inv.holding_quantities_present",
+      "entity": "logical.holding_change",
+      "statement": "On every persisted logical.holding_change row, before_qty, after_qty, and quantity_change are all non-null.",
+      "derived_from": [
+        "L1.holdings-follow-trade",
+        "L1.no-phantom-positions"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.holdings-follow-trade names a holding change as 'a change in what an account holds,' which this entity states as a before-and-after quantity pair; type.holding_quantity's own review_trigger, and before_qty and after_qty's own review_triggers, already name a report with no determinable before or after quantity as a case requiring review. This invariant lifts that already-recorded review trigger into a checkable, deterministic fact: no persisted row carries a null before_qty, after_qty, or quantity_change, because a sum over partly null members would otherwise silently drop them from every position's total instead of surfacing the gap.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Credible while every raw.holding_history report carries a determinable before and after quantity for the holding change it reports, the same condition before_qty and after_qty's own parallel assumptions already rest on.",
+      "review_trigger": "a persisted logical.holding_change row is found with a null before_qty, after_qty, or quantity_change",
+      "sufficiency_group": "sg.no-phantom-positions"
     }
   ],
   "sufficiency_groups": [
@@ -974,7 +1124,7 @@
       ],
       "mode": "all_required",
       "coverage_claim": "logical.holding_change's history kind, incremental_by_identity, follows from L1.holdings-follow-trade (a holding change is identified by its original trade and its current trade, and belongs to whoever owned the causing trade), L1.identity (those trade numbers persistently identify the same trades across every report), and L1.attribution-at-placement (the ownership, once fixed on the current trade, is not moved) -- together these entail one row per (original_trade_number, current_trade_number) pair, updated in place. original_trade_number and current_trade_number, handed off unchanged from raw.holding_history's own hh_h_t_id and hh_t_id with the identity mutation role, give this entity exactly the composite identity L1.holdings-follow-trade names. This group's scope is limited to the entity's shape and its two identity attributes; the ownership this entity copies through current_trade_number is the more specific claim covered by sg.holding-attribution instead.",
-      "gap": "none"
+      "gap": "L1.hole.deletions bounds this group's own row-per-pair claim: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided."
     },
     {
       "id": "sg.holding-attribution",
@@ -996,10 +1146,12 @@
         "handoff.logical.trade.owning_account_effective_from->logical.holding_change.owning_account_effective_from",
         "handoff.logical.trade.owning_customer_number->logical.holding_change.owning_customer_number",
         "handoff.logical.trade.owning_customer_effective_from->logical.holding_change.owning_customer_effective_from",
-        "inv.holding_change_ownership_frozen"
+        "inv.holding_change_ownership_frozen",
+        "inv.holding_change_ownership_present",
+        "inv.holding_change_current_trade_known"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward, naming both which account and, 'through it the customer, as they stood,' which customer statement; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution; sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for holding-change reports, anchoring first_encounter_only's ordering directly for this entity rather than by extension from trade reports. inv.holding_change_ownership_frozen restates that all four values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own four attributes resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account or customer statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). Separately, L1.hole.owner-change-reversions-account bounds which account statement -- and hence which customer statement -- a trade's placed_at pins in the first place: if a customer-only change also re-versions the account, a trade placed shortly after such a change could pin a different account (and customer) statement than it does today, which would change what this holding change copies without this job deciding it. A holding change whose current trade's ownership pin does not resolve, for any of these reasons, has no ownership reference for this job to copy.",
+      "coverage_claim": "L1.holdings-follow-trade requires a holding change to belong to whoever owned the causing (current) trade, as that trade's ownership was recorded, and forbids ever re-attributing it by looking the account up again; L1.attribution-at-placement is the clause that fixed that ownership on the current trade at its own first encounter and forbids it moving afterward, naming both which account and, 'through it the customer, as they stood,' which customer statement; L1.identity underlies the persistence of the account and customer numbers being copied. owning_account_number, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are handed off, with selector first_encounter_only, directly and only from trade-lifecycle's logical.trade -- never from logical.account or logical.customer -- through this holding change's current_trade_number, so the copy can never be a fresh, forbidden re-attribution; sources-v1.json's trade_code_meanings.report_order now states applies_to explicitly for holding-change reports, anchoring first_encounter_only's ordering directly for this entity rather than by extension from trade reports. inv.holding_change_ownership_frozen restates that all four values, once copied at first encounter, are never replaced by a later report of the same pair, unlike before_qty and after_qty which do update. This coverage is conditional: it depends on trade-lifecycle's own four attributes resolving for the named current trade, which trade-lifecycle's own model bounds by L1.hole.change-effective-time (an account or customer statement ownership-history has itself deferred) and by L1.hole.batch-identity (trade-lifecycle's first_encounter_only selector, like this job's own, rests on file production order rather than a report carrying which file delivered it). Separately, L1.hole.owner-change-reversions-account bounds which account statement -- and hence which customer statement -- a trade's placed_at pins in the first place: if a customer-only change also re-versions the account, a trade placed shortly after such a change could pin a different account (and customer) statement than it does today, which would change what this holding change copies without this job deciding it. A holding change whose current trade's ownership pin does not resolve, for any of these reasons, has no ownership reference for this job to copy. inv.holding_change_ownership_present restates this exclusion as a checkable invariant: every persisted holding change carries all four copied attributes non-null. inv.holding_change_current_trade_known distinguishes the separate, unknown-trade case: an hh_t_id that does not resolve to any logical.trade row at all does not drop out silently the way an unresolved pin does, but fires as a violation instead.",
       "gap": "L1.hole.change-effective-time and L1.hole.batch-identity each bound this group's coverage by bounding the upstream trade-lifecycle values it copies; L1.hole.owner-change-reversions-account bounds which statement is pinned in the first place; see coverage_claim."
     },
     {
@@ -1036,10 +1188,14 @@
         "inv.account_position_not_negative",
         "inv.customer_position_not_negative",
         "inv.account_position_key_matches_holding_change",
-        "inv.customer_position_key_matches_holding_change"
+        "inv.customer_position_key_matches_holding_change",
+        "inv.account_position_is_sum_of_changes",
+        "inv.customer_position_is_sum_of_changes",
+        "inv.holding_quantity_change_is_difference",
+        "inv.holding_quantities_present"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total.",
+      "coverage_claim": "L1.no-phantom-positions requires that summing holding changes for any one statement of an account or a customer can never go below zero -- both halves of the clause, symmetrically. before_qty and after_qty, handed off from raw.holding_history's hh_before_qty and hh_after_qty with selector latest_change (sources-v1.json's report_order.applies_to now anchors this ordering for holding-change reports directly), state each holding change's before-and-after quantities; quantity_change computes their difference as the change's net contribution, per L1.holdings-follow-trade's own description of a holding change as a change in what an account holds; inv.holding_quantity_updates_in_place makes that update-in-place, and the provisional exclusion of cdc_flag D reports, checkable directly, mirroring trade-lifecycle's own inv.trade_outcome_updates_in_place. inv.holding_quantity_change_is_difference makes the after-minus-before computation itself checkable on every row, and inv.holding_quantities_present makes non-null presence of before_qty, after_qty, and quantity_change checkable directly, so a report with no determinable quantity fires rather than silently dropping out of a sum. The account half: logical.account_position.account_number and account_effective_from are computed_within_entity, equal to the owning_account_number and owning_account_effective_from every holding_change grouped into that row already carries (fixed per sg.holding-attribution) -- read off the group itself rather than handed off from a single source row, since a group is exactly the set of holding_change rows sharing that value; inv.account_position_key_matches_holding_change makes that exactness checkable. The customer half, now symmetric with the account half: logical.customer_position.customer_number and customer_effective_from are computed_within_entity the same way, from owning_customer_number and owning_customer_effective_from, completing the (customer_number, customer_effective_from) pair L1.attribution-at-placement's 'and through it the customer, as they stood' names, per L1.no-phantom-positions' own 'statement... of a customer' wording; inv.customer_position_key_matches_holding_change makes that exactness checkable too. logical.account_position.net_quantity and logical.customer_position.net_quantity are handed off from quantity_change with selector sum_of_deltas, grouped by the same keys. inv.account_position_not_negative and inv.customer_position_not_negative restate the clause's own bound directly, over both statement kinds. This coverage is conditional: latest_change rests on the anchored trade_code_meanings.report_order -- file production order, not a report carrying which file delivered it -- which L1.hole.batch-identity leaves open; what a cdc_flag D report means for a holding change's quantities is L1.hole.deletions, not decided here; and a holding change whose current trade's ownership pin does not resolve, per L1.hole.change-effective-time (bounding sg.holding-attribution), drops out of every sum here rather than being counted in either statement's total. inv.holding_change_ownership_present (in sg.holding-attribution) restates that drop-out itself as a checkable invariant on the persisted rows this group sums over; inv.holding_change_current_trade_known distinguishes the separate case of an hh_t_id that does not resolve to any logical.trade row at all, which does not drop out silently but fires as a violation instead.",
       "gap": "L1.hole.batch-identity bounds the latest_change selector's reliance on file production order; L1.hole.deletions bounds what a D-flagged report means for a holding change's quantities; L1.hole.change-effective-time bounds which holding changes have a resolved ownership pin to be summed at all, propagated from sg.holding-attribution; see coverage_claim. L1.hole.owner-change-reversions-account bounds which account and customer statement a trade's -- and hence a holding change's -- ownership pin lands on in the first place, propagated from sg.holding-attribution."
     },
     {
@@ -1065,12 +1221,13 @@
     },
     {
       "id": "hole.deletions",
-      "question": "What does a deletion marker (cdc_flag D) on a raw.holding_history row mean for a holding change's history, its copied ownership, and the before/after quantities this job sums? This job's handling -- excluding D-flagged reports from the latest_change candidate set feeding before_qty and after_qty, mirroring trade-lifecycle's own provisional handling of D on raw.trade_cdc -- is provisional; it does not decide what a D-flagged report means for the holding change otherwise, whether it stands, is voided, or removes the holding change from every position sum, nor what it would mean if a holding change's first-encountered report were itself D-flagged.",
+      "question": "What does a deletion marker (cdc_flag D) on a raw.holding_history row mean for a holding change's history, its copied ownership, and the before/after quantities this job sums? This job's handling -- excluding D-flagged reports from the latest_change candidate set feeding before_qty and after_qty, mirroring trade-lifecycle's own provisional handling of D on raw.trade_cdc -- is provisional; it does not decide what a D-flagged report means for the holding change otherwise, whether it stands, is voided, or removes the holding change from every position sum, nor what it would mean if a holding change's first-encountered report were itself D-flagged. Separately, and prior to any question of quantities: whether a pair whose only reports are D-flagged has a holding_change row at all is undecided here too -- row existence, not only the values within an existing row. With no I, U, or historical report as a candidate for such a pair, the non-nullable before_qty and after_qty cannot be filled, so the model yields no row; that is one behavior consistent with the hole, not a resolution of it.",
       "derived_from_hole": "L1.hole.deletions",
       "owner_hat": "data-product-owner",
       "disposition": "deferred",
       "blocks": [
-        "sg.no-phantom-positions"
+        "sg.no-phantom-positions",
+        "sg.holding-shape"
       ]
     },
     {
