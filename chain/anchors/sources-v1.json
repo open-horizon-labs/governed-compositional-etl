@@ -437,6 +437,25 @@
     "terminal_status_codes": [
       "CMPT",
       "CNCL"
-    ]
+    ],
+    "trade_type_codes": {
+      "authority": "TPC-DI 1.1.0 TradeType.txt (structural code list; shape only)",
+      "codes": {
+        "TLB": "the row reports a limit order to buy",
+        "TLS": "the row reports a limit order to sell",
+        "TMB": "the row reports a market order to buy",
+        "TMS": "the row reports a market order to sell"
+      },
+      "field": "t_tt_id",
+      "limit_orders": [
+        "TLB",
+        "TLS"
+      ],
+      "market_orders": [
+        "TMB",
+        "TMS"
+      ],
+      "note": "Which lifecycle stages an order type passes through is not stated here; the Sketch says what a market order's earliest report means."
+    }
   }
 }

@@ -427,6 +427,27 @@ def fingerprints(job: str, l1: dict | None = None, selected: bool = False) -> di
     return out
 
 
+def adjudication_for(group_id: str, clauses: list[str]) -> str | None:
+    """Latest recorded adjudication for a group under one of the changed clauses: 'invalidate', 'keep', or None."""
+    path = ROOT / "chain/cache-adjudications.jsonl"
+    if not path.exists():
+        return None
+    verdict = None
+    for line in path.read_text().splitlines():
+        if not line.strip():
+            continue
+        entry = json.loads(line)
+        if entry.get("clause") not in clauses:
+            continue
+        note = entry.get("groups", {}).get(group_id)
+        text = json.dumps(note).lower() if note is not None else ""
+        if "invalidate" in text or "stale" in text:
+            verdict = "invalidate"
+        elif "keep" in text or "unchanged" in text:
+            verdict = "keep"
+    return verdict
+
+
 def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
     """Recompute fingerprints and report the stale set. Hash-unchanged never re-projects. Hash-changed asks Jev."""
     l1 = parse_l1()
@@ -442,10 +463,25 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
             continue
         current = fingerprints(job, l1)
         prev = previous.get("jobs", {}).get(job, {}).get("elements", {})
+        review_path = L2_DIR / job / "review.json"
+        selected_sha = json.loads(review_path.read_text()).get("model_sha256") if review_path.exists() else None
+        prev_selected_sha = previous.get("jobs", {}).get(job, {}).get("selected_model_sha256")
         elements = {}
         for eid, info in current.items():
             before = prev.get(eid, {}).get("fingerprint")
             if before == info["fingerprint"]:
+                # an unchanged fingerprint is a hit, except that a pending decision persists: "review" until adjudicated,
+                # "stale" until the job has been re-selected since it was recorded
+                prior = prev.get(eid, {}).get("cache")
+                touched_before = prev.get(eid, {}).get("touched_clauses") or []
+                if prior == "review":
+                    adjudicated = adjudication_for(eid, touched_before)
+                    decision = "stale" if adjudicated == "invalidate" else ("hit-by-adjudication" if adjudicated == "keep" else "review")
+                    elements[eid] = {**info, "cache": decision, "touched_clauses": touched_before, "jev": prev.get(eid, {}).get("jev")}
+                    continue
+                if prior in ("stale", "stale-new") and selected_sha == prev_selected_sha:
+                    elements[eid] = {**info, "cache": prior, "touched_clauses": touched_before, "jev": prev.get(eid, {}).get("jev")}
+                    continue
                 elements[eid] = {**info, "cache": "hit"}
                 continue
             touched = [c for c in info["derived_from"] if c in changed_clauses]
@@ -454,10 +490,17 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
                 verdicts = [JEV.invalidation(c, prev_texts.get(c, ""), l1["clauses"][c], {"id": eid, "kind": "sufficiency_group", "statement": info.get("coverage_claim"), "note": json.dumps(info.get("justifications"), sort_keys=True)[:3000]}) for c in touched]
                 decisions = {v.get("decision") for v in verdicts}
                 decision = "review" if "review" in decisions else ("stale" if "invalidate" in decisions else "hit-by-jev")
+                if decision == "review":
+                    # a reviewer's recorded adjudication (chain/cache-adjudications.jsonl) settles what Jev could not
+                    adjudicated = adjudication_for(eid, touched)
+                    if adjudicated == "invalidate":
+                        decision = "stale"
+                    elif adjudicated == "keep":
+                        decision = "hit-by-adjudication"
                 jev = [{k: v.get(k) for k in ("verdict", "p_behavior_changes", "confidence_band", "decision")} for v in verdicts]
             elements[eid] = {**info, "cache": decision, "touched_clauses": touched, "jev": jev}
         stale = sorted(e for e, i in elements.items() if i["cache"] in ("stale", "stale-new"))
-        report["jobs"][job] = {"status": "ok", "elements": elements, "stale": stale, "l3_reprojection_required": bool(stale)}
+        report["jobs"][job] = {"status": "ok", "elements": elements, "stale": stale, "l3_reprojection_required": bool(stale), "selected_model_sha256": selected_sha}
     return report
 
 

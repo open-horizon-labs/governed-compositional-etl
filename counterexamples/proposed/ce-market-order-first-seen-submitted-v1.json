@@ -1,0 +1,93 @@
+{
+  "adjacent_not_authorized": [
+    "completion timing (L1.hole.trade-timestamps)",
+    "what a market order reported PNDG means"
+  ],
+  "approved_or_rejected_by": "clause approved by business authority 2026-09-17; projection pending",
+  "constructed_by_hat": "sketch-reviewer",
+  "deterministic_assertion": "After trade-lifecycle cycle 11 and L3 cycle 5, run on either engine yields first_seen_late false for 900002 and true for 900003 with every audit at zero.",
+  "expected": {
+    "after_cycle_11": "900002 first_seen_late false, 900003 true, on both engines; all audits at zero; the two engines agree.",
+    "before_cycle_11": "both trades marked first_seen_late true; no audit fires (the projection is consistent with the old rule)."
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {
+      "trade_cdc": [
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed market buy on account 428, earliest report SBMT, within the 2007-12-29 statement. Expected: not first seen late.",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-02 10:15:00",
+          "t_exec_name": "constructed",
+          "t_id": 900002,
+          "t_is_cash": true,
+          "t_qty": 50,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "SBMT",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TMB"
+        },
+        {
+          "batch_date": "2017-06-30",
+          "cdc_dsn": 0,
+          "cdc_flag": "I",
+          "note": "Constructed limit buy, same moment, earliest report SBMT. Expected: first seen late (its first lifecycle event is PNDG).",
+          "t_bid_price": 6.4,
+          "t_ca_id": 428,
+          "t_chrg": null,
+          "t_comm": null,
+          "t_dts": "2010-03-02 10:16:00",
+          "t_exec_name": "constructed",
+          "t_id": 900003,
+          "t_is_cash": true,
+          "t_qty": 50,
+          "t_s_symb": "AAAAAAAAAAAABFV",
+          "t_st_id": "SBMT",
+          "t_tax": null,
+          "t_trade_price": null,
+          "t_tt_id": "TLB"
+        }
+      ],
+      "trade_history": [
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed.",
+          "th_dts": "2010-03-02 10:15:00",
+          "th_st_id": "SBMT",
+          "th_t_id": 900002
+        },
+        {
+          "batch_date": "2017-06-30",
+          "note": "Constructed.",
+          "th_dts": "2010-03-02 10:16:00",
+          "th_st_id": "SBMT",
+          "th_t_id": 900003
+        }
+      ]
+    },
+    "raw_anchor": "oracle/fixtures/public/chain-fixture-v1.json"
+  },
+  "id": "ce.l1.market-order-first-seen-submitted",
+  "labels": [
+    "constructed",
+    "L1",
+    "trade-lifecycle"
+  ],
+  "proposal": "chain/ce/accepted/ce.l1.first-seen-late-market-orders.md",
+  "proposed_on": "2026-09-17",
+  "provenance": "controlled_counterexample",
+  "schema_version": "ce-document/v1",
+  "status": "accepted-clause-pending-projection",
+  "tempting_wrong_repair": [
+    "treating every SBMT first report as not late",
+    "inferring order type from price fields"
+  ],
+  "why_constructed": "L1.placement-moment (amended) says an order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted. No fixture trade is a market order. This document adds one and a limit-order twin so the two are told apart."
+}

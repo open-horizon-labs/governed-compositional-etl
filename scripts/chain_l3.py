@@ -158,7 +158,18 @@ def check(target: str, job: str) -> dict:
         stamped = manifest.get("group_fingerprints") or {}
         current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items()}
         derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]])
-        if stamped and derived_groups and all(stamped.get(gid) == current.get(gid) for gid in derived_groups):
+        # a group whose fingerprint moved only because a clause was reworded is still valid when the chain manifest
+        # records Jev's keep (cache "hit-by-jev") or an adjudicated keep for that group; a moved fingerprint under
+        # "stale" or an unadjudicated "review" is not
+        chain_manifest = json.loads((ROOT / "chain/manifest.json").read_text()) if (ROOT / "chain/manifest.json").exists() else {}
+        cache = {gid: info.get("cache") for gid, info in chain_manifest.get("jobs", {}).get(job, {}).get("elements", {}).items()}
+        kept = {gid for gid in derived_groups if stamped.get(gid) != current.get(gid) and cache.get(gid) in ("hit-by-jev", "hit-by-adjudication")}
+        awaiting = sorted(gid for gid in derived_groups if stamped.get(gid) != current.get(gid) and cache.get(gid) == "review")
+        if awaiting:
+            problems.append(f"groups {awaiting} moved under an L1 change that Jev routed to review; adjudicate (keep or invalidate) before this projection can be accepted or re-projected")
+        if kept and all(stamped.get(gid) == current.get(gid) or gid in kept for gid in derived_groups):
+            provenance_note = f"review sha superseded; groups {sorted(kept)} moved only under a clause change Jev judged behavior-neutral (kept); projection remains valid"
+        elif stamped and derived_groups and all(stamped.get(gid) == current.get(gid) for gid in derived_groups):
             provenance_note = "review sha superseded by an L2 change that left every derived group's fingerprint unchanged; projection remains valid"
         else:
             problems.append("manifest review_sha256 does not match the selected L2 model and derived group fingerprints differ or are unstamped; re-project the stale artifacts")

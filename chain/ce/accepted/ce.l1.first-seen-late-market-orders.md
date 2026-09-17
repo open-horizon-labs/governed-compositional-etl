@@ -1,6 +1,6 @@
 ### CE: ce.l1.first-seen-late-market-orders
 
-- Status: proposed
+- Status: accepted 2026-09-17 (business authority, demonstration); clause L1.placement-moment amended; anchors gain trade_type_codes
 - Level: L1, observed at L2 review of trade-lifecycle cycle 3
 - Input and simulation context: `first_seen_late` derived as "first-encountered report's status is later than PNDG in the anchored status order".
 - Projection output: a market order whose earliest report is SBMT is marked first seen late.
@@ -11,4 +11,4 @@
 - Tempting wrong repair: using TradeType (market versus limit) from the received row to decide, which is interpreting an anchored code and would be allowed once anchored, but the Sketch has not said that trade type governs the lifecycle's first event.
 - Deterministic assertion: none until the clause lands; the derivation stays a review flag with its premise stated.
 - Proposed by: sketch reviewer (Opus), trade-lifecycle cycle 3.
-- Approved or rejected by: pending, business authority.
+- Approved or rejected by: approved, business authority (2026-09-17). Downstream: trade-lifecycle L2 cycle 11, L3 cycle 5 on both engines, runnable CE `counterexamples/proposed/ce-market-order-first-seen-submitted-v1.json`.

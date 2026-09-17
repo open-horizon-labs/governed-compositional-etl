@@ -38,7 +38,7 @@ Each job compiles to its own semantic model. A job lists the clauses it needs.
 ### Trades and ownership
 
 - **L1.attribution-at-placement** — A trade belongs to the account, and through it the customer, as they stood at the moment the trade was placed. Later changes to that account or customer do not move a trade that was already placed, and do not move anything that trade created.
-- **L1.placement-moment** — A trade is placed at the moment of the earliest report of it held by the brokerage, as that report states its own time. A later report of a trade the brokerage has not seen before is treated as its placement and marked as first seen late, so the ownership it fixes can be reviewed. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends.)
+- **L1.placement-moment** — A trade is placed at the moment of the earliest report of it held by the brokerage, as that report states its own time. A trade whose earliest held report is not the trade's first lifecycle event is treated as placed at that report and marked as first seen late, so the ownership it fixes can be reviewed. An order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted. (Placement assumed under `issue-8-statement-content-assumed`; the market-order sentence accepted from `ce.l1.first-seen-late-market-orders` on 2026-09-17.)
 - **L1.lifecycle-mutates-outcome** — As a trade moves through its life (pending, submitted, completed, cancelled), its outcome changes: status, executed price, fees, commission, tax, quantity. Its ownership does not change. A later report of the same trade updates the outcome and leaves the ownership as first recorded.
 
 ### Holdings and positions

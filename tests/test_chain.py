@@ -298,6 +298,40 @@ class CounterexampleDocumentTests(unittest.TestCase):
 
 
 class L3GateTests(unittest.TestCase):
+    def test_a_jev_kept_clause_rewording_does_not_stale_the_projection(self):
+        """Above the hash floor Jev decides: when the chain manifest records a derived group as hit-by-jev, the L3 gate
+        treats the moved fingerprint as valid; when it records review, the gate demands adjudication. Scratch copies."""
+        import shutil, tempfile
+        target, job = "duckdb-native", "trade-lifecycle"
+        if not (ROOT / "chain/l3" / target / job / "manifest.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3_dir = Path(tmp) / "l3"
+            shutil.copytree(ROOT / "chain/l3" / target / job, l3_dir / target / job)
+            mpath = l3_dir / target / job / "manifest.json"
+            m = json.loads(mpath.read_text()); m["derived_from_model"]["review_sha256"] = "0" * 64
+            current = {gid: info["fingerprint"] for gid, info in L3.L2.fingerprints(job, selected=True).items()}
+            m["group_fingerprints"] = {gid: current[gid] for gid in m["group_fingerprints"]}
+            groups = list(m["group_fingerprints"]); moved = groups[0]
+            m["group_fingerprints"][moved] = "1" * 64
+            mpath.write_text(json.dumps(m))
+            chain_manifest = json.loads((ROOT / "chain/manifest.json").read_text())
+            saved_root_manifest = (ROOT / "chain/manifest.json").read_text()
+            saved = L3.L3_DIR; L3.L3_DIR = l3_dir
+            try:
+                for decision, expect_ok in (("hit-by-jev", True), ("review", False)):
+                    cm = json.loads(json.dumps(chain_manifest))
+                    for gid in cm["jobs"][job]["elements"]:
+                        cm["jobs"][job]["elements"][gid]["cache"] = "hit"
+                    cm["jobs"][job]["elements"][moved]["cache"] = decision
+                    (ROOT / "chain/manifest.json").write_text(json.dumps(cm))
+                    report = L3.check(target, job)
+                    provenance_problems = [p for p in report["problems"] if "fingerprint" in p or "adjudicate" in p]
+                    self.assertEqual(not provenance_problems, expect_ok, (decision, report["problems"], report.get("provenance")))
+            finally:
+                L3.L3_DIR = saved
+                (ROOT / "chain/manifest.json").write_text(saved_root_manifest)
+
     def test_a_newly_selected_deterministic_invariant_demands_an_audit(self):
         """The L2-to-L3 seam: when a re-selected L2 adds a deterministic invariant, the L3 gate rejects every projection
         of that job until an audit exists for it. Non-deterministic invariants demand nothing. Exercised on a scratch copy."""
