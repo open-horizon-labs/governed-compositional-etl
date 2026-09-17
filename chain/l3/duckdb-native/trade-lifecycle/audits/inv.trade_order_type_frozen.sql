@@ -1,8 +1,12 @@
--- inv.trade_order_type_frozen (restated): for any trade_number, order_type
--- equals t_tt_id on the trade's first-encountered anchored raw.trade_cdc
--- report, and every other anchored raw.trade_cdc report of that trade
--- agrees with it (not merely that the frozen value is never replaced by a
--- later report -- every anchored report is checked for agreement). A held
+-- inv.trade_order_type_frozen (restated): for any trade_number the job
+-- claims a governed.trade row for, order_type equals t_tt_id on the
+-- trade's first-encountered anchored raw.trade_cdc report, and every other
+-- anchored raw.trade_cdc report of that trade agrees with it (not merely
+-- that the frozen value is never replaced by a later report -- every
+-- anchored report is checked for agreement, row-scoped to governed.trade
+-- like its sibling inv.trade_owning_account_frozen, so it asserts nothing
+-- about a trade_number the job does not claim, e.g. one held under either
+-- open hole). A held
 -- report (any of cdc_flag, t_st_id, t_tt_id outside its anchored vocabulary,
 -- null-sensitive) is not evidence either way: it is excluded from this
 -- comparison entirely. A trade whose earliest report or earliest
@@ -41,4 +45,5 @@ SELECT vcr.t_id AS trade_number, vcr.t_tt_id AS order_type, e.expected_order_typ
        'anchored_report_disagrees' AS problem
 FROM valid_cdc_rows AS vcr
 JOIN expected AS e ON e.trade_number = vcr.t_id
+JOIN governed.trade AS t ON t.trade_number = vcr.t_id
 WHERE vcr.t_tt_id IS DISTINCT FROM e.expected_order_type;

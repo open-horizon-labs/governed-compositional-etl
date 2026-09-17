@@ -1,17 +1,22 @@
 -- inv.trade_first_seen_late_defined_or_held (restated): for any
 -- trade_number that inv.every_received_trade_persisted claims a
--- governed.trade row for, first_seen_late is null if and only if the trade
--- is held: either inv.unknown_codes_held reports its first-encountered
--- report's status or order type as outside the anchored vocabularies, or
+-- governed.trade row for, first_seen_late is null if and only if
 -- inv.trade_market_order_seen_pending_held reports it as a market order
--- first reported PNDG. first_seen_late is non-null (true or false) for
--- every other claimed trade. A trade_number whose earliest report is itself
--- held while a later raw.trade_cdc report is anchored
--- (L1.hole.held-first-report-placement) is not claimed by
--- inv.every_received_trade_persisted at all -- it has no governed.trade row
--- and so no first_seen_late value for this invariant to claim either; the
--- JOIN to governed.trade below naturally excludes it. Zero rows means the
--- invariant holds.
+-- first reported PNDG; first_seen_late is non-null (true or false) for
+-- every other claimed trade. A trade whose first-encountered report's
+-- status or order type is unanchored is never claimed a row at all (see
+-- inv.trade_held_first_report_unclaimed and inv.every_received_trade_
+-- persisted), so among claimed trades first_status and raw_order_type
+-- below are already guaranteed anchored -- the "first_status NOT IN
+-- (anchored)" disjunct in `expected` is dead by construction; it is kept
+-- as a belt (a second, independent check that no claimed trade's
+-- first_status is ever unanchored, rather than trusting that guarantee
+-- silently). A trade_number whose earliest report is itself held while a
+-- later raw.trade_cdc report is anchored (L1.hole.held-first-report-
+-- placement, widened) is not claimed by inv.every_received_trade_persisted
+-- at all -- it has no governed.trade row and so no first_seen_late value
+-- for this invariant to claim either; the JOIN to governed.trade below
+-- naturally excludes it. Zero rows means the invariant holds.
 
 WITH valid_cdc_rows AS (
     -- A row carrying any code outside its anchored vocabulary in any of

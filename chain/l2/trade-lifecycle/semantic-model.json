@@ -901,7 +901,7 @@
     {
       "id": "inv.trade_owning_account_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, every anchored (not held under L1.unknown-codes) raw.trade_cdc report of that trade carries the same t_ca_id as the trade's first-encountered anchored report; owning_account_number is set once at that first anchored encounter and is never replaced by a later anchored report. A held report is not evidence either way: it neither confirms nor contradicts owning_account_number, and is excluded from this invariant's comparison entirely.",
+      "statement": "For any trade_number, every anchored (not held under L1.unknown-codes) raw.trade_cdc report of that trade carries the same t_ca_id as the trade's first-encountered anchored report; owning_account_number is set once at that first anchored encounter and is never replaced by a later anchored report. A held report is not evidence either way: it neither confirms nor contradicts owning_account_number, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business.",
       "derived_from": [
         "L1.attribution-at-placement"
       ],
@@ -919,7 +919,7 @@
     {
       "id": "inv.trade_placement_reference_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, placed_at, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each set once -- from the trade's first-encountered anchored report and the account and customer statements resolved as of that report's own time -- and are never replaced by a later anchored report of the same trade. A held report is not evidence either way: it neither confirms nor contradicts these values, and is excluded from this invariant's comparison entirely.",
+      "statement": "For any trade_number, placed_at, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each set once -- from the trade's first-encountered anchored report and the account and customer statements resolved as of that report's own time -- and are never replaced by a later anchored report of the same trade. A held report is not evidence either way: it neither confirms nor contradicts these values, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business.",
       "derived_from": [
         "L1.placement-moment",
         "L1.attribution-at-placement"
@@ -1123,7 +1123,7 @@
     {
       "id": "inv.trade_order_type_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered anchored raw.trade_cdc report, and is never replaced by a later anchored report's t_tt_id. A held report is not evidence either way: it neither confirms nor contradicts order_type, and is excluded from this invariant's comparison entirely.",
+      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered anchored raw.trade_cdc report, and is never replaced by a later anchored report's t_tt_id. A held report is not evidence either way: it neither confirms nor contradicts order_type, and is excluded from this invariant's comparison entirely. This invariant quantifies over trade_numbers for which this job claims a logical.trade row; a trade unclaimed under inv.trade_held_first_report_unclaimed or L1.hole.deletions is not this invariant's business.",
       "derived_from": [
         "L1.lifecycle-mutates-outcome"
       ],

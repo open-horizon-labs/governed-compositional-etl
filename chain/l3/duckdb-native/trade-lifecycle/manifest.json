@@ -129,11 +129,12 @@
     "review_sha256": "aa96f17f146596ca221934a86212efc7bc3528e34a85c59c54db08539af15fa9"
   },
   "group_fingerprints": {
+    "sg.constructed-scenarios": "990997abb5658589c811f6876487e72c9c50fe1d846dd2e041ddf496d22dbad4",
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",
-    "sg.placement-moment": "b3a1bac643b067f4a794eb538879e633906a676790bd8b2c9ed360eaa011ceee",
+    "sg.placement-moment": "4748495927a039733f7e0819d4c508cb20b66b28e02de907eac9a16643fce58c",
     "sg.trade-identity": "aac9f60fd0cb1ca39e5ff833e639308ac579b82eadccd1aed1ecb4131ec2efcc",
     "sg.trade-shape": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849",
-    "sg.unknown-codes": "0000000000000000000000000000000000000000000000000000000000000000"
+    "sg.unknown-codes": "e56467b11b92cd9366e5159763f2607fab471a0234f71286364f2ad73de7feeb"
   },
   "job": "trade-lifecycle",
   "questions_for_authority": [],
