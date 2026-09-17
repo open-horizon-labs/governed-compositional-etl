@@ -230,6 +230,22 @@ class EngineIndependenceTests(unittest.TestCase):
         self.assertTrue(report["identical"], report)
 
 
+class L3AuditContainmentTests(unittest.TestCase):
+    def test_audit_reading_a_deferred_source_is_rejected(self):
+        base = ROOT / "chain/l3/duckdb-native/ownership-history"
+        audit = base / "audits/inv.customer_single_current.sql"
+        if not audit.exists():
+            self.skipTest("native projection not present")
+        original = audit.read_text()
+        try:
+            audit.write_text(original.rstrip().rstrip(";") + "\nUNION ALL SELECT customer_number, 0 FROM raw.customer_cdc\n")
+            report = L3.check("duckdb-native", "ownership-history")
+            self.assertEqual(report["status"], "rejected")
+            self.assertTrue(any("raw.customer_cdc" in p and "audit" in p for p in report["problems"]), report["problems"])
+        finally:
+            audit.write_text(original)
+
+
 class L3GateTests(unittest.TestCase):
     def test_l3_requires_a_passed_review(self):
         with self.assertRaises(L3.L3Error):

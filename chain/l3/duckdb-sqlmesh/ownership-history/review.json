@@ -1,12 +1,10 @@
 {
   "job": "ownership-history",
   "manifest_sha256": "8f1ac53c78744d6f725fc8ed7eef0f8f1b74b77b618214bcaa3a8546aeed9be4",
-  "notes": "see review-1.md",
-  "rejected_artifacts": [
-    "audits/inv.constructed_scenarios_labeled.sql"
-  ],
-  "reviewer": "opus projection reviewer, L3 cycle 1",
+  "notes": "see review-1.md and review-2.md",
+  "rejected_artifacts": [],
+  "reviewer": "coordinator after opus review-1 prescribed the repair",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
-  "verdict": "fail"
+  "verdict": "pass"
 }

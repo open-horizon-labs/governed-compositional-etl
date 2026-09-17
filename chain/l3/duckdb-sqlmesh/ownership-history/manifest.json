@@ -1,16 +1,6 @@
 {
-  "schema_version": "l3-manifest/v1",
-  "target": "duckdb-sqlmesh",
-  "job": "ownership-history",
-  "derived_from_model": {
-    "path": "chain/l2/ownership-history/semantic-model.json",
-    "review_sha256": "51615cd92c4738f46f60a421107e08dc8f7da7f3b7e49f55859c572dcf991235"
-  },
   "artifacts": [
     {
-      "file": "models/customer.sql",
-      "entity": "logical.customer",
-      "strategy": "versioned: FULL rebuild from the complete raw.customer_mgmt_action change feed",
       "derived_from": [
         "logical.customer",
         "logical.customer.customer_number",
@@ -23,14 +13,14 @@
         "handoff.raw.customer_mgmt_action.c_tier->logical.customer.tier",
         "handoff.raw.customer_mgmt_action.action_type->logical.customer.status"
       ],
+      "entity": "logical.customer",
+      "file": "models/customer.sql",
       "reads": [
         "raw.customer_mgmt_action"
-      ]
+      ],
+      "strategy": "versioned: FULL rebuild from the complete raw.customer_mgmt_action change feed"
     },
     {
-      "file": "models/account.sql",
-      "entity": "logical.account",
-      "strategy": "versioned: FULL rebuild from the complete raw.customer_mgmt_action and ce.account_changes change feed",
       "derived_from": [
         "logical.account",
         "logical.account.account_number",
@@ -51,68 +41,86 @@
         "handoff.ce.account_changes.status_id->logical.account.status",
         "handoff.ce.account_changes.tax_status_id->logical.account.tax_treatment"
       ],
+      "entity": "logical.account",
+      "file": "models/account.sql",
       "reads": [
         "raw.customer_mgmt_action",
         "ce.account_changes"
-      ]
+      ],
+      "strategy": "versioned: FULL rebuild from the complete raw.customer_mgmt_action and ce.account_changes change feed"
     }
   ],
   "audits": [
     {
+      "entity": "logical.customer",
       "file": "audits/inv.customer_single_current.sql",
-      "invariant": "inv.customer_single_current",
-      "entity": "logical.customer"
+      "invariant": "inv.customer_single_current"
     },
     {
+      "entity": "logical.customer",
       "file": "audits/inv.customer_statements_no_overlap.sql",
-      "invariant": "inv.customer_statements_no_overlap",
-      "entity": "logical.customer"
+      "invariant": "inv.customer_statements_no_overlap"
     },
     {
+      "entity": "logical.customer",
       "file": "audits/inv.customer_asof_has_unique_answer.sql",
-      "invariant": "inv.customer_asof_has_unique_answer",
-      "entity": "logical.customer"
+      "invariant": "inv.customer_asof_has_unique_answer"
     },
     {
+      "entity": "logical.customer",
       "file": "audits/inv.customer_statement_has_content.sql",
-      "invariant": "inv.customer_statement_has_content",
-      "entity": "logical.customer"
+      "invariant": "inv.customer_statement_has_content"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.account_single_current.sql",
-      "invariant": "inv.account_single_current",
-      "entity": "logical.account"
+      "invariant": "inv.account_single_current"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.account_statements_no_overlap.sql",
-      "invariant": "inv.account_statements_no_overlap",
-      "entity": "logical.account"
+      "invariant": "inv.account_statements_no_overlap"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.account_asof_has_unique_answer.sql",
-      "invariant": "inv.account_asof_has_unique_answer",
-      "entity": "logical.account"
+      "invariant": "inv.account_asof_has_unique_answer"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.account_statement_has_content.sql",
-      "invariant": "inv.account_statement_has_content",
-      "entity": "logical.account"
+      "invariant": "inv.account_statement_has_content"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.constructed_scenarios_labeled.sql",
-      "invariant": "inv.constructed_scenarios_labeled",
-      "entity": "logical.account"
+      "invariant": "inv.constructed_scenarios_labeled"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.constructed_account_change_refers_to_known_account.sql",
-      "invariant": "inv.constructed_account_change_refers_to_known_account",
-      "entity": "logical.account"
+      "invariant": "inv.constructed_account_change_refers_to_known_account"
     },
     {
+      "entity": "logical.account",
       "file": "audits/inv.account_asof_carries_customer_asof.sql",
-      "invariant": "inv.account_asof_carries_customer_asof",
-      "entity": "logical.account"
+      "invariant": "inv.account_asof_carries_customer_asof"
     }
   ],
-  "questions_for_authority": []
+  "derived_from_model": {
+    "path": "chain/l2/ownership-history/semantic-model.json",
+    "review_sha256": "51615cd92c4738f46f60a421107e08dc8f7da7f3b7e49f55859c572dcf991235"
+  },
+  "group_fingerprints": {
+    "sg.constructed-scenarios": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
+    "sg.current-version": "9b10389debc3ca53e0141d93de60c709c5174419f3ccbf1a85672a5df796af6c",
+    "sg.history-asof": "dcf2ef9cdbdacd1024d4f083fe68e0aa1fc1d45dcc6da436aa33ccb78e19f5b2",
+    "sg.identity": "c10e08f06e8b7ad64964b6f9f8e7b72d79a664a1b2516ee64ae1bc531e12c0d7",
+    "sg.owner-standing": "6e51664dde65dad88657828b65aeca4ab1249082b1b2354bba36df55fb29c48c",
+    "sg.statement-content": "bc07b10cbb9aed9d0ce1043004c3b2b17a013cce14e205e14557e97e4256a098"
+  },
+  "job": "ownership-history",
+  "questions_for_authority": [],
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-sqlmesh"
 }
