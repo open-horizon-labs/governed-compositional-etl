@@ -360,6 +360,27 @@ def check(job: str, l1: dict | None = None) -> dict:
     covered = {c for g in groups.values() for c in g["parent_clauses"]}
     for c in sorted(allowed_clauses - covered):
         problems.append(f"clause {c} has no sufficiency group in job {job}: gap")
+    # A hole that closes leaves its text behind. Two independent reviewers found the same defect in two different
+    # jobs: an element's `statement` was rewritten to the new clause while its `necessity` and `parallel_assumption`
+    # went on deferring to the closed hole -- and those are the fields an implementer reads as normative, so the prose
+    # reinstated the very bug the statement had just fixed. Any field naming a hole this model does not carry is
+    # surfaced here. It is a question, not a problem, because the reference may be honest provenance ("replacing the
+    # prior deferral to the now-closed L1.hole.deletions") or a live deferral ("what it means is L1.hole.deletions,
+    # not decided here"), and telling those apart is reading, which is a reviewer's job and not this gate's.
+    dangling: dict[str, list[str]] = {}
+    def scan(o, path=""):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                scan(v, f"{path}.{k}" if path else str(k))
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                scan(v, f"{path}[{i}]")
+        elif isinstance(o, str):
+            for h in set(HOLE_REF.findall(o)) - carried:
+                dangling.setdefault(h, []).append(path)
+    scan({k: v for k, v in doc.items() if k != "holes"})
+    for h, where in sorted(dangling.items()):
+        questions.append(f"{len(where)} field(s) still name {h}, which this model does not carry: {', '.join(where[:6])}{' and more' if len(where) > 6 else ''}. Each is either provenance saying the hole closed, or a live deferral to a question that is no longer open -- and a stale necessity or parallel_assumption is read as normative and reinstates whatever the statement just fixed")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"job": job, "status": status, "problems": problems, "questions": questions, "holes_carried": sorted(carried),
             "groups": {g: {"parents": groups[g]["parent_clauses"], "gap": groups[g]["gap"]} for g in groups},

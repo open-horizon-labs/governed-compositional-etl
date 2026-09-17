@@ -109,7 +109,9 @@ class L2GateTests(unittest.TestCase):
 
     def test_filed_question_does_not_block_validation(self):
         report = self.mutate(lambda d: d.__setitem__("questions_for_authority", ["Which moment is placement?"]))
-        self.assertEqual(report["questions"], ["Which moment is placement?"])
+        # present, not sole: the gate raises other questions of its own (a field naming a hole the model no longer
+        # carries, for one), and this test is about a filed question not blocking validation
+        self.assertIn("Which moment is placement?", report["questions"])
         self.assertFalse(any("question" in p.lower() for p in report["problems"]), report["problems"])
         if not report["problems"]:
             self.assertEqual(report["status"], "question")
@@ -485,6 +487,52 @@ class CounterexampleSimulationTests(unittest.TestCase):
 
     def test_two_phase_on_duckdb_native(self):
         self.check_target("duckdb-native")
+
+
+class DanglingHoleReferenceTests(unittest.TestCase):
+    """A hole that closes leaves its text behind. Two reviewers found the same defect in two different jobs in one
+    cycle: an element's statement rewritten to the new clause while its necessity and parallel_assumption went on
+    deferring to the closed hole -- and those are the fields an implementer reads as normative, so the prose
+    reinstated the bug the statement had just fixed. Mechanized from that, the rule immediately found four more
+    fields naming a hole closed in an earlier cycle, which nobody had caught."""
+
+    def test_a_field_naming_an_uncarried_hole_is_reported(self):
+        import copy, json as _json
+        path = ROOT / "chain/l2/positions/semantic-model.json"
+        if not path.exists():
+            self.skipTest("positions not compiled")
+        doc = _json.loads(path.read_text())
+        carried = {h["derived_from_hole"] for h in doc.get("holes", [])}
+        self.assertTrue(carried, "the model carries no hole, so this test proves nothing")
+        invented = "L1.hole.a-hole-this-model-does-not-carry"
+        self.assertNotIn(invented, carried)
+        scratch = copy.deepcopy(doc)
+        scratch["invariants"][0]["necessity"] = f"Deferred to {invented} and never resolved."
+        import tempfile, shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            l2 = Path(tmp) / "l2"
+            shutil.copytree(ROOT / "chain/l2", l2)
+            (l2 / "positions/semantic-model.json").write_text(_json.dumps(scratch))
+            saved = L2.L2_DIR
+            L2.L2_DIR = l2
+            try:
+                r = L2.check("positions")
+            finally:
+                L2.L2_DIR = saved
+        self.assertTrue([q for q in r["questions"] if invented in q], r["questions"])
+        self.assertFalse([p for p in r["problems"] if invented in p], "it must be a question, never a refusal")
+
+    def test_a_carried_hole_is_not_reported(self):
+        for job in ("ownership-history", "trade-lifecycle", "positions"):
+            if not (ROOT / "chain/l2" / job / "semantic-model.json").exists():
+                continue
+            r = L2.check(job)
+            carried = set(r["holes_carried"])
+            with self.subTest(job=job):
+                for q in r["questions"]:
+                    if "does not carry" in q:
+                        for h in carried:
+                            self.assertNotIn(f"still name {h},", q, f"{job}: {h} is carried and must not be flagged")
 
 
 class ReportedInvariantNeedsACounterexampleTests(unittest.TestCase):

@@ -311,18 +311,18 @@
           ],
           "derivation": {
             "kind": "computed_within_entity",
-            "rule": "false when this statement's own is_withdrawal is true, since a withdrawal statement is never itself the current one; otherwise true when no statement of the same customer_number has a later effective_from than this one and false when one does. It follows that once a customer's latest statement is a withdrawal, no statement of that customer_number is current, per L1.current-version's amendment ('none once its latest statement is a withdrawal'). Not received from any source."
+            "rule": "false when this statement's own is_withdrawal is true, since a withdrawal statement is never itself the current one; false when a withdrawal statement of the same customer_number has an effective_from at or before this statement's effective_from, since a statement dated at or after a withdrawal is not treated as resuming the withdrawn record's standing, per L1.hole.deletion-reversal's 'until answered, no job may treat a report received after a withdrawal as resuming the record' -- this holds even when that later statement is itself an ordinary, ostensibly non-withdrawal report; otherwise true when no statement of the same customer_number has a later effective_from than this one and false when one does. It follows that once a customer has any withdrawal statement, no statement of that customer_number at or after the withdrawal's own moment is ever current again, pending L1.hole.deletion-reversal, and, within that bound, at most one statement is current per L1.current-version's amendment ('none once its latest statement is a withdrawal'). Not received from any source."
           },
           "disposition": "candidate",
           "feedback": [
             "inv.customer_single_current",
             "sketch-review"
           ],
-          "necessity": "L1.current-version requires at most one current statement per customer, defined as the one with no later statement, and none once the latest statement is a withdrawal; this attribute exposes that fact directly.",
+          "necessity": "L1.current-version requires at most one current statement per customer, defined as the one with no later statement, and none once the latest statement is a withdrawal; this attribute exposes that fact directly. L1.hole.deletion-reversal forbids treating a report received after a withdrawal as resuming the record, so this attribute's derivation must foreclose currency from the withdrawal's own moment forward rather than merely at the withdrawal statement itself, or a later ordinary report would silently answer the hole by resuming the record.",
           "nullable": false,
           "owner_hat": "data-product-owner",
-          "parallel_assumption": "Credible once every customer statement has a known effective_from to order it against the others and a known is_withdrawal value. The withdrawal branch is not yet exercised by this job: every statement it currently produces has is_withdrawal false (see the is_withdrawal attribute), because the sources that could set it true remain deferred under L1.hole.change-effective-time.",
-          "review_trigger": "zero or more than one statement of the same customer_number is flagged current, or a statement with is_withdrawal true is flagged current",
+          "parallel_assumption": "Credible once every customer statement has a known effective_from to order it against the others and a known is_withdrawal value. The withdrawal branch, and the reversal-foreclosure branch it now requires, are not yet exercised by this job: every statement it currently produces has is_withdrawal false (see the is_withdrawal attribute), because the sources that could set it true remain deferred under L1.hole.change-effective-time. Should a report ever be received after a withdrawal, this rule reads it as not resuming the record, matching trade-lifecycle's monotonic treatment of the same hole for a trade's withdrawn flag; if the business answers L1.hole.deletion-reversal to allow resumption, this derivation must be revisited.",
+          "review_trigger": "zero or more than one statement of the same customer_number is flagged current, a statement with is_withdrawal true is flagged current, or a statement dated at or after a withdrawal of the same customer_number is flagged current",
           "sufficiency_group": "sg.current-version"
         },
         {
@@ -461,21 +461,23 @@
           "semantic_type": "statement_is_current",
           "derived_from": [
             "L1.current-version",
-            "L1.deletion-withdraws"
+            "L1.deletion-withdraws",
+            "L1.owner-standing"
           ],
           "derivation": {
             "kind": "computed_within_entity",
-            "rule": "false when this statement's own is_withdrawal is true, since a withdrawal statement is never itself the current one; otherwise true when no statement of the same account_number has a later effective_from than this one and false when one does. It follows that once an account's latest statement is a withdrawal, no statement of that account_number is current, per L1.current-version's amendment ('none once its latest statement is a withdrawal'). Not received from any source."
+            "rule": "false when this statement's own is_withdrawal is true, since a withdrawal statement is never itself the current one; false when a withdrawal statement of the same account_number has an effective_from at or before this statement's effective_from, since a statement dated at or after the account's own withdrawal is not treated as resuming it, per L1.hole.deletion-reversal, even when that later statement is itself an ordinary report; false when this statement's own owning_customer_number's customer entity has a withdrawal statement with an effective_from at or before this statement's effective_from, since L1.owner-standing's extended second sentence holds that an account has no standing at a moment when its owner has none, and this attribute is the compiled form of that cascade rather than a fact asserted only by an invariant with nothing producing it; otherwise true when no statement of the same account_number has a later effective_from than this one and false when one does. It follows that once an account's own record or its owning customer's record carries a withdrawal, no statement of that account_number at or after the earlier of the two withdrawal moments is ever current again, pending L1.hole.deletion-reversal for the account's own case, and, within that bound, at most one statement is current per L1.current-version's amendment. Not received from any source."
           },
           "disposition": "candidate",
           "feedback": [
             "inv.account_single_current",
+            "inv.account_asof_carries_customer_asof",
             "sketch-review"
           ],
-          "necessity": "L1.current-version requires at most one current statement per account, defined as the one with no later statement, and none once the latest statement is a withdrawal; this attribute exposes that fact directly.",
+          "necessity": "L1.current-version requires at most one current statement per account, defined as the one with no later statement, and none once the latest statement is a withdrawal; this attribute exposes that fact directly. L1.hole.deletion-reversal forbids treating a report received after a withdrawal as resuming the record, so this attribute must foreclose currency from the withdrawal's own moment forward. And L1.owner-standing's extended second sentence requires an account to have no standing when its owner has none; since 'current' is this job's compiled answer to 'does this account have standing now,' that requirement must be produced here, by referencing the owning customer's own withdrawal state, rather than left to a must-hold invariant with no derivation behind it.",
           "nullable": false,
           "owner_hat": "data-product-owner",
-          "parallel_assumption": "Credible once every account statement has a known effective_from to order it against the others and a known is_withdrawal value. The withdrawal branch is not yet exercised by this job: every statement it currently produces has is_withdrawal false (see the is_withdrawal attribute), because the sources that could set it true remain deferred under L1.hole.change-effective-time.",
+          "parallel_assumption": "Credible once every account statement has a known effective_from to order it against the others, a known is_withdrawal value, and (for the owner-cascade branch) a resolvable owning_customer_number whose customer entity's own is_withdrawal history is known. Assumes owning_customer_number is constant across an account's own statements unless a new account statement changes it, since whether a customer-only change reversions the account's own statements is L1.hole.owner-change-reversions-account, left open. The withdrawal, reversal-foreclosure, and owner-cascade branches are not yet exercised by this job: every statement it currently produces has is_withdrawal false for both entities (see the is_withdrawal attributes), because the sources that could set it true remain deferred under L1.hole.change-effective-time. Should a report ever be received after a withdrawal, this rule reads it as not resuming the record, matching trade-lifecycle's monotonic treatment of the same hole for a trade's withdrawn flag; if the business answers L1.hole.deletion-reversal to allow resumption, this derivation must be revisited.",
           "review_trigger": "zero or more than one statement of the same account_number is flagged current, or a statement with is_withdrawal true is flagged current",
           "sufficiency_group": "sg.current-version"
         },
@@ -512,11 +514,12 @@
             "L1.identity",
             "L1.history",
             "L1.constructed-scenarios",
-            "L1.omitted-facts-stand"
+            "L1.omitted-facts-stand",
+            "L1.deletion-withdraws"
           ],
           "derivation": {
             "kind": "carried_forward_from_previous_statement",
-            "rule": "When a statement's own source supplies no owning-customer value (as ce.account_changes does not), L1.omitted-facts-stand holds that a constructed change which does not mention the owner leaves the owner as it last stood: owning_customer_number equals the value carried by this account's immediately preceding statement. L1.identity holds that a change produces a new dated statement about the same account, not a different one, and L1.history holds that a later statement sits beside the earlier one rather than overwriting it, so 'this account's immediately preceding statement' is well defined. A constructed change sourced from ce.account_changes always has a previous statement to carry the owner from, because L1.constructed-scenarios' authorized clarification forbids a constructed scenario from introducing an account the brokerage does not have — it only changes something the received records already know — which inv.constructed_account_change_refers_to_known_account checks directly."
+            "rule": "When a statement's own source supplies no owning-customer value (as ce.account_changes does not), L1.omitted-facts-stand holds that a constructed change which does not mention the owner leaves the owner as it last stood: owning_customer_number equals the value carried by this account's immediately preceding statement. L1.identity holds that a change produces a new dated statement about the same account, not a different one, and L1.history holds that a later statement sits beside the earlier one rather than overwriting it, so 'this account's immediately preceding statement' is well defined. A constructed change sourced from ce.account_changes always has a previous statement to carry the owner from, because L1.constructed-scenarios' authorized clarification forbids a constructed scenario from introducing an account the brokerage does not have — it only changes something the received records already know — which inv.constructed_account_change_refers_to_known_account checks directly. The carried-forward derivation does not apply to a withdrawal statement (is_withdrawal = true): a withdrawal asserts no standing at all, per L1.deletion-withdraws, so it carries no owner forward either; owning_customer_number is null for such a statement, licensed only by is_withdrawal = true, exactly as status and tax_treatment are."
           },
           "disposition": "candidate",
           "feedback": [
@@ -524,11 +527,12 @@
             "inv.account_owner_matches_producing_source",
             "sketch-review"
           ],
-          "necessity": "L1.owner-standing requires that an account's standing include its owner's standing, and L1.statement-content names 'which customer owns it' as part of what an account statement carries; this attribute names which customer that is so the customer's as-of statement can be looked up for the same moment. Where a statement's source does not supply this fact directly, this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.omitted-facts-stand, L1.identity, and L1.history.",
-          "nullable": false,
+          "necessity": "L1.owner-standing requires that an account's standing include its owner's standing, and L1.statement-content names 'which customer owns it' as part of what an account statement carries; this attribute names which customer that is so the customer's as-of statement can be looked up for the same moment. Where a statement's source does not supply this fact directly, this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.omitted-facts-stand, L1.identity, and L1.history. L1.deletion-withdraws requires that a withdrawal assert no standing at all, and 'which customer owns it' is one of L1.statement-content's three standing facts; this attribute must therefore be absent on a withdrawal exactly as status and tax_treatment are, not asserted as a fact the record no longer has.",
+          "nullable": true,
+          "note": "Non-null for every non-withdrawal statement, checked by inv.account_owner_matches_producing_source's non-withdrawal branch; null for a statement whose is_withdrawal is true, since a withdrawal asserts no standing fact at all, including who owns the account.",
           "owner_hat": "data-product-owner",
-          "parallel_assumption": "Credible for whatever account statements exist; whether a change to the customer alone produces a new account statement carrying this same value is unresolved. The carried-forward derivation is credible while a change that does not mention the owner is understood to leave the owner unchanged rather than unknown; if the business intends otherwise, this derivation must be revisited.",
-          "review_trigger": "an account statement's owning_customer_number does not match any customer_number known to the customer entity, or a constructed change is recorded as an account's first statement with no owning_customer_number determinable by this derivation",
+          "parallel_assumption": "Credible for whatever account statements exist; whether a change to the customer alone produces a new account statement carrying this same value is unresolved. The carried-forward derivation is credible while a change that does not mention the owner is understood to leave the owner unchanged rather than unknown; if the business intends otherwise, this derivation must be revisited. No source this job reads today produces a withdrawal statement, so the null branch is not yet exercised; once raw.account_cdc is undeferred, its own c_id handoff must read only I/U rows for this attribute, never a D row, matching the restriction already required of the ca_st_id handoff.",
+          "review_trigger": "a non-withdrawal account statement's owning_customer_number does not match any customer_number known to the customer entity, a constructed change is recorded as an account's first statement with no owning_customer_number determinable by this derivation, or a statement with is_withdrawal true carries a non-null owning_customer_number",
           "sufficiency_group": "sg.owner-standing"
         },
         {
@@ -699,7 +703,7 @@
         "sketch-review"
       ],
       "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this incremental file's c_tier supplies that value even while the statement's own effective moment is unresolved.",
-      "note": "Deferred: raw.customer_cdc supplies no handoff of its own effective moment to logical.customer, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time.",
+      "note": "Deferred: raw.customer_cdc supplies no handoff of its own effective moment to logical.customer, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time. Once undeferred, this handoff must read c_tier only from a row whose cdc_flag is I or U; a row whose cdc_flag is D is a withdrawal under L1.deletion-withdraws and asserts no standing, so it must populate no value here, leaving tier null for that statement.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while c_tier on a customer change record names the tier the brokerage considers the customer to hold as of that change, independent of when the change is deemed to take effect.",
       "review_trigger": "the change-effective-time hole is resolved and this handoff can be promoted from deferred to candidate",
@@ -857,7 +861,7 @@
         "sketch-review"
       ],
       "necessity": "L1.owner-standing requires the owning customer be carried on the account's statement; this incremental file's c_id supplies that value even while the statement's own effective moment is unresolved.",
-      "note": "Deferred: raw.account_cdc supplies no handoff of its own effective moment to logical.account, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time.",
+      "note": "Deferred: raw.account_cdc supplies no handoff of its own effective moment to logical.account, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time. Once undeferred, this handoff must read c_id only from a row whose cdc_flag is I or U; a row whose cdc_flag is D is a withdrawal under L1.deletion-withdraws and asserts no standing at all, including who owns the account, so it must populate logical.account.is_withdrawal instead, leaving owning_customer_number null for that statement rather than echoing the row's last c_id.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while c_id on an account change record names the customer who owns the account as of that change, independent of when the change is deemed to take effect.",
       "review_trigger": "the change-effective-time hole is resolved and this handoff can be promoted from deferred to candidate",
@@ -874,7 +878,7 @@
         "sketch-review"
       ],
       "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this incremental file's ca_tax_st supplies that value even while the statement's own effective moment is unresolved.",
-      "note": "Deferred: raw.account_cdc supplies no handoff of its own effective moment to logical.account, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time.",
+      "note": "Deferred: raw.account_cdc supplies no handoff of its own effective moment to logical.account, a versioned entity, so a new dated statement cannot yet be projected from this source. Blocked by L1.hole.change-effective-time; see hole.change_effective_time. Once undeferred, this handoff must read ca_tax_st only from a row whose cdc_flag is I or U; a row whose cdc_flag is D is a withdrawal under L1.deletion-withdraws and asserts no standing, so it must populate no value here, leaving tax_treatment null for that statement.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while ca_tax_st on an account change record names the tax treatment the brokerage considers the account to hold as of that change, independent of when the change is deemed to take effect.",
       "review_trigger": "the change-effective-time hole is resolved and this handoff can be promoted from deferred to candidate",
@@ -1084,7 +1088,7 @@
     {
       "id": "inv.customer_asof_has_unique_answer",
       "entity": "logical.customer",
-      "statement": "For any customer_number and any moment T: there is no answer if T precedes the customer's first statement, or if the latest statement of that customer effective at or before T is a withdrawal (is_withdrawal = true); otherwise exactly one statement -- the latest one effective at or before T -- is the as-of answer. This is the checkable form of L1.deletion-withdraws' 'a question asked as of that moment or later has no answer for that record, rather than an older one.'",
+      "statement": "For any customer_number and any moment T: there is no answer if T precedes the customer's first statement, or if some withdrawal statement of that customer has an effective_from at or before T -- regardless of whether an even later, ostensibly ordinary statement exists between the withdrawal and T, since such a later report is not treated as resuming the record, per L1.hole.deletion-reversal; otherwise exactly one statement -- the latest one effective at or before T, necessarily earlier than any withdrawal -- is the as-of answer. This is the checkable form of L1.deletion-withdraws' 'a question asked as of that moment or later has no answer for that record, rather than an older one,' bounded on its resuming side by L1.hole.deletion-reversal.",
       "derived_from": [
         "L1.as-of",
         "L1.deletion-withdraws"
@@ -1094,16 +1098,16 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping; L1.deletion-withdraws requires that once the latest such statement is a withdrawal, the as-of question has no answer at all rather than the withdrawal or an older statement standing in for one.",
+      "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping; L1.deletion-withdraws requires that once a withdrawal has occurred at or before the queried moment, the as-of question has no answer at all rather than the withdrawal, an older statement, or a later ordinary statement standing in for one -- the last of which L1.hole.deletion-reversal forbids until answered.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review. The no-answer-on-withdrawal branch is not yet exercised by this job, since every statement it currently produces has is_withdrawal false, pending L1.hole.change-effective-time.",
-      "review_trigger": "an as-of query for a customer_number returns more than one candidate statement, or returns a withdrawal statement itself as the answer instead of no answer",
+      "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review. The no-answer-on-withdrawal branch, and the reversal-foreclosure bound it now states explicitly, are not yet exercised by this job, since every statement it currently produces has is_withdrawal false, pending L1.hole.change-effective-time. This invariant reads L1.hole.deletion-reversal's 'until answered' sentence as licensing a monotonic, non-resuming answer rather than leaving the case undefined; if the business answers the hole to allow resumption, this invariant must be revisited.",
+      "review_trigger": "an as-of query for a customer_number returns more than one candidate statement, returns a withdrawal statement itself as the answer instead of no answer, or returns a statement dated at or after a withdrawal of the same customer_number as the answer",
       "sufficiency_group": "sg.history-asof"
     },
     {
       "id": "inv.account_asof_has_unique_answer",
       "entity": "logical.account",
-      "statement": "For any account_number and any moment T: there is no answer if T precedes the account's first statement, or if the latest statement of that account effective at or before T is a withdrawal (is_withdrawal = true); otherwise exactly one statement -- the latest one effective at or before T -- is the as-of answer. This is the checkable form of L1.deletion-withdraws' 'a question asked as of that moment or later has no answer for that record, rather than an older one.'",
+      "statement": "For any account_number and any moment T: there is no answer if T precedes the account's first statement, or if some withdrawal statement of that account has an effective_from at or before T -- regardless of whether an even later, ostensibly ordinary statement exists between the withdrawal and T, since such a later report is not treated as resuming the record, per L1.hole.deletion-reversal; otherwise exactly one statement -- the latest one effective at or before T, necessarily earlier than any withdrawal -- is the as-of answer. This is the checkable form of L1.deletion-withdraws' 'a question asked as of that moment or later has no answer for that record, rather than an older one,' bounded on its resuming side by L1.hole.deletion-reversal.",
       "derived_from": [
         "L1.as-of",
         "L1.deletion-withdraws"
@@ -1113,10 +1117,10 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping; L1.deletion-withdraws requires that once the latest such statement is a withdrawal, the as-of question has no answer at all rather than the withdrawal or an older statement standing in for one.",
+      "necessity": "L1.as-of defines the as-of answer as the latest statement that took effect at or before the queried moment, which is unique only if statements are ordered and non-overlapping; L1.deletion-withdraws requires that once a withdrawal has occurred at or before the queried moment, the as-of question has no answer at all rather than the withdrawal, an older statement, or a later ordinary statement standing in for one -- the last of which L1.hole.deletion-reversal forbids until answered.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review. The no-answer-on-withdrawal branch is not yet exercised by this job, since every statement it currently produces has is_withdrawal false, pending L1.hole.change-effective-time.",
-      "review_trigger": "an as-of query for an account_number returns more than one candidate statement, or returns a withdrawal statement itself as the answer instead of no answer",
+      "parallel_assumption": "Holds under the no-overlap and ordering assumptions above; if they fail, an as-of question could have more than one candidate answer, which should trigger review. The no-answer-on-withdrawal branch, and the reversal-foreclosure bound it now states explicitly, are not yet exercised by this job, since every statement it currently produces has is_withdrawal false, pending L1.hole.change-effective-time. This invariant reads L1.hole.deletion-reversal's 'until answered' sentence as licensing a monotonic, non-resuming answer rather than leaving the case undefined; if the business answers the hole to allow resumption, this invariant must be revisited.",
+      "review_trigger": "an as-of query for an account_number returns more than one candidate statement, returns a withdrawal statement itself as the answer instead of no answer, or returns a statement dated at or after a withdrawal of the same account_number as the answer",
       "sufficiency_group": "sg.history-asof"
     },
     {
@@ -1220,7 +1224,7 @@
     {
       "id": "inv.withdrawal_never_reaches_account_status",
       "entity": "logical.account",
-      "statement": "No logical.account.status value is ever populated by a handoff sourced from a withdrawal report: the action_type -> status handoff never fires for a withdrawal because raw.customer_mgmt_action's action_type vocabulary names no withdrawal action, the ce.account_changes.status_id -> status handoff never fires for a withdrawal because that source carries no withdrawal signal, and the deferred ca_st_id -> status handoff must read only I/U rows once undeferred, never a D row. This is the checkable form of L1.deletion-withdraws' 'it neither opens nor closes an account,' and the exact parallel of inv.account_statement_never_created_by_activity for L1.closed-account-activity's 'no trade creates a statement.'",
+      "statement": "No logical.account.status or logical.account.tax_treatment value is ever populated by a handoff sourced from a withdrawal report. For status: the action_type -> status handoff never fires for a withdrawal because raw.customer_mgmt_action's action_type vocabulary names no withdrawal action, the ce.account_changes.status_id -> status handoff never fires for a withdrawal because that source carries no withdrawal signal, and the deferred ca_st_id -> status handoff must read only I/U rows once undeferred, never a D row. For tax_treatment: the ce.account_changes.tax_status_id -> tax_treatment handoff never fires for a withdrawal for the same reason, and the deferred ca_tax_st -> tax_treatment handoff must likewise read only I/U rows once undeferred. This is the checkable form of L1.deletion-withdraws' 'it neither opens nor closes an account' and its broader 'creates nothing', and the exact parallel of inv.account_statement_never_created_by_activity for L1.closed-account-activity's 'no trade creates a statement.' The third L1.statement-content fact, which customer owns the account, is covered the same way by inv.account_owner_matches_producing_source's own withdrawal exception in sg.owner-standing, since owning_customer_number is that group's more specific member.",
       "derived_from": [
         "L1.deletion-withdraws",
         "L1.statement-content"
@@ -1230,10 +1234,10 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.deletion-withdraws requires that a withdrawal neither open nor close an account; since status is this job's only open/closed fact, the direct, deterministic check of that requirement is that no status value ever traces to a withdrawal report, whether by direct handoff or by being read as though it opened or closed the account.",
+      "necessity": "L1.deletion-withdraws requires that a withdrawal neither open nor close an account and create nothing; since status and tax_treatment are this job's other two L1.statement-content facts for an account besides ownership, the direct, deterministic check of that requirement is that neither value ever traces to a withdrawal report, whether by direct handoff or by being read as though it opened, closed, or re-taxed the account.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds while this job's only status-populating handoffs remain the two named candidate ones (neither sourced from a withdrawal-carrying field) plus the deferred ca_st_id handoff, whose own note requires it to skip D rows once undeferred. Not yet exercisable end to end, since no source this job reads today can produce a withdrawal statement at all, pending L1.hole.change-effective-time.",
-      "review_trigger": "a logical.account statement produced from a cdc_flag = 'D' row, or from any other withdrawal report, is found with a non-null status",
+      "parallel_assumption": "Holds while this job's only status- and tax_treatment-populating handoffs remain the candidate ones named above (none sourced from a withdrawal-carrying field) plus the deferred ca_st_id and ca_tax_st handoffs, whose own notes now require them to skip D rows once undeferred. Not yet exercisable end to end, since no source this job reads today can produce a withdrawal statement at all, pending L1.hole.change-effective-time.",
+      "review_trigger": "a logical.account statement produced from a cdc_flag = 'D' row, or from any other withdrawal report, is found with a non-null status or a non-null tax_treatment",
       "sufficiency_group": "sg.statement-content"
     },
     {
@@ -1340,24 +1344,25 @@
     {
       "id": "inv.account_owner_matches_producing_source",
       "entity": "logical.account",
-      "statement": "For every candidate-sourced account statement whose producing historical action carries c_id, owning_customer_number equals that action's c_id; for one produced by a constructed scenario row, which carries no owner field, owning_customer_number equals the value carried by the account's immediately preceding statement, per L1.omitted-facts-stand.",
+      "statement": "For every candidate-sourced account statement that is not itself a withdrawal (is_withdrawal = false) whose producing historical action carries c_id, owning_customer_number equals that action's c_id; for one produced by a constructed scenario row, which carries no owner field, owning_customer_number equals the value carried by the account's immediately preceding statement, per L1.omitted-facts-stand. A withdrawal statement (is_withdrawal = true) carries no owning_customer_number at all, since it asserts no standing fact, including who owns the account.",
       "derived_from": [
         "L1.owner-standing",
         "L1.statement-content",
         "L1.identity",
         "L1.history",
         "L1.constructed-scenarios",
-        "L1.omitted-facts-stand"
+        "L1.omitted-facts-stand",
+        "L1.deletion-withdraws"
       ],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.owner-standing and L1.statement-content require an account statement to name the customer who owns it; this invariant is the direct value-correctness check that owning_customer_number equals its producing historical action's own c_id where supplied, or the previous statement's value where a constructed scenario row omits it under L1.omitted-facts-stand, rather than some other statement's owner being substituted.",
+      "necessity": "L1.owner-standing and L1.statement-content require an account statement to name the customer who owns it; this invariant is the direct value-correctness check that owning_customer_number equals its producing historical action's own c_id where supplied, or the previous statement's value where a constructed scenario row omits it under L1.omitted-facts-stand, rather than some other statement's owner being substituted. L1.deletion-withdraws requires that a withdrawal assert no standing, including ownership, so a withdrawal statement is excepted from this requirement rather than being checked against a producing source's c_id or a carried-forward value.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds for statements sourced from the historical action file, whose account actions (NEW, ADDACCT, UPDACCT, CLOSEACCT) all carry c_id directly, and for statements sourced from ce.account_changes, whose carried-forward value can be checked against the account's immediately preceding statement, guaranteed to exist by L1.constructed-scenarios and inv.constructed_account_change_refers_to_known_account; not yet checkable for a statement whose only source is an incremental account change record, since that handoff remains deferred under L1.hole.change-effective-time.",
-      "review_trigger": "an account statement's owning_customer_number does not equal its producing historical action's c_id, or does not equal the immediately preceding statement's owning_customer_number where a constructed row omits the owner",
+      "parallel_assumption": "Holds for statements sourced from the historical action file, whose account actions (NEW, ADDACCT, UPDACCT, CLOSEACCT) all carry c_id directly, and for statements sourced from ce.account_changes, whose carried-forward value can be checked against the account's immediately preceding statement, guaranteed to exist by L1.constructed-scenarios and inv.constructed_account_change_refers_to_known_account; not yet checkable for a statement whose only source is an incremental account change record, since that handoff remains deferred under L1.hole.change-effective-time; nor does the withdrawal exception have any statement to except yet, since no source this job reads today can produce one.",
+      "review_trigger": "a non-withdrawal account statement's owning_customer_number does not equal its producing historical action's c_id, does not equal the immediately preceding statement's owning_customer_number where a constructed row omits the owner, or a statement with is_withdrawal true carries a non-null owning_customer_number",
       "sufficiency_group": "sg.owner-standing"
     },
     {
@@ -1449,7 +1454,8 @@
       "id": "sg.current-version",
       "parent_clauses": [
         "L1.current-version",
-        "L1.deletion-withdraws"
+        "L1.deletion-withdraws",
+        "L1.owner-standing"
       ],
       "members": [
         "type.statement_is_current",
@@ -1464,8 +1470,8 @@
         "inv.account_single_current"
       ],
       "mode": "all_required",
-      "coverage_claim": "The is_current flag, true for exactly the statement of a customer or account with no later statement and false for every other, together with the single-current invariants, is a direct restatement of L1.current-version's amended requirement: at most one current statement per customer and per account, exactly one while the record stands, and none once its latest statement is a withdrawal. The is_withdrawal flag is what lets is_current express that amendment: a withdrawal statement is never itself current, computed_within_entity for every statement this job currently produces (false for every raw.customer_mgmt_action- and ce.account_changes-sourced statement, since neither source's vocabulary or fields carry a withdrawal signal), and, once undeferred, from the matching CDC source's cdc_flag = 'D'. This determination depends on every statement's effective_from being known; where a statement's only source is an incremental CDC file, its order relative to the customer's or account's other statements is not yet resolvable, so its current-ness cannot yet be determined either.",
-      "gap": "L1.hole.change-effective-time. The none-once-withdrawn behavior is fully expressed by is_current's derivation rule and the single-current invariants, but unexercised: every statement this job currently produces has is_withdrawal false, because the only sources that could set it true (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) remain deferred under the same hole."
+      "coverage_claim": "The is_current flag, true for exactly the statement of a customer or account with no later statement and false for every other, together with the single-current invariants, is a direct restatement of L1.current-version's amended requirement: at most one current statement per customer and per account, exactly one while the record stands, and none once its latest statement is a withdrawal. The is_withdrawal flag is what lets is_current express that amendment: a withdrawal statement is never itself current, computed_within_entity for every statement this job currently produces (false for every raw.customer_mgmt_action- and ce.account_changes-sourced statement, since neither source's vocabulary or fields carry a withdrawal signal), and, once undeferred, from the matching CDC source's cdc_flag = 'D'. Both is_current rules are now also bounded so that a statement dated at or after a withdrawal of the same record is never treated as current, foreclosing currency from the withdrawal's own moment forward rather than only at the withdrawal statement itself, per L1.hole.deletion-reversal's 'until answered, no job may treat a report received after a withdrawal as resuming the record.' The account's is_current additionally incorporates the owner-standing cascade directly: an account statement is never current if its owning customer carries a withdrawal at or before that statement's own moment, which is where L1.owner-standing's extended second sentence is actually compiled, rather than left to sg.owner-standing's must-hold invariant with nothing producing it. This determination depends on every statement's effective_from being known; where a statement's only source is an incremental CDC file, its order relative to the customer's or account's other statements is not yet resolvable, so its current-ness cannot yet be determined either.",
+      "gap": "L1.hole.change-effective-time. The none-once-withdrawn behavior, the reversal-foreclosure bound, and the owner-cascade bound are all fully expressed by is_current's derivation rules and the single-current invariants, but unexercised: every statement this job currently produces has is_withdrawal false for both entities, because the only sources that could set it true (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) remain deferred under the same hole. Also bounded by L1.hole.deletion-reversal: the reversal-foreclosure reading this group's is_current rules now state is this job's own resolution of what the hole's 'until answered' sentence licenses (a monotonic, non-resuming reading, matching trade-lifecycle's treatment of the same hole), not an answer to the hole itself; should the business answer the hole to allow resumption, both rules must be revisited."
     },
     {
       "id": "sg.owner-standing",

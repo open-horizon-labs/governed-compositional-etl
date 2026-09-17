@@ -407,7 +407,7 @@
       "status": "assumed"
     },
     "cdc_flag": {
-      "D": "the record is marked deleted; meaning is L1.hole.deletions",
+      "D": "the record is marked deleted; meaning is L1.deletion-withdraws",
       "I": "the record is newly inserted in this incremental file",
       "U": "the record updates an existing record"
     },

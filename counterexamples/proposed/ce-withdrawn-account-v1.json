@@ -15,8 +15,9 @@
   "deterministic_assertion": "On both engines, with this scenario loaded: account 624 has no current statement and no as-of answer at or after 2017-07-08; its 2008-03-14 and 2010-02-07 statements and every as-of answer before 2017-07-08 match a run without the scenario; no holding_change exists for the pair (372101, 353232); and account 428's statements, trades and holding changes are byte-identical to a run without the scenario. Every must-hold audit is at zero and the two engines agree.",
   "expected": {
     "account_624": "Its 2008-03-14 and 2010-02-07 statements stand with their standing facts byte-identical to a run without this scenario. 624 has no current statement. An as-of question at any moment before 2017-07-08 answers exactly as it did without the scenario; an as-of question at or after 2017-07-08 has no answer for 624 rather than the 2010 statement.",
-    "deletion_only_holding": "No logical.holding_change row exists for the pair (372101, 353232), and it contributes to no account or customer position. No audit reports it as a violation: under the clause there was never a holding to withdraw, so its absence is the required behavior and an audit should hold that absence rather than tolerate it.",
+    "deletion_only_holding": "The pair (372101, 353232) has exactly one report, carrying flag D, and is therefore genuinely withdrawal-only: the received report I|1488406 is on the pair (353232, 372101), the reverse ordering and a different partition key, which a review mistook for a report on this pair. Measured: raw.holding_history in this scenario holds (353232,353232) with a null flag, (353232,372101) with I, and (372101,353232) with D alone. So no logical.holding_change row exists for it and it contributes to no position, and inv.holding_change_absent_for_withdrawn_only_pair is not vacuous on this fixture.",
     "everything_else": "Account 428, its two statements plus the counterexample rollover statement, trades 353232 and 372101 with their attribution and outcomes, and the holding changes already derived from them are byte-identical to a run without this scenario. A withdrawal does not reach back through what already followed.",
+    "later_withdrawal_pair": "The pair (353232, 372101) has a received I report and now a later D report. It MUST still have its logical.holding_change row, with the quantities its I report stated, because a withdrawal does not reach back through what already followed. A model that drops it is committing the defect the narrowing from any-D to D-only exists to fix. Whether the D report may additionally be READ -- to move the quantities or to mark the holding -- is L1.hole.deletion-reversal's case and is not asserted here.",
     "reported_rows": "inv.customer_withdrawal_with_standing_accounts_reported is expected to report one row per account that still has a standing statement at or after the withdrawal moment of the customer that owns it, naming the customer number, the account number, and the withdrawal moment. On this scenario the expected row count is ZERO and the reason matters: this document withdraws account 624, not its owner customer 238, and the invariant reports withdrawn customers with standing accounts. The row-producing case is a withdrawal of customer 238 while accounts 428 and 624 still stand, which would report two rows."
   },
   "fixture": {
@@ -46,6 +47,16 @@
           "hh_h_t_id": 372101,
           "hh_t_id": 353232,
           "note": "A holding pair whose only report is a deletion, over two trades the brokerage already has. This is the case the positions Developer raised in questions_for_authority. The quantities are plausible and must not be used: the clause says there was never a holding here to withdraw."
+        },
+        {
+          "batch_date": "2017-07-08",
+          "cdc_dsn": 1488502,
+          "cdc_flag": "D",
+          "hh_after_qty": 0,
+          "hh_before_qty": 5225,
+          "hh_h_t_id": 353232,
+          "hh_t_id": 372101,
+          "note": "A withdrawal of a holding pair that already has a received I report (cdc_dsn 1488406), giving the I-then-D ordering. This is the case the recompile turned from dropped into claimed: the old audit abstained on a whole pair whenever ANY report was D, which dropped a pair with genuine pre-withdrawal history, and the no-reach-back sentence forbids that. Added because a review found the conjunct that was the point of the recompile had no witness in any fixture -- correctly, unlike its companion claim that this document built no D-only pair at all."
         }
       ]
     }

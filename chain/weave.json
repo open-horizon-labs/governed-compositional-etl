@@ -151,7 +151,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time. The none-once-withdrawn behavior is fully expressed by is_current's derivation rule and the single-current invariants, but unexercised: every statement this job currently produces has is_withdrawal false, because the only sources that could set it true (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) remain deferred under the same hole.",
+      "gap": "L1.hole.change-effective-time. The none-once-withdrawn behavior, the reversal-foreclosure bound, and the owner-cascade bound are all fully expressed by is_current's derivation rules and the single-current invariants, but unexercised: every statement this job currently produces has is_withdrawal false for both entities, because the only sources that could set it true (raw.customer_cdc.cdc_flag, raw.account_cdc.cdc_flag) remain deferred under the same hole. Also bounded by L1.hole.deletion-reversal: the reversal-foreclosure reading this group's is_current rules now state is this job's own resolution of what the hole's 'until answered' sentence licenses (a monotonic, non-resuming reading, matching trade-lifecycle's treatment of the same hole), not an answer to the hole itself; should the business answer the hole to allow resumption, both rules must be revisited.",
       "group": "sg.current-version",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -193,7 +193,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity bounds latest_change reliance on file production order rather than a report carrying which file delivered it.",
+      "gap": "L1.hole.batch-identity bounds latest_change reliance on file production order rather than a report carrying which file delivered it. L1.hole.deletion-reversal bounds this group's candidate set for a trade with an anchored cdc_flag D report: an anchored I/U report received after that D report is excluded from latest_change rather than applied, because applying it would treat it as resuming a withdrawn trade's assertion, which the hole leaves undecided; the outcome facts stand as they were at the trade's last anchored I/U report before the D.",
       "group": "sg.outcome",
       "job": "trade-lifecycle",
       "relation": "named-gap"
