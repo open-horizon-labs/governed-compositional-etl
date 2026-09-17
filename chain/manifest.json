@@ -1,12 +1,13 @@
 {
   "changed_clauses": [
-    "L1.constructed-scenarios"
+    "L1.omitted-facts-stand",
+    "L1.placement-moment"
   ],
   "jobs": {
     "ownership-history": {
       "elements": {
         "sg.constructed-scenarios": {
-          "cache": "stale",
+          "cache": "hit",
           "coverage_claim": "The handoffs drawing from the labeled ce.account_changes source that are members of this group establish this account statement's identity, effective time, and constructed label: account_id populates account_number and action_at populates effective_from, satisfying L1.identity's persistent-identity requirement and L1.history/L1.as-of's dated, ordered statement requirement for this source specifically; provenance populates the account statement's own provenance field, and only ever from this source, while no raw-sourced handoff ever populates it, satisfying L1.constructed-scenarios' 'labeled... wherever it appears' and 'never mixed into the received records.' The standing facts this source's rows also carry, status_id and tax_status_id, are populated by handoffs that are members of sg.statement-content instead, since content coverage is the more specific claim owned there; this group's coverage is limited to identity, history/as-of, and labeling for this source.",
           "derived_from": [
             "L1.as-of",
@@ -16,7 +17,6 @@
           ],
           "fingerprint": "3d2d119eb0c026c25849b1a3d42e160ec4730ceb03b9844a0f7f52f185724d8d",
           "gap": "none",
-          "jev": null,
           "justifications": {
             "handoff.ce.account_changes.account_id->logical.account.account_number": {
               "necessity": "the account this labeled scenario is about must carry the same identity role as any received account statement; account_id is this constructed source's account number.",
@@ -55,9 +55,6 @@
             "inv.constructed_scenarios_labeled",
             "logical.account.provenance",
             "type.constructed_scenario_label"
-          ],
-          "touched_clauses": [
-            "L1.constructed-scenarios"
           ]
         },
         "sg.current-version": {
@@ -224,16 +221,17 @@
         },
         "sg.owner-standing": {
           "cache": "stale",
-          "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation, which continues the owner recorded on the account's immediately preceding statement because L1.identity holds that a later statement is about the same account and L1.history holds that an unstated fact is not overwritten but carried beside the earlier statement. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies.",
+          "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation under L1.omitted-facts-stand, which holds that a constructed change not mentioning the owner leaves it as it last stood. L1.identity and L1.history make 'the account's immediately preceding statement' well defined, and L1.constructed-scenarios together with inv.constructed_account_change_refers_to_known_account guarantee that a preceding statement exists to carry from. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment \u2014 exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies.",
           "derived_from": [
             "L1.as-of",
             "L1.constructed-scenarios",
             "L1.history",
             "L1.identity",
+            "L1.omitted-facts-stand",
             "L1.owner-standing",
             "L1.statement-content"
           ],
-          "fingerprint": "3994630db469f0875234399bc92bd2bdb7fcf5ede4e90c3cfd2f2c30892f7f42",
+          "fingerprint": "6e51664dde65dad88657828b65aeca4ab1249082b1b2354bba36df55fb29c48c",
           "gap": "L1.hole.owner-change-reversions-account",
           "jev": null,
           "justifications": {
@@ -250,7 +248,7 @@
               "parallel_assumption": "Holds as long as the account's owning_customer_number is known for the statement in question; where it is not yet derivable, the paired customer as-of answer cannot be produced either."
             },
             "logical.account.owning_customer_number": {
-              "necessity": "L1.owner-standing requires that an account's standing include its owner's standing, and L1.statement-content names 'which customer owns it' as part of what an account statement carries; this attribute names which customer that is so the customer's as-of statement can be looked up for the same moment. Where a statement's source does not supply this fact directly, this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.identity and L1.history.",
+              "necessity": "L1.owner-standing requires that an account's standing include its owner's standing, and L1.statement-content names 'which customer owns it' as part of what an account statement carries; this attribute names which customer that is so the customer's as-of statement can be looked up for the same moment. Where a statement's source does not supply this fact directly, this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.omitted-facts-stand, L1.identity, and L1.history.",
               "parallel_assumption": "Credible for whatever account statements exist; whether a change to the customer alone produces a new account statement carrying this same value is unresolved. The carried-forward derivation is credible while a change that does not mention the owner is understood to leave the owner unchanged rather than unknown; if the business intends otherwise, this derivation must be revisited."
             },
             "type.account_owner_reference": {
@@ -266,18 +264,20 @@
             "type.account_owner_reference"
           ],
           "touched_clauses": [
-            "L1.constructed-scenarios"
+            "L1.omitted-facts-stand"
           ]
         },
         "sg.statement-content": {
           "cache": "stale",
-          "coverage_claim": "For every customer statement sourced from the historical action file, this job hands off tier directly from c_tier and, from the same row's action_type, derives active/inactive status using the anchored action_type_meanings (NEW, UPDCUST: active; INACT: inactive), so both standing facts L1.statement-content names for a customer are populated wherever this source supplies a statement. For every account statement sourced from the historical action file, this job hands off tax treatment directly from ca_tax_st and derives open/closed status from action_type (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed), populating both facts L1.statement-content names for an account; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes \u2014 the one account source with no pending effective-time hole of its own \u2014 this job hands off status and tax treatment directly from that source's own status_id and tax_status_id fields, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred.",
+          "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes \u2014 the one account source with no pending effective-time hole of its own \u2014 status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred.",
           "derived_from": [
             "L1.constructed-scenarios",
             "L1.history",
+            "L1.identity",
+            "L1.omitted-facts-stand",
             "L1.statement-content"
           ],
-          "fingerprint": "5922a01467a5b3dae3c289ea981a53a4e08a13c6eab86d31469b056fbed4a8cb",
+          "fingerprint": "bc07b10cbb9aed9d0ce1043004c3b2b17a013cce14e205e14557e97e4256a098",
           "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action.",
           "jev": null,
           "justifications": {
@@ -322,28 +322,28 @@
               "parallel_assumption": "Credible while ca_tax_st on this file's rows records the tax treatment the brokerage considers the account to hold as of that row's action_ts."
             },
             "inv.account_statement_has_content": {
-              "necessity": "L1.statement-content requires a dated statement to carry the enumerated standing facts, not merely exist as an empty shell; this invariant is the direct check that status and tax_treatment are populated wherever the source supplies them.",
-              "parallel_assumption": "Holds for statements sourced from a feed that supplies tax_treatment directly and supplies or, through the anchored action_type_meanings, entails status; the historical action file now satisfies both, through ca_tax_st and the interpreted action_type, and the labeled constructed scenario ce.account_changes satisfies both directly through status_id and tax_status_id. Does not yet hold for a statement whose only source is an incremental account change record, since that record's effective moment is not yet resolvable (L1.hole.change-effective-time) and its content handoffs remain deferred."
+              "necessity": "L1.statement-content requires a dated statement to carry the enumerated standing facts, not merely exist as an empty shell; this invariant is the direct check that status and tax_treatment are populated on every candidate-sourced statement, whether supplied directly by the source or carried forward under L1.omitted-facts-stand when the producing action omits the field.",
+              "parallel_assumption": "Holds unconditionally for statements sourced from the historical action file: NEW, ADDACCT, and UPDACCT carry ca_tax_st directly, and CLOSEACCT omits it, so tax_treatment is carried forward from the account's preceding statement under L1.omitted-facts-stand; status is entailed by the anchored action_type meaning on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Also holds unconditionally for statements sourced from the labeled constructed scenario ce.account_changes, which carries both status_id and tax_status_id directly on every row. Does not yet hold for a statement whose only source is an incremental account change record, since that record's effective moment is not yet resolvable (L1.hole.change-effective-time) and its content handoffs remain deferred."
             },
             "inv.customer_statement_has_content": {
-              "necessity": "L1.statement-content requires a dated statement to carry the enumerated standing facts, not merely exist as an empty shell; this invariant is the direct check that status and tier are populated wherever the source supplies them.",
-              "parallel_assumption": "Holds for statements sourced from a feed that supplies tier directly and supplies or, through the anchored action_type_meanings, entails status; the historical action file now satisfies both, through c_tier and the interpreted action_type. Does not yet hold for a statement whose only source is an incremental customer change record, since that record's effective moment is not yet resolvable (L1.hole.change-effective-time) and its content handoffs remain deferred."
+              "necessity": "L1.statement-content requires a dated statement to carry the enumerated standing facts, not merely exist as an empty shell; this invariant is the direct check that status and tier are populated on every candidate-sourced statement, whether supplied directly by the source or carried forward under L1.omitted-facts-stand when the producing action omits the field.",
+              "parallel_assumption": "Holds unconditionally for statements sourced from the historical action file: NEW and UPDCUST carry c_tier directly, and INACT omits it, so tier is carried forward from the customer's preceding statement under L1.omitted-facts-stand; status is entailed by the anchored action_type meaning on every one of NEW, UPDCUST, and INACT. Does not yet hold for a statement whose only source is an incremental customer change record, since that record's effective moment is not yet resolvable (L1.hole.change-effective-time) and its content handoffs remain deferred."
             },
             "logical.account.status": {
               "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this attribute carries that fact directly on the statement.",
               "parallel_assumption": "Credible where the source of this statement supplies its open/closed fact directly, or entails it through a stated code meaning: the historical action file entails it through the anchored meaning of action_type (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed), the labeled constructed scenario supplies it directly through status_id, and an incremental account change record supplies it directly through ca_st_id though its effective moment is not yet resolvable (L1.hole.change-effective-time). Whether a CLOSEACCT-derived closed status remains accurate after any later, unrecorded reopening is bounded by L1.hole.closed-account-activity, not resolved by any handoff."
             },
             "logical.account.tax_treatment": {
-              "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this attribute carries that fact directly on the statement.",
-              "parallel_assumption": "Credible where the source of this statement supplies its own tax-treatment fact."
+              "necessity": "L1.statement-content requires an account's dated statement to carry its tax treatment; this attribute carries that fact directly on the statement. Where the producing action omits this field (as CLOSEACCT does), this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.omitted-facts-stand, L1.identity, and L1.history.",
+              "parallel_assumption": "Credible where the source of this statement supplies its own tax-treatment fact directly, or, when the producing action omits it, per the carried-forward derivation; credible while an action's omission of tax treatment is understood to mean the fact is unchanged rather than unknown. The preceding statement this derivation carries from is itself sourced from the historical action file only while incremental account CDC content handoffs stay deferred under L1.hole.change-effective-time; should they be promoted to candidate, this derivation must be revisited for how it identifies the immediately preceding statement."
             },
             "logical.customer.status": {
               "necessity": "L1.statement-content requires a customer's dated statement to carry whether the customer is active or inactive; this attribute carries that fact directly on the statement.",
               "parallel_assumption": "Credible where the source of this statement supplies its active/inactive fact directly, or entails it through a stated code meaning: the historical action file entails it through the anchored meaning of action_type (NEW, UPDCUST: active; INACT: inactive), and an incremental customer change record supplies it directly through c_st_id, though the latter's effective moment is not yet resolvable (L1.hole.change-effective-time)."
             },
             "logical.customer.tier": {
-              "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this attribute carries that fact directly on the statement.",
-              "parallel_assumption": "Credible where the source of this statement supplies its own tier fact."
+              "necessity": "L1.statement-content requires a customer's dated statement to carry the customer's tier; this attribute carries that fact directly on the statement. Where the producing action omits this field (as INACT does), this attribute's own carried_forward_from_previous_statement derivation supplies it instead, per L1.omitted-facts-stand, L1.identity, and L1.history.",
+              "parallel_assumption": "Credible where the source of this statement supplies its own tier fact directly, or, when the producing action omits it, per the carried-forward derivation; credible while an action's omission of tier is understood to mean the fact is unchanged rather than unknown. The preceding statement this derivation carries from is itself sourced from the historical action file only while incremental customer CDC content handoffs stay deferred under L1.hole.change-effective-time; should they be promoted to candidate, this derivation must be revisited for how it identifies the immediately preceding statement."
             },
             "type.account_standing_status": {
               "necessity": "L1.statement-content enumerates 'whether the account is open or closed' as part of the standing facts an account's dated statement carries; a dedicated status value is indispensable to express that specific enumerated fact, distinct from tax treatment and ownership.",
@@ -385,13 +385,12 @@
             "type.customer_tier"
           ],
           "touched_clauses": [
-            "L1.constructed-scenarios"
+            "L1.omitted-facts-stand"
           ]
         }
       },
       "l3_reprojection_required": true,
       "stale": [
-        "sg.constructed-scenarios",
         "sg.owner-standing",
         "sg.statement-content"
       ],
@@ -401,7 +400,289 @@
       "status": "no-l2"
     },
     "trade-lifecycle": {
-      "status": "no-l2"
+      "elements": {
+        "sg.constructed-scenarios": {
+          "cache": "stale-new",
+          "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, and inv.trade_not_constructed restates that every trade statement this model can produce originates from raw.trade_cdc alone, satisfying L1.constructed-scenarios' labeling and non-mixing requirement vacuously for this job as it stands. Because owning_account_effective_from and owning_customer_number (sg.placement-moment) are references to the upstream account statement, not copies of its facts, a trade whose ownership pins a statement sourced from ce.account_changes carries that statement's own provenance label reachable through the reference; this job introduces no separate, unlabeled copy that could obscure it.",
+          "derived_from": [
+            "L1.constructed-scenarios"
+          ],
+          "fingerprint": "7cb9a88f41dea6fedfe0c170e2decb1f4eb7b977fdf1dc044685434aa5fcf79c",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "inv.trade_not_constructed": {
+              "necessity": "L1.constructed-scenarios requires a constructed scenario to be labeled wherever it appears and never mixed into received records; with no constructed trade source anchored, this job has no mechanism that could introduce an unlabeled constructed fact into the trade entity, satisfying the clause vacuously for this job as it stands.",
+              "parallel_assumption": "Credible while sources-v1.json continues to anchor no labeled constructed source for trades; if one is added, this invariant and the model must be revisited."
+            }
+          },
+          "members": [
+            "inv.trade_not_constructed"
+          ],
+          "touched_clauses": []
+        },
+        "sg.outcome": {
+          "cache": "stale-new",
+          "coverage_claim": "L1.lifecycle-mutates-outcome enumerates exactly six outcome facts -- status, executed price, fees, commission, tax, quantity -- that change as a trade moves through its life. Each is handed off from raw.trade_cdc's own field for that fact (t_st_id, t_trade_price, t_chrg, t_comm, t_tax, t_qty respectively), typed mutable, and a later CDC row for the same trade_number replaces each with its newly reported value, which inv.trade_outcome_updates_in_place restates directly. All six facts the clause names are covered by a member of this group; the clause names no others.",
+          "derived_from": [
+            "L1.lifecycle-mutates-outcome"
+          ],
+          "fingerprint": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "handoff.raw.trade_cdc.t_chrg->logical.trade.fees": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's fees; raw.trade_cdc's t_chrg is the brokerage's own recorded charge value on each report, the fees fact the clause names.",
+              "parallel_assumption": "Credible while t_chrg on a trade_cdc row names the fees the brokerage charges on the trade, as of that report."
+            },
+            "handoff.raw.trade_cdc.t_comm->logical.trade.commission": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's commission; raw.trade_cdc's t_comm is the brokerage's own recorded commission value on each report.",
+              "parallel_assumption": "Credible while t_comm on a trade_cdc row names the commission charged on the trade, as of that report."
+            },
+            "handoff.raw.trade_cdc.t_qty->logical.trade.quantity": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's quantity; raw.trade_cdc's t_qty is the brokerage's own recorded quantity value on each report.",
+              "parallel_assumption": "Credible while t_qty on a trade_cdc row names the trade's quantity, as of that report."
+            },
+            "handoff.raw.trade_cdc.t_st_id->logical.trade.status": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a later report of a trade to update its status; raw.trade_cdc's t_st_id is the brokerage's own recorded lifecycle-status value on each report of the trade.",
+              "parallel_assumption": "Credible while t_st_id on a trade_cdc row names the trade's lifecycle status as of that report."
+            },
+            "handoff.raw.trade_cdc.t_tax->logical.trade.tax": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's tax; raw.trade_cdc's t_tax is the brokerage's own recorded tax value on each report.",
+              "parallel_assumption": "Credible while t_tax on a trade_cdc row names the tax owed on the trade, as of that report."
+            },
+            "handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a later report to update the trade's executed price; raw.trade_cdc's t_trade_price is the brokerage's own recorded executed-price value on each report, distinct from t_bid_price, which records the price at which the trade was requested rather than executed and this job does not hand off.",
+              "parallel_assumption": "Credible while t_trade_price on a trade_cdc row names the price at which the trade actually executed, as of that report."
+            },
+            "inv.trade_outcome_updates_in_place": {
+              "necessity": "L1.lifecycle-mutates-outcome states directly that a later report of the same trade updates the outcome; this invariant is the restatement of that update-in-place requirement over the six named outcome facts.",
+              "parallel_assumption": "Holds while every raw.trade_cdc row for a given t_id is a later report about that same trade rather than an unrelated new trade reusing the number."
+            },
+            "logical.trade.commission": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a trade's outcome, including its commission, to change as it moves through its life and requires a later report to update that fact; this attribute carries commission directly and is replaced by each later report.",
+              "parallel_assumption": "Credible while a trade report supplies its own commission fact once determinable; a report of a trade not yet executed may carry no commission value yet, which the clause does not forbid."
+            },
+            "logical.trade.executed_price": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a trade's outcome, including its executed price, to change as it moves through its life and requires a later report to update that fact; this attribute carries executed price directly and is replaced by each later report.",
+              "parallel_assumption": "Credible while a trade report supplies its own executed-price fact once the trade has executed; a report of a trade that has not yet executed may carry no executed price yet, which the clause does not forbid."
+            },
+            "logical.trade.fees": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a trade's outcome, including its fees, to change as it moves through its life and requires a later report to update that fact; this attribute carries fees directly and is replaced by each later report.",
+              "parallel_assumption": "Credible while a trade report supplies its own fees fact once determinable; a report of a trade not yet executed may carry no fees value yet, which the clause does not forbid."
+            },
+            "logical.trade.quantity": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a trade's outcome, including its quantity, to change as it moves through its life and requires a later report to update that fact; this attribute carries quantity directly and is replaced by each later report.",
+              "parallel_assumption": "Credible while every trade report carries a determinable quantity, from the moment it is placed onward."
+            },
+            "logical.trade.status": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a trade's outcome, including its status, to change as it moves through its life and requires a later report to update that fact; this attribute carries status directly and is replaced by each later report.",
+              "parallel_assumption": "Credible while every trade report carries a determinable lifecycle status (pending, submitted, completed, or cancelled)."
+            },
+            "logical.trade.tax": {
+              "necessity": "L1.lifecycle-mutates-outcome requires a trade's outcome, including its tax, to change as it moves through its life and requires a later report to update that fact; this attribute carries tax directly and is replaced by each later report.",
+              "parallel_assumption": "Credible while a trade report supplies its own tax fact once determinable; a report of a trade not yet executed may carry no tax value yet, which the clause does not forbid."
+            },
+            "type.trade_commission": {
+              "necessity": "L1.lifecycle-mutates-outcome names commission as one of the outcome facts that changes through a trade's life; a dedicated value is indispensable to express that specific fact, distinct from fees and tax.",
+              "parallel_assumption": "Credible while the brokerage records a single commission value per trade report, replaced rather than accumulated."
+            },
+            "type.trade_executed_price": {
+              "necessity": "L1.lifecycle-mutates-outcome names executed price as one of the outcome facts that changes through a trade's life; a dedicated value is indispensable to express that specific fact, distinct from any bid or requested price.",
+              "parallel_assumption": "Credible while the brokerage records a single executed-price value per trade report, replaced rather than accumulated."
+            },
+            "type.trade_fees": {
+              "necessity": "L1.lifecycle-mutates-outcome names fees as one of the outcome facts that changes through a trade's life; a dedicated value is indispensable to express that specific fact, distinct from commission and tax.",
+              "parallel_assumption": "Credible while the brokerage records a single fees value per trade report, replaced rather than accumulated."
+            },
+            "type.trade_quantity": {
+              "necessity": "L1.lifecycle-mutates-outcome names quantity as one of the outcome facts that changes through a trade's life; a dedicated value is indispensable to express that specific fact.",
+              "parallel_assumption": "Credible while the brokerage records a single quantity value per trade report, replaced rather than accumulated."
+            },
+            "type.trade_status": {
+              "necessity": "L1.lifecycle-mutates-outcome names status as one of the outcome facts that changes as a trade moves through its life (pending, submitted, completed, cancelled); a dedicated value is indispensable to express that fact, replaced by a later report rather than kept beside it.",
+              "parallel_assumption": "Credible while the brokerage's own status coding names the trade's current lifecycle stage on every report."
+            },
+            "type.trade_tax": {
+              "necessity": "L1.lifecycle-mutates-outcome names tax as one of the outcome facts that changes through a trade's life; a dedicated value is indispensable to express that specific fact, distinct from fees and commission.",
+              "parallel_assumption": "Credible while the brokerage records a single tax value per trade report, replaced rather than accumulated."
+            }
+          },
+          "members": [
+            "handoff.raw.trade_cdc.t_chrg->logical.trade.fees",
+            "handoff.raw.trade_cdc.t_comm->logical.trade.commission",
+            "handoff.raw.trade_cdc.t_qty->logical.trade.quantity",
+            "handoff.raw.trade_cdc.t_st_id->logical.trade.status",
+            "handoff.raw.trade_cdc.t_tax->logical.trade.tax",
+            "handoff.raw.trade_cdc.t_trade_price->logical.trade.executed_price",
+            "inv.trade_outcome_updates_in_place",
+            "logical.trade.commission",
+            "logical.trade.executed_price",
+            "logical.trade.fees",
+            "logical.trade.quantity",
+            "logical.trade.status",
+            "logical.trade.tax",
+            "type.trade_commission",
+            "type.trade_executed_price",
+            "type.trade_fees",
+            "type.trade_quantity",
+            "type.trade_status",
+            "type.trade_tax"
+          ],
+          "touched_clauses": []
+        },
+        "sg.placement-moment": {
+          "cache": "stale-new",
+          "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time: placed_at, handed off from raw.trade_cdc's t_dts with selector first_encounter_only, carries exactly that moment, frozen. L1.attribution-at-placement requires the trade's ownership to reference the account (and through it the customer) as they stood at that moment, not the account's current statement; L1.as-of defines that answer as the upstream logical.account statement whose effective_from is the latest at or before placed_at. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies that exact statement. owning_customer_number is handed off directly from that same pinned statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it, satisfying the 'and through it the customer' half of the clause. inv.trade_placement_reference_frozen restates that all three attributes are set once, at first encounter, and never replaced. L1.placement-moment also calls for a first_seen_late marker distinguishing a trade whose first-encountered report is not its true earliest lifecycle report; this job does not derive that marker because sources-v1.json anchors no meaning for raw.trade_cdc's cdc_flag or t_st_id codes that would let this job detect a skipped earlier report without inventing code meanings the anchors do not state -- left as a note on logical.trade rather than modeled or blocked by a question, per this cycle's authority.",
+          "derived_from": [
+            "L1.as-of",
+            "L1.attribution-at-placement",
+            "L1.identity",
+            "L1.placement-moment"
+          ],
+          "fingerprint": "575fd51c11231f019a7ba75110493a7a49ff655548c2b2762fa405757deef531",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from": {
+              "necessity": "L1.attribution-at-placement requires the trade's ownership reference to name the account as it stood at the moment of placement; L1.as-of defines that answer as the latest statement that took effect at or before the queried moment. This handoff selects, among the upstream ownership-history statements of this trade's owning_account_number, the one whose effective_from is the latest at or before placed_at, and freezes that effective_from as the second half of the (account_number, effective_from) reference identifying the specific account statement -- not the account's current statement.",
+              "parallel_assumption": "Credible while the upstream logical.account entity carries a resolvable statement of this trade's owning account with an effective_from at or before placed_at."
+            },
+            "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number": {
+              "necessity": "L1.attribution-at-placement requires that, through the account, the trade also belongs to the customer as that customer stood at the same moment; the account statement already pinned by owning_account_number and owning_account_effective_from carries, as its own owning_customer_number, exactly that customer. This handoff freezes that same value directly off the pinned statement rather than performing an independent as-of lookup, so the customer named can never be inconsistent with the account statement this trade's ownership pins.",
+              "parallel_assumption": "Credible wherever the account statement pinned by owning_account_number and owning_account_effective_from itself has a resolvable owning_customer_number."
+            },
+            "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at": {
+              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time; raw.trade_cdc's t_dts is that report's own recorded time, and this handoff takes it only from the trade's first-encountered report, never a later one.",
+              "parallel_assumption": "Credible while t_dts on a trade's first-encountered report is the report's own stated time of that event, not a receipt or batch-load time."
+            },
+            "inv.trade_placement_reference_frozen": {
+              "necessity": "L1.placement-moment fixes placement to the earliest held report's own time, and L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the placement-moment reference attributes.",
+              "parallel_assumption": "Holds while a later raw.trade_cdc report of a known trade never carries an earlier event time than the one already recorded as placed_at."
+            },
+            "logical.trade.owning_account_effective_from": {
+              "necessity": "L1.attribution-at-placement requires the account to be referenced as it stood at placement, not merely named; together with owning_account_number, this attribute completes the (account_number, effective_from) pair that identifies the specific account statement in effect at placed_at, per L1.as-of's 'latest statement that took effect at or before' the queried moment.",
+              "parallel_assumption": "Credible while the upstream logical.account entity carries a statement of this trade's owning account with an effective_from at or before placed_at; not yet resolvable where the correct statement is one of ownership-history's own deferred CDC-sourced account statements."
+            },
+            "logical.trade.owning_customer_number": {
+              "necessity": "L1.attribution-at-placement requires that, through the account, the trade also belongs to the customer as that customer stood at the same moment; this attribute carries that customer directly from the same account statement owning_account_number and owning_account_effective_from already pin, so it can never name a customer inconsistent with that statement.",
+              "parallel_assumption": "Credible while the account statement pinned by owning_account_number and owning_account_effective_from has a resolvable owning_customer_number."
+            },
+            "logical.trade.placed_at": {
+              "necessity": "L1.placement-moment requires placement to be the moment stated by the earliest report of the trade the brokerage holds, in that report's own time; this attribute carries that moment, set once at first encounter and never replaced by a later report.",
+              "parallel_assumption": "Credible while the trade's first-encountered report states its own event time."
+            },
+            "type.trade_owning_account_effective_from": {
+              "necessity": "L1.attribution-at-placement requires the trade's ownership to reference the account as it stood at placement, not merely which account; L1.as-of defines that answer as the account's statement whose effective_from is the latest at or before the queried moment; a dedicated value carrying that specific effective_from is required to complete the (account_number, effective_from) reference that identifies the exact account statement. L1.lifecycle-mutates-outcome states directly that a later report of the same trade 'leaves the ownership as first recorded'; on this entity (incremental_by_identity, not versioned), that reference is fixed once at first encounter and never replaced by a later report, which is exactly the frozen_from_first_encounter role -- not per_statement, which describes a value's own kept-history nature on a versioned entity, a role that belongs to the account entity this value is drawn from, not to how it behaves once pinned here.",
+              "parallel_assumption": "Credible while the upstream logical.account entity carries a statement of this trade's owning account whose effective_from is at or before placed_at."
+            },
+            "type.trade_owning_customer_reference": {
+              "necessity": "L1.attribution-at-placement requires that, through the account, the trade also belongs to the customer as that customer stood at the same moment; a dedicated value naming that customer is required to express that half of the clause. L1.lifecycle-mutates-outcome states directly that a later report of the same trade 'leaves the ownership as first recorded'; on this entity (incremental_by_identity, not versioned), that customer reference is fixed once at first encounter and never replaced by a later report, which is exactly the frozen_from_first_encounter role -- not per_statement, which describes the value's own kept-history nature on the account entity it is drawn from, not how it behaves once pinned here.",
+              "parallel_assumption": "Credible while the account statement this trade's ownership pins has a resolvable owning customer."
+            },
+            "type.trade_placed_at": {
+              "necessity": "L1.placement-moment requires the trade's placement to be the moment stated by the earliest report of it the brokerage holds, in that report's own recorded time. L1.attribution-at-placement requires that a later change does not move a trade that was already placed; since this moment is what selects the account statement the trade references, it must be set once and never replaced, or a later report could shift which statement is selected and move the trade's ownership.",
+              "parallel_assumption": "Credible while the earliest report of a trade the brokerage holds states its own time, and that time is treated as the placement moment even when it is not the trade's true first lifecycle event (the first-seen-late case L1.placement-moment names)."
+            }
+          },
+          "members": [
+            "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
+            "handoff.logical.account.owning_customer_number->logical.trade.owning_customer_number",
+            "handoff.raw.trade_cdc.t_dts->logical.trade.placed_at",
+            "inv.trade_placement_reference_frozen",
+            "logical.trade.owning_account_effective_from",
+            "logical.trade.owning_customer_number",
+            "logical.trade.placed_at",
+            "type.trade_owning_account_effective_from",
+            "type.trade_owning_customer_reference",
+            "type.trade_placed_at"
+          ],
+          "touched_clauses": [
+            "L1.placement-moment"
+          ]
+        },
+        "sg.trade-identity": {
+          "cache": "stale-new",
+          "coverage_claim": "Every raw.trade_cdc row carries t_id, the brokerage's own trade number, handed off unchanged into trade_number with the identity mutation role; because this value is identical across every CDC row reporting the same trade, no later report ever produces a 'different' trade, satisfying L1.identity's persistence requirement for the trade entity.",
+          "derived_from": [
+            "L1.identity"
+          ],
+          "fingerprint": "6b52f9f4ab8b68689702ab59805148623986477305549e876d702457b4851253",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "handoff.raw.trade_cdc.t_id->logical.trade.trade_number": {
+              "necessity": "L1.identity requires the trade's own number as its identity; raw.trade_cdc carries t_id as the brokerage's trade number on every row reporting that trade, including its first-encountered row and every later report.",
+              "parallel_assumption": "Credible while t_id values in this file are the brokerage's real trade numbers and not reused for different trades."
+            },
+            "logical.trade.trade_number": {
+              "necessity": "L1.identity requires a value that identifies which trade a report is about and stays the same across every later report of that trade; this attribute carries the identity type for exactly that purpose.",
+              "parallel_assumption": "Credible while the brokerage's trade number is stable and unique per trade."
+            },
+            "type.trade_number": {
+              "necessity": "L1.identity requires that a change to a trade does not make it a different trade; a value invariant across every report of the same trade is required to express that persistence, which is exactly the identity mutation role.",
+              "parallel_assumption": "Credible while the brokerage's trade number is never reassigned to a different trade; if a trade number were reused for a different trade this role would misidentify reports, which should trigger review."
+            }
+          },
+          "members": [
+            "handoff.raw.trade_cdc.t_id->logical.trade.trade_number",
+            "logical.trade.trade_number",
+            "type.trade_number"
+          ],
+          "touched_clauses": []
+        },
+        "sg.trade-shape": {
+          "cache": "stale-new",
+          "coverage_claim": "logical.trade's history kind, incremental_by_identity, is the direct consequence of L1.identity (a trade is a persistent identified thing; a later report about the same trade number is the same trade, not a new one), L1.lifecycle-mutates-outcome (a later report updates outcome facts on this same row), and L1.attribution-at-placement (the trade's ownership, once established at placement, is never moved by a later report about the account or customer) -- together these entail one row per trade_number, updated in place, holding a frozen portion beside a mutable portion. The frozen portion's account-identity component is owning_account_number: raw.trade_cdc's t_ca_id, taken only from the trade's first-encountered report and never replaced by a later one, which inv.trade_owning_account_frozen restates directly. This is the part of L1.attribution-at-placement that names which account a trade belongs to, fixed at first encounter; the remaining part -- which dated statement of that account, and through it which customer, stood as of the moment of placement -- is now resolved by L1.placement-moment and covered by sg.placement-moment instead, since that is the more specific claim. This group's own scope is limited to the entity's shape and the account-identity portion.",
+          "derived_from": [
+            "L1.attribution-at-placement",
+            "L1.identity",
+            "L1.lifecycle-mutates-outcome"
+          ],
+          "fingerprint": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849",
+          "gap": "none",
+          "jev": null,
+          "justifications": {
+            "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number": {
+              "necessity": "L1.attribution-at-placement requires the trade's own account be named and fixed at first encounter; raw.trade_cdc's t_ca_id is the brokerage's own recorded account number on the trade's first-encountered report, and this handoff takes that value only, never a later report's t_ca_id, per the clause's 'do not move a trade that was already placed.'",
+              "parallel_assumption": "Credible while t_ca_id on a trade's first-encountered report names the account the trade was placed under."
+            },
+            "inv.trade_owning_account_frozen": {
+              "necessity": "L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the account a trade is recorded against.",
+              "parallel_assumption": "Holds while raw.trade_cdc never legitimately reassigns a trade to a different account after its first report; a contradiction would indicate a data error or an unaddressed business rule, not a value this attribute should adopt."
+            },
+            "logical.trade": {
+              "necessity": "L1.identity requires a trade to be the same persistent identified thing across every report of it, not a new trade each time. L1.lifecycle-mutates-outcome requires that a later report of the same trade update its outcome (status, executed price, fees, commission, tax, quantity) in place. L1.attribution-at-placement requires that a trade's ownership, once established at placement, is never moved by a later change to the account or customer, and that nothing the trade created is moved either. Together these entail exactly one row per identified trade, updated in place by later reports, holding a portion frozen at first encounter beside a portion that mutates -- the incremental_by_identity history kind, not versioned (which would keep every report as a separate dated statement) and not append_by_identity (which would treat every report as a new, unrelated event).",
+              "parallel_assumption": "Credible while every raw.trade_cdc row for the same t_id is understood to be a later report about that same trade rather than a distinct trade reusing the number."
+            },
+            "logical.trade.owning_account_number": {
+              "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under and forbids a later change from moving it; this attribute names that account, set once at first encounter and never replaced by a later report.",
+              "parallel_assumption": "Credible while the account a trade is placed under is settled at the trade's first-encountered report; whether a later report could legitimately correct it is not addressed by the clause and is not assumed here."
+            },
+            "type.trade_owning_account_reference": {
+              "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under, and requires that a later change does not move a trade that was already placed; a value naming that account, set once and never replaced by a later report, is required to express that. L1.identity supplies the account's own persistent number as the value this reference carries.",
+              "parallel_assumption": "Credible while a trade's account assignment is settled at the trade's first-encountered report and never legitimately contradicted by a later report of the same trade."
+            }
+          },
+          "members": [
+            "handoff.raw.trade_cdc.t_ca_id->logical.trade.owning_account_number",
+            "inv.trade_owning_account_frozen",
+            "logical.trade",
+            "logical.trade.owning_account_number",
+            "type.trade_owning_account_reference"
+          ],
+          "touched_clauses": []
+        }
+      },
+      "l3_reprojection_required": true,
+      "stale": [
+        "sg.constructed-scenarios",
+        "sg.outcome",
+        "sg.placement-moment",
+        "sg.trade-identity",
+        "sg.trade-shape"
+      ],
+      "status": "ok"
     }
   },
   "l1": {
@@ -415,7 +696,9 @@
       "L1.identity": "fcbdbdaa0b056238053af66315320949a5c80b82039620a9fc58a185db9442c6",
       "L1.lifecycle-mutates-outcome": "d8edfe2e475d63f7d6a6117f509d046bc0e823b7c90fbdcb6c7bff8fa843b770",
       "L1.no-phantom-positions": "31c8d8e18fbef917b3e4dd0f034e610b535a923b510861aacfdfbe29440b28d9",
+      "L1.omitted-facts-stand": "d0c779cd0c2b06a984529246554f0cdc68cad87d5d4a05142ce5eced7d071615",
       "L1.owner-standing": "359f28444e3ad773ac1595cbb99e37a79da83272b710d25a8accceff7a3150f0",
+      "L1.placement-moment": "4e4937db82642d7527f3680622f87e318b5e149f019c01be9117453eb61dd969",
       "L1.statement-content": "b203489f09eb80ac13b30834cc1e81510ff0a3adb52fbcae68ad78e8594d6c6a"
     },
     "clauses": {
@@ -428,7 +711,9 @@
       "L1.identity": "Customers, accounts, and trades are the things the brokerage already identifies: a customer number, an account number, a trade number. A change to a customer or an account does not make it a different customer or account; it makes a new dated statement about the same one.",
       "L1.lifecycle-mutates-outcome": "As a trade moves through its life (pending, submitted, completed, cancelled), its outcome changes: status, executed price, fees, commission, tax, quantity. Its ownership does not change. A later report of the same trade updates the outcome and leaves the ownership as first recorded.",
       "L1.no-phantom-positions": "Summing holding changes for any one statement of an account or customer can never go below zero. A negative result means a holding was opened under one statement and closed under another, which the clauses above forbid.",
+      "L1.omitted-facts-stand": "A change that does not mention a standing fact leaves that fact as it last stood. A statement produced by such a change carries the fact at its last stated value. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends.)",
       "L1.owner-standing": "An account's standing includes its owner's standing. When the brokerage says how an account stood at a moment, that includes how its customer stood at that same moment.",
+      "L1.placement-moment": "A trade is placed at the moment of the earliest report of it the brokerage holds, as that report states its own time. A later report of a trade the brokerage has not seen before is treated as its placement and marked as first seen late, so the ownership it fixes can be reviewed. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends.)",
       "L1.statement-content": "A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)"
     },
     "holes": {
@@ -438,7 +723,7 @@
       "L1.hole.deletions": "Incremental files can mark a record deleted. What does deleting a trade or account mean for history, ownership, and holdings?",
       "L1.hole.owner-change-reversions-account": "When a customer's standing changes, does the brokerage consider every account of that customer to have a new statement at that moment, or only the customer? The source data shows customer changes without matching account changes.",
       "L1.hole.securities-and-brokers": "Securities, companies, and brokers are named in the records but not yet part of any job. When they are, the attribution rule must be restated for them.",
-      "L1.hole.trade-timestamps": "Which moment counts as \"when the trade was placed\" and \"when it completed\" when a later report of a trade arrives without its full history?"
+      "L1.hole.trade-timestamps": "Which moment counts as \"when it completed\" when a later report of a trade arrives without its full history? (Placement is settled, provisionally, by `L1.placement-moment`.)"
     },
     "jobs": {
       "ownership-history": {
@@ -449,6 +734,7 @@
           "L1.current-version",
           "L1.owner-standing",
           "L1.statement-content",
+          "L1.omitted-facts-stand",
           "L1.constructed-scenarios"
         ],
         "description": "Know how any customer or account stood at any moment, and who owned what.",
@@ -470,11 +756,12 @@
           "L1.identity",
           "L1.as-of",
           "L1.attribution-at-placement",
+          "L1.placement-moment",
           "L1.lifecycle-mutates-outcome",
           "L1.constructed-scenarios"
         ],
         "description": "Know each trade's outcome and who owned it when it happened.",
-        "feedback": "a later report of a trade changes its outcome fields and leaves its recorded ownership byte-identical; ownership equals the account's as-of statement at placement, not the current one"
+        "feedback": "a later report of a trade changes its outcome fields and leaves its recorded ownership byte-identical; ownership equals the account's as-of statement at placement, not the current one; placement is the earliest held report's own time"
       }
     }
   }

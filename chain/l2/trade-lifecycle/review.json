@@ -1,0 +1,11 @@
+{
+  "groups_selected": [],
+  "job": "trade-lifecycle",
+  "model_sha256": "8f69c1632cfecd10c7d9a52e50c408a21be307763e803287f1de5ce85077ce0d",
+  "notes": "see chain/l2/trade-lifecycle/review-2.md",
+  "rejected_element_ids": [],
+  "reviewer": "opus sketch reviewer, trade-lifecycle cycle 2",
+  "schema_version": "l2-review/v1",
+  "selected_element_ids": [],
+  "verdict": "fail"
+}

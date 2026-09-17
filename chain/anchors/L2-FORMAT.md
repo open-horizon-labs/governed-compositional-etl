@@ -63,7 +63,7 @@ Filing a question in `questions_for_authority` marks the model `question` and om
 
 ## Derived attributes are not handoffs
 
-Some statement values are not received from any source. The current flag follows from there being no later statement. If a clause says an unmentioned fact stands as last stated, a change that omits a fact carries it forward from the previous statement of the same thing. Declare these with `derivation` on the attribute (`computed_within_entity` or `carried_forward_from_previous_statement`) and a rule a reader can check, and cite the clause that makes the rule follow. This document states shape and mechanism; the Sketch says whether a fact carries. The gate does not require a handoff for a derived attribute. Do not invent a source handoff for a value the sources do not carry.
+Some statement values are not received from any source. If a clause says which statement is current, the current flag follows from that clause (for example, from there being no later statement). If a clause says an unmentioned fact stands as last stated, a change that omits a fact carries it forward from the previous statement of the same thing. Declare these with `derivation` on the attribute (`computed_within_entity` or `carried_forward_from_previous_statement`) and a rule a reader can check, and cite the clause that makes the rule follow. This document states shape and mechanism; the Sketch says whether a fact carries. The gate does not require a handoff for a derived attribute. Do not invent a source handoff for a value the sources do not carry.
 
 ## Fields an action omits
 

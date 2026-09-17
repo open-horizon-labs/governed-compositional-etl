@@ -5,8 +5,8 @@
   ],
   "relations": [
     {
-      "note": "same meaning realized in several jobs; keep one definition",
-      "relation": "overlap",
+      "note": "same meaning must carry one mutation role across jobs",
+      "relation": "contradiction",
       "semantic_kind": "statement_effective_time",
       "uses": [
         [
@@ -17,13 +17,13 @@
         [
           "trade-lifecycle",
           "trade_owning_account_effective_from",
-          "per_statement"
+          "frozen_from_first_encounter"
         ]
       ]
     },
     {
-      "note": "same meaning realized in several jobs; keep one definition",
-      "relation": "overlap",
+      "note": "same meaning must carry one mutation role across jobs",
+      "relation": "contradiction",
       "semantic_kind": "account_owner_identity_reference",
       "uses": [
         [
@@ -34,7 +34,7 @@
         [
           "trade-lifecycle",
           "trade_owning_customer_reference",
-          "per_statement"
+          "frozen_from_first_encounter"
         ]
       ]
     },
@@ -93,10 +93,10 @@
   ],
   "schema_version": "l2-weave/v1",
   "summary": {
-    "contradiction": 0,
+    "contradiction": 2,
     "dependency": 2,
     "gap": 2,
     "named-gap": 5,
-    "overlap": 2
+    "overlap": 0
   }
 }
