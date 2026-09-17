@@ -182,6 +182,13 @@ def check(target: str, job: str) -> dict:
             verdict = GUARD.guard_statement(s, roles, art["entity"].split(".")[-1])
             if not verdict.ok:
                 problems.append(f"artifact {art['file']} writes protected columns: {json.dumps(verdict.attempted_writes)}")
+        # tempting wrong resolution: joining an upstream versioned entity on is_current when the model's selector is as-of
+        as_of_sources = {h["from"].rsplit(".", 1)[0] for h in model["handoffs"] if h.get("selector") == "as_of_event_time" and h["from"].startswith("logical.")}
+        for s in statements:
+            for col in s.find_all(exp.Column):
+                if col.name.lower() == "is_current" and as_of_sources:
+                    problems.append(f"artifact {art['file']} references is_current; the model resolves {sorted(as_of_sources)} as of an event time, not as of now")
+                    break
         declared = {r.lower() for r in art.get("reads", [])}
         observed = set()
         for s in statements:
@@ -271,6 +278,71 @@ def run_sqlmesh(target: str, job: str, database: Path, fixture_report: dict) -> 
     return fixture_report
 
 
+def run_two_phase(target: str, job: str, database: Path | None = None, watch: str = "SELECT * FROM governed.trade WHERE trade_number = 372101") -> dict:
+    """The counterexample as a simulation: project the first-encounter batch, then load the later batch and the labeled
+    constructed change without dropping governed tables, project again, and report what changed on the watched row."""
+    fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
+    ce = json.loads((ROOT / "counterexamples/archive/ce-account-428-rollover-v1.json").read_text())
+    changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"]["ce_account_changes"]]
+    database = database or ROOT / f"build/chain-{target}-twophase.duckdb"
+    profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
+    first = run(target, job, "first_encounter", database=database)
+    if not first["ok"]:
+        raise L3Error("first-encounter phase failed its audits")
+    con = duckdb.connect(str(database), read_only=True)
+    try:
+        cur = con.execute(watch); cols = [d[0] for d in cur.description]; before = [dict(zip(cols, map(str, r))) for r in cur.fetchall()]
+    finally:
+        con.close()
+    LOADER.reload_sources(database, fixture, "rollover", changes)
+    report = {"target": target, "job": job, "phase": "two-phase", "upstream": [], "audits": {}, "samples": {}}
+    if is_sqlmesh(profile):
+        second = run_sqlmesh_replan(target, job, database, report)
+    else:
+        con = duckdb.connect(str(database))
+        try:
+            for up in JOB_ORDER[: JOB_ORDER.index(job)]:
+                execute(con, L3_DIR / target / up, json.loads((L3_DIR / target / up / "manifest.json").read_text()))
+            base = L3_DIR / target / job
+            manifest = json.loads((base / "manifest.json").read_text())
+            execute(con, base, manifest)
+            for a in manifest["audits"]:
+                rows = con.execute((base / a["file"]).read_text()).fetchall()
+                report["audits"][a["invariant"]] = {"violations": len(rows)}
+        finally:
+            con.close()
+        report["ok"] = all(v["violations"] == 0 for v in report["audits"].values())
+        second = report
+    con = duckdb.connect(str(database), read_only=True)
+    try:
+        cur = con.execute(watch); cols = [d[0] for d in cur.description]; after = [dict(zip(cols, map(str, r))) for r in cur.fetchall()]
+        versions = [list(map(str, r)) for r in con.execute("SELECT account_number, effective_from, is_current, provenance FROM governed.account WHERE account_number = 428 ORDER BY effective_from").fetchall()]
+    finally:
+        con.close()
+    changed = sorted(k for k in (after[0] if after else {}) if before and after and before[0].get(k) != after[0].get(k))
+    return {"target": target, "job": job, "first_phase_ok": first["ok"], "second_phase_ok": second["ok"], "watched_before": before, "watched_after": after, "changed_columns": changed, "account_428_statements_after": versions}
+
+
+def run_sqlmesh_replan(target: str, job: str, database: Path, report: dict) -> dict:
+    """Second phase on a SQLMesh target: restate the stage-free FULL upstream and re-run the custom-materialized model against the reloaded sources."""
+    import subprocess
+    project = ROOT / f"build/chain-{target}-{job}"
+    import shutil
+    shutil.rmtree(project / ".cache", ignore_errors=True)
+    restate = []
+    for j in JOB_ORDER[: JOB_ORDER.index(job) + 1]:
+        manifest = json.loads((L3_DIR / target / j / "manifest.json").read_text())
+        for art in manifest["artifacts"]:
+            restate += ["--restate-model", "governed." + art["entity"].split(".")[-1]]
+    result = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "plan", "prod", "--auto-apply", "--no-prompts", "--skip-tests", "--skip-linter", *restate], cwd=ROOT, text=True, capture_output=True)
+    if result.returncode or "Failed models" in result.stdout:
+        raise L3Error(f"SQLMesh second-phase plan failed:\n{result.stdout[-3000:]}\n{result.stderr[-1500:]}")
+    audit = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "audit"], cwd=ROOT, text=True, capture_output=True)
+    report["ok"] = audit.returncode == 0 and "0 audit errors" in audit.stdout
+    report["sqlmesh"] = {"audit_tail": (audit.stdout + audit.stderr)[-800:]}
+    return report
+
+
 def run(target: str, job: str, phase: str = "rollover", database: Path | None = None) -> dict:
     """Load the fixture (and labeled CE rows for the rollover phase), run upstream jobs' projections, then this job, then audits."""
     fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
@@ -334,7 +406,7 @@ def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=("check", "run", "stamp", "compare"))
+    p.add_argument("command", choices=("check", "run", "stamp", "compare", "twophase"))
     p.add_argument("target")
     p.add_argument("job")
     p.add_argument("--against", help="compare: the second target")
@@ -345,6 +417,8 @@ def main() -> int:
             r = check(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["status"] == "ok" else 3
         if a.command == "stamp":
             print(json.dumps(stamp(a.target, a.job), indent=2)); return 0
+        if a.command == "twophase":
+            r = run_two_phase(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["first_phase_ok"] and r["second_phase_ok"] else 3
         if a.command == "compare":
             r = compare(a.job, a.target, a.against, a.phase); print(json.dumps(r, indent=2)); return 0 if r["identical"] else 3
         r = run(a.target, a.job, a.phase); print(json.dumps(r, indent=2)); return 0 if r["ok"] else 3

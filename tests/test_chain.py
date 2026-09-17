@@ -246,6 +246,32 @@ class L3AuditContainmentTests(unittest.TestCase):
             audit.write_text(original)
 
 
+class CounterexampleSimulationTests(unittest.TestCase):
+    """The account-428 rollover as a two-phase simulation: outcome changes, ownership stays pinned."""
+
+    def check_target(self, target):
+        review = ROOT / "chain/l2/trade-lifecycle/review.json"
+        manifest = ROOT / "chain/l3" / target / "trade-lifecycle/manifest.json"
+        if not review.exists() or json.loads(review.read_text())["verdict"] != "pass" or not manifest.exists():
+            self.skipTest(f"trade-lifecycle not projected on {target}")
+        r = L3.run_two_phase(target, "trade-lifecycle", database=ROOT / f"build/test-twophase-{target}.duckdb")
+        self.assertTrue(r["first_phase_ok"] and r["second_phase_ok"], r)
+        before, after = r["watched_before"][0], r["watched_after"][0]
+        self.assertEqual(before["status"], "PNDG")
+        self.assertEqual(after["status"], "CMPT")
+        for frozen in ("owning_account_number", "placed_at", "owning_account_effective_from", "owning_customer_number", "first_seen_late"):
+            self.assertEqual(before[frozen], after[frozen], frozen)
+        self.assertEqual(after["owning_account_effective_from"], "2012-11-15 18:05:28")
+        self.assertTrue(any(v[2] == "True" and v[3] == "controlled_counterexample" for v in r["account_428_statements_after"]))
+        self.assertTrue(set(r["changed_columns"]) <= {"status", "executed_price", "fees", "commission", "tax", "quantity"}, r["changed_columns"])
+
+    def test_two_phase_on_duckdb_sqlmesh(self):
+        self.check_target("duckdb-sqlmesh")
+
+    def test_two_phase_on_duckdb_native(self):
+        self.check_target("duckdb-native")
+
+
 class L3GateTests(unittest.TestCase):
     def test_l3_requires_a_passed_review(self):
         with self.assertRaises(L3.L3Error):

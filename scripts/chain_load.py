@@ -62,6 +62,24 @@ def load_fixture(database: Path, fixture: dict, phase: str, ce_changes: list[dic
         con.close()
 
 
+def reload_sources(database: Path, fixture: dict, phase: str, ce_changes: list[dict] | None = None) -> None:
+    """Replace raw.* and ce.* tables for a phase, keeping governed.* intact: the second half of a two-phase simulation."""
+    spec = fixture["phases"][phase]
+    batches = {fixture["batch_dates"][b] for b in spec["include_batches"]}
+    con = duckdb.connect(str(database))
+    try:
+        for table, ddl in DDL.items():
+            con.execute(f"DROP TABLE IF EXISTS {table}")
+            con.execute(f"CREATE TABLE {table} {ddl}")
+        _insert(con, "raw.customer_mgmt_action", fixture["raw"]["customer_mgmt_action"])
+        for table in ("account_cdc", "customer_cdc", "trade_cdc", "holding_history"):
+            _insert(con, f"raw.{table}", [r for r in fixture["raw"][table] if r["batch_date"] in batches])
+        if spec["apply_counterexample"] and ce_changes:
+            _insert(con, "ce.account_changes", ce_changes)
+    finally:
+        con.close()
+
+
 def parse_customer_mgmt(path: Path):
     for _, element in ET.iterparse(str(path), events=("end",)):
         if not element.tag.endswith("Action"):
