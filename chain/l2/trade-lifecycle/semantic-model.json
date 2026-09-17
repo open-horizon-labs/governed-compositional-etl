@@ -901,7 +901,7 @@
     {
       "id": "inv.trade_owning_account_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, every raw.trade_cdc report of that trade carries the same t_ca_id as the trade's first-encountered report; owning_account_number is set once at first encounter and is never replaced by a later report.",
+      "statement": "For any trade_number, every anchored (not held under L1.unknown-codes) raw.trade_cdc report of that trade carries the same t_ca_id as the trade's first-encountered anchored report; owning_account_number is set once at that first anchored encounter and is never replaced by a later anchored report. A held report is not evidence either way: it neither confirms nor contradicts owning_account_number, and is excluded from this invariant's comparison entirely.",
       "derived_from": [
         "L1.attribution-at-placement"
       ],
@@ -910,16 +910,16 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the account a trade is recorded against.",
+      "necessity": "L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the account a trade is recorded against. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm the frozen t_ca_id (its content is not read) nor contradict it (it is not treated as a later report carrying a different value); this invariant quantifies over anchored reports only.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds while raw.trade_cdc never legitimately reassigns a trade to a different account after its first report; a contradiction would indicate a data error or an unaddressed business rule, not a value this attribute should adopt.",
-      "review_trigger": "a later raw.trade_cdc report of a known trade_number carries a t_ca_id different from the one recorded at first encounter",
+      "parallel_assumption": "Holds while raw.trade_cdc never legitimately reassigns a trade to a different account after its first anchored report; a contradiction among anchored reports would indicate a data error or an unaddressed business rule, not a value this attribute should adopt. A held report supplies no t_ca_id value and is excluded from this comparison entirely, per L1.unknown-codes.",
+      "review_trigger": "a later anchored raw.trade_cdc report of a known trade_number carries a t_ca_id different from the one recorded at first anchored encounter",
       "sufficiency_group": "sg.trade-shape"
     },
     {
       "id": "inv.trade_placement_reference_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, placed_at, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each set once -- from the trade's first-encountered report and the account and customer statements resolved as of that report's own time -- and are never replaced by a later report of the same trade.",
+      "statement": "For any trade_number, placed_at, owning_account_effective_from, owning_customer_number, and owning_customer_effective_from are each set once -- from the trade's first-encountered anchored report and the account and customer statements resolved as of that report's own time -- and are never replaced by a later anchored report of the same trade. A held report is not evidence either way: it neither confirms nor contradicts these values, and is excluded from this invariant's comparison entirely.",
       "derived_from": [
         "L1.placement-moment",
         "L1.attribution-at-placement"
@@ -929,10 +929,10 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "L1.placement-moment fixes placement to the earliest held report's own time, and L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the placement-moment reference attributes.",
+      "necessity": "L1.placement-moment fixes placement to the earliest held report's own time, and L1.attribution-at-placement states directly that later changes do not move a trade that was already placed; this invariant is the restatement of that requirement over the placement-moment reference attributes. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm these frozen values (its content is not read) nor contradict them (it is not treated as a later report carrying a different value); this invariant quantifies over anchored reports only.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds while a later report of a known trade, from either anchored source (raw.trade_cdc or raw.trade_history), never carries an earlier event time than the one already recorded as placed_at.",
-      "review_trigger": "a later report of a known trade_number, from either anchored source, carries an event time earlier than its recorded placed_at, or any of placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from is found replaced after first encounter",
+      "parallel_assumption": "Holds while a later anchored report of a known trade, from either anchored source (raw.trade_cdc or raw.trade_history), never carries an earlier event time than the one already recorded as placed_at. A held report supplies no event time and is excluded from this comparison entirely, per L1.unknown-codes.",
+      "review_trigger": "a later anchored report of a known trade_number, from either anchored source, carries an event time earlier than its recorded placed_at, or any of placed_at, owning_account_effective_from, owning_customer_number, owning_customer_effective_from is found replaced after first encounter by an anchored report",
       "sufficiency_group": "sg.placement-moment"
     },
     {
@@ -1104,7 +1104,7 @@
     {
       "id": "inv.trade_order_type_frozen",
       "entity": "logical.trade",
-      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered raw.trade_cdc report, and is never replaced by a later report's t_tt_id.",
+      "statement": "For any trade_number, order_type equals t_tt_id on the trade's first-encountered anchored raw.trade_cdc report, and is never replaced by a later anchored report's t_tt_id. A held report is not evidence either way: it neither confirms nor contradicts order_type, and is excluded from this invariant's comparison entirely.",
       "derived_from": [
         "L1.lifecycle-mutates-outcome"
       ],
@@ -1113,10 +1113,10 @@
       "feedback": [
         "sketch-review"
       ],
-      "necessity": "order_type's own type element cites L1.lifecycle-mutates-outcome's enumeration of the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and its statement that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it. This invariant is the direct, checkable restatement of that freeze -- order_type equals the trade's first-encountered raw.trade_cdc report's t_tt_id and is never replaced -- as its own audit, exactly as inv.trade_owning_account_frozen restates the analogous freeze for owning_account_number, so an L3 audit need not embed the check inside another invariant's own audit.",
+      "necessity": "order_type's own type element cites L1.lifecycle-mutates-outcome's enumeration of the outcome facts a later report changes (status, executed price, fees, commission, tax, quantity) and its statement that a later report leaves the ownership as first recorded; order type is in neither set, so nothing a later report does moves it. This invariant is the direct, checkable restatement of that freeze -- order_type equals the trade's first-encountered anchored raw.trade_cdc report's t_tt_id and is never replaced -- as its own audit, exactly as inv.trade_owning_account_frozen restates the analogous freeze for owning_account_number, so an L3 audit need not embed the check inside another invariant's own audit. L1.unknown-codes holds a report as a whole and lets nothing but its place in the order of reports be read, so a held report cannot confirm the frozen order_type (its content is not read) nor contradict it; this invariant quantifies over anchored reports only.",
       "owner_hat": "data-product-owner",
-      "parallel_assumption": "Holds while t_tt_id on a trade's first-encountered raw.trade_cdc report is the order's own type and is never legitimately corrected by a later report.",
-      "review_trigger": "a later raw.trade_cdc report of a known trade_number carries a t_tt_id different from the one recorded at first encounter",
+      "parallel_assumption": "Holds while t_tt_id on a trade's first-encountered anchored raw.trade_cdc report is the order's own type and is never legitimately corrected by a later anchored report. A held report supplies no t_tt_id value and is excluded from this comparison entirely, per L1.unknown-codes.",
+      "review_trigger": "a later anchored raw.trade_cdc report of a known trade_number carries a t_tt_id different from the one recorded at first anchored encounter",
       "sufficiency_group": "sg.placement-moment"
     },
     {
