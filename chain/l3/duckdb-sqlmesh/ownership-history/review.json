@@ -1,10 +1,10 @@
 {
   "job": "ownership-history",
-  "manifest_sha256": "86d296a66345372f0e0a0c882ac43ae88191587f65d26eb959e4f6d5b0ac7d7e",
-  "notes": "see review-1..6",
-  "projection_sha256": "41e7eeb88e4f7751492573b3d4965f0a467b3a7fcdb4d0c17f547b859b0f62e8",
+  "manifest_sha256": "4d6ec0e44392d26f9e2e16a38795b040b2f1e7a25ed67e21729176933c5997a4",
+  "notes": "see review-1..8",
+  "projection_sha256": "14a640d7287ee25eb140ddf0fee34e57023dae265b7a7b6219f7882d9d09dcb8",
   "rejected_artifacts": [],
-  "reviewer": "coordinator, bookkeeping review 6 (unknown-codes audit)",
+  "reviewer": "coordinator, scoped review 8 (closed-account clause)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
   "verdict": "pass"

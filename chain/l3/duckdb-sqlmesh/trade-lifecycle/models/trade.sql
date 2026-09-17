@@ -37,7 +37,8 @@ MODEL (
     "inv.trade_ownership_pin_present",
     "inv.every_received_trade_persisted",
     "inv.trade_held_first_report_unclaimed",
-    "inv.unknown_codes_held"
+    "inv.unknown_codes_held",
+    "inv.trade_on_closed_account_reported"
   ),
   depends_on (governed.account, governed.customer)
 );

@@ -13,7 +13,8 @@ MODEL (
     "inv.account_status_matches_producing_source",
     "inv.account_tax_treatment_matches_producing_source",
     "inv.account_owner_matches_producing_source",
-    "inv.unknown_codes_held"
+    "inv.unknown_codes_held",
+    "inv.account_statement_never_created_by_activity"
   ),
   depends_on (governed.customer)
 );

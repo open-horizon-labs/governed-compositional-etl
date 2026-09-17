@@ -12,6 +12,12 @@
 
 **Guardrails:** the L2 model and the engine profile are the only authority; no policy from data shape; no reading L1, other jobs' models except upstream ones the model names, or anything under `oracle/`, `counterexamples/`, `.oh/`, `contracts/`, `docs/`, `sketches/`.
 
+## An invariant that reports rather than holds
+
+Some invariants carry `reports: true`. Their rows are findings the chain hands the business, not defects in your projection: the compiled thing did exactly what the Sketch told it to, and the records contain something only the business can resolve. Write the audit exactly as you would any other, and never weaken it to keep a run quiet. The rows are the point.
+
+The two engines express it differently, and both are already supported. On `duckdb-native` the harness reads the L2 and counts a reporting invariant's rows as `reported` rather than `violations`, so a run stays ok while surfacing them under `findings_for_the_business`. On `duckdb-sqlmesh` an audit that returns rows blocks promotion, which is the wrong outcome for a finding, so declare it non-blocking: `AUDIT (name "inv.x", blocking false);`. SQLMesh 0.236.1 supports this. Register it in the manifest and in the model's audits list like any other.
+
 ## Acceptance is not yours
 
 `chain_l3.py stamp` records that a reviewed projection is accepted. It is the reviewer's step, never the Developer's, and the mechanism enforces part of that: stamping refuses a projection whose content changed after the review that accepted it, and refuses a review whose verdict is not pass. Do not run it, and do not write or edit `review.json` or any `review-*.md`; they are the reviewer's record of what was judged, and the reviewer's name is on them.

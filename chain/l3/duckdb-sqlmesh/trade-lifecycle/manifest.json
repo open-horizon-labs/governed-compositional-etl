@@ -96,6 +96,11 @@
     },
     {
       "entity": "logical.trade",
+      "file": "audits/inv.trade_on_closed_account_reported.sql",
+      "invariant": "inv.trade_on_closed_account_reported"
+    },
+    {
+      "entity": "logical.trade",
       "file": "audits/inv.trade_first_seen_late_defined_or_held.sql",
       "invariant": "inv.trade_first_seen_late_defined_or_held"
     },
@@ -107,7 +112,7 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "8087a81bdfb7bb6a413a3e0cbeb4d35291df592bb0da8c2ba18db34d72af4d51"
+    "review_sha256": "040535420f59ec57f2010b28824082dfaec08e18d19219fd4125fe8d2670c7f6"
   },
   "group_fingerprints": {
     "sg.constructed-scenarios": "bc19bc4df49822f826102ef0b0209f1d9e13e35cf16ae1680e88994b77f33ec7",
