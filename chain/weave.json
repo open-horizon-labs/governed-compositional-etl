@@ -91,13 +91,19 @@
       "relation": "named-gap"
     },
     {
+      "gap": "L1.hole.batch-identity: owning_account_number comes from the first-encountered report selected by anchored report_order, not from a report carrying which file delivered it.",
+      "group": "sg.trade-shape",
+      "job": "trade-lifecycle",
+      "relation": "named-gap"
+    },
+    {
       "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, and L1.hole.deletions each bound part of this group's coverage; see coverage_claim.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.deletions",
+      "gap": "L1.hole.deletions bounds what a D-flagged report means for a trade's outcome; L1.hole.batch-identity bounds latest_change's reliance on file production order rather than a report carrying which file delivered it.",
       "group": "sg.outcome",
       "job": "trade-lifecycle",
       "relation": "named-gap"
@@ -108,7 +114,7 @@
     "contradiction": 0,
     "dependency": 2,
     "gap": 2,
-    "named-gap": 7,
+    "named-gap": 8,
     "overlap": 2
   }
 }

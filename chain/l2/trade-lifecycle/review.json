@@ -1,10 +1,10 @@
 {
   "groups_selected": [],
   "job": "trade-lifecycle",
-  "model_sha256": "8f69c1632cfecd10c7d9a52e50c408a21be307763e803287f1de5ce85077ce0d",
-  "notes": "see chain/l2/trade-lifecycle/review-2.md",
+  "model_sha256": "354431621c2640b81d8424f4a5e024ec1bc112ccf41c7e4489a620e4ab4b70bd",
+  "notes": "see review-3.md",
   "rejected_element_ids": [],
-  "reviewer": "opus sketch reviewer, trade-lifecycle cycle 2",
+  "reviewer": "opus sketch reviewer, trade-lifecycle cycle 3",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [],
   "verdict": "fail"

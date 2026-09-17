@@ -301,6 +301,19 @@ def check(job: str, l1: dict | None = None) -> dict:
         for gid in deferred_groups:
             if gid and gid not in blocks and any(steps[m].get("disposition") == "deferred" and steps[m].get("sufficiency_group") == gid and hole["derived_from_hole"] in " ".join(str(steps[m].get(k, "")) for k in ("necessity", "parallel_assumption", "note", "review_trigger")) for m in steps):
                 problems.append(f"hole {hole['id']} blocks deferred members of {gid} but does not list it in blocks")
+    # review-3 (trade-lifecycle) mechanization: holes' blocks and groups' gaps must agree in both directions
+    for hole in doc.get("holes", []):
+        for gid in hole.get("blocks", []) or []:
+            if gid in groups and hole["derived_from_hole"] not in groups[gid]["gap"]:
+                problems.append(f"hole {hole['id']} blocks {gid} but that group's gap does not name {hole['derived_from_hole']}")
+    holes_by_l1 = {h["derived_from_hole"]: h for h in doc.get("holes", [])}
+    for g in groups.values():
+        for hid in re.findall(r"L1\.hole\.[a-z0-9-]+", g["gap"]):
+            hole = holes_by_l1.get(hid)
+            if hole is None:
+                problems.append(f"group {g['id']} gap names {hid}, which the model does not carry as a hole")
+            elif g["id"] not in (hole.get("blocks") or []):
+                problems.append(f"group {g['id']} gap names {hid} but hole {hole['id']} does not list the group in blocks")
     covered = {c for g in groups.values() for c in g["parent_clauses"]}
     for c in sorted(allowed_clauses - covered):
         problems.append(f"clause {c} has no sufficiency group in job {job}: gap")
