@@ -175,13 +175,13 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it",
+      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it. L1.hole.deletion-reversal bounds this group as well: owning_account_number is taken only from an anchored I/U report at or before the trade's earliest anchored D report, never from a report received after it; a trade with no qualifying report before its earliest D report is claimed absent by inv.trade_earliest_report_withdrawn_unclaimed, not pinned from the later report.",
       "group": "sg.trade-shape",
       "job": "trade-lifecycle",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group coverage; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group coverage; see coverage_claim. L1.hole.deletion-reversal bounds this group's placement facts (placed_at, order_type, and, through owning_account_number, the account and customer pins) the same way it bounds sg.outcome's own candidate set: each is taken only from an anchored I/U report at or before the trade's earliest anchored D report, never from a report received after it, and a trade with no qualifying report before its earliest D report is claimed absent by inv.trade_earliest_report_withdrawn_unclaimed rather than pinned from that later report.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"
@@ -199,7 +199,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.deletion-reversal bounds this group's row-per-pair claim for a pair whose earliest anchored report is cdc_flag D and which has a later anchored non-D report: what such a report means is undecided, so that case is excluded from both inv.eligible_holding_report_persisted and inv.holding_change_absent_for_withdrawn_only_pair.",
+      "gap": "L1.hole.deletion-reversal bounds this group's row-per-pair claim for a pair whose earliest anchored report is cdc_flag D and which has a later anchored non-D report: what such a report means is undecided, so that case is excluded from both inv.eligible_holding_report_persisted and inv.holding_change_absent_for_withdrawn_only_pair. L1.hole.batch-identity also bounds this group: the 'earlier than every anchored D report' predicate both invariants use rests on report_order (batch_date, cdc_dsn), the same file-production-order reliance that hole leaves open.",
       "group": "sg.holding-shape",
       "job": "positions",
       "relation": "named-gap"
