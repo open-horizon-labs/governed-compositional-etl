@@ -5,10 +5,10 @@
     "sg.history-asof"
   ],
   "job": "ownership-history",
-  "model_sha256": "bf7b63a4dfa6d73b1616bece8cf6dac5c9df6d47dfaac098c7532ad5d93e4cd2",
-  "notes": "see review-8.md; pass, no exclusions",
+  "model_sha256": "51615cd92c4738f46f60a421107e08dc8f7da7f3b7e49f55859c572dcf991235",
+  "notes": "see review-9.md; gap fields only; all groups hit",
   "rejected_element_ids": [],
-  "reviewer": "opus sketch reviewer, cycle 8 (scoped)",
+  "reviewer": "coordinator, bookkeeping review 9",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.ce.account_changes.account_id->logical.account.account_number",

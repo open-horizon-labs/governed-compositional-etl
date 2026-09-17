@@ -67,25 +67,25 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time",
+      "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker in an incremental change file means for a customer's or account's kept history is unresolved.",
       "group": "sg.history-asof",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time",
+      "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker means for which statement of a customer or account is current is unresolved.",
       "group": "sg.current-version",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.owner-change-reversions-account",
+      "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment) and L1.hole.deletions (what a deletion marker in that file means for owner-standing is unresolved).",
       "group": "sg.owner-standing",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action.",
+      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved.",
       "group": "sg.statement-content",
       "job": "ownership-history",
       "relation": "named-gap"
@@ -97,7 +97,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, and L1.hole.deletions each bound part of this group's coverage; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, and L1.hole.owner-change-reversions-account each bound part of this group's coverage; see coverage_claim.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"

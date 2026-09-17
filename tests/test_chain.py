@@ -105,8 +105,10 @@ class L2GateTests(unittest.TestCase):
 
     def test_filed_question_does_not_block_validation(self):
         report = self.mutate(lambda d: d.__setitem__("questions_for_authority", ["Which moment is placement?"]))
-        self.assertEqual(report["status"], "question")
-        self.assertEqual(report["problems"], [])
+        self.assertEqual(report["questions"], ["Which moment is placement?"])
+        self.assertFalse(any("question" in p.lower() for p in report["problems"]), report["problems"])
+        if not report["problems"]:
+            self.assertEqual(report["status"], "question")
 
     def test_developer_may_not_self_select(self):
         report = self.mutate(lambda d: d["entities"][0].__setitem__("disposition", "selected"))

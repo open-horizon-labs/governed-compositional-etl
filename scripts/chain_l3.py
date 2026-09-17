@@ -88,6 +88,24 @@ def body_of(sql: str, sqlmesh_target: bool) -> str:
     return text.replace("@this_model", "this_model_placeholder")
 
 
+def groups_of(model: dict, element_ids: list[str]) -> set[str]:
+    steps = L2.element_steps(model)
+    return {steps[e]["sufficiency_group"] for e in element_ids if e in steps and steps[e].get("sufficiency_group")}
+
+
+def stamp(target: str, job: str) -> dict:
+    """After a passed projection review: record the fingerprints of the L2 groups the artifacts derive from."""
+    model, review = load_job(job)
+    base = L3_DIR / target / job
+    manifest = json.loads((base / "manifest.json").read_text())
+    derived = groups_of(model, [d for a in manifest["artifacts"] for d in a["derived_from"]])
+    current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job).items() if gid in derived}
+    manifest["group_fingerprints"] = current
+    manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]
+    (base / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return {"target": target, "job": job, "groups": sorted(current)}
+
+
 def column_roles(model: dict, entity_id: str) -> dict[str, str]:
     types = {t["id"]: t["mutation_role"] for t in model["types"]}
     entity = next(e for e in model["entities"] if e["id"] == entity_id)
@@ -108,8 +126,15 @@ def check(target: str, job: str) -> dict:
     for e in sorted(Draft202012Validator(schema).iter_errors(manifest), key=lambda e: list(e.path)):
         problems.append(f"manifest: {e.message} at {'/'.join(map(str, e.path))}")
     questions = list(manifest.get("questions_for_authority") or [])
+    provenance_note = None
     if manifest.get("derived_from_model", {}).get("review_sha256") != review["model_sha256"]:
-        problems.append("manifest review_sha256 does not match the selected L2 model; recompile from the current review")
+        stamped = manifest.get("group_fingerprints") or {}
+        current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job).items()}
+        derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]])
+        if stamped and derived_groups and all(stamped.get(gid) == current.get(gid) for gid in derived_groups):
+            provenance_note = "review sha superseded by an L2 change that left every derived group's fingerprint unchanged; projection remains valid"
+        else:
+            problems.append("manifest review_sha256 does not match the selected L2 model and derived group fingerprints differ or are unstamped; re-project the stale artifacts")
     if manifest.get("target") != target or manifest.get("job") != job:
         problems.append("manifest target/job do not match the directory")
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
@@ -176,7 +201,7 @@ def check(target: str, job: str) -> dict:
         elif sqlmesh_target and not (base / a["file"]).read_text().lstrip().startswith("AUDIT"):
             problems.append(f"audit {a['file']} must be a SQLMesh AUDIT file on target {target}")
     status = "rejected" if problems else ("question" if questions else "ok")
-    return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"],
+    return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"], "provenance": provenance_note,
             "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", []))}
 
 
@@ -268,7 +293,7 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=("check", "run"))
+    p.add_argument("command", choices=("check", "run", "stamp"))
     p.add_argument("target")
     p.add_argument("job")
     p.add_argument("--phase", default="rollover", choices=("first_encounter", "rollover"))
@@ -276,6 +301,8 @@ def main() -> int:
     try:
         if a.command == "check":
             r = check(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["status"] == "ok" else 3
+        if a.command == "stamp":
+            print(json.dumps(stamp(a.target, a.job), indent=2)); return 0
         r = run(a.target, a.job, a.phase); print(json.dumps(r, indent=2)); return 0 if r["ok"] else 3
     except (L3Error, OSError, json.JSONDecodeError, duckdb.Error) as error:
         print(f"l3 error: {error}", file=sys.stderr); return 2

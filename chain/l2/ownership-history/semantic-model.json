@@ -1135,7 +1135,7 @@
       ],
       "mode": "conditional",
       "coverage_claim": "For every statement whose source carries its own moment of change (the historical action file's action_ts), effective_from is populated and the no-overlap and unique-answer invariants hold over it, satisfying L1.history's 'kept, with the moment it took effect' and L1.as-of's 'the latest one that took effect at or before it.' The labeled constructed account scenario's own effective_from handoff (action_at) is covered under sg.constructed-scenarios instead, since it is the more specific claim about that source. Incremental CDC records carry no moment of their own (a batch date is not an effective moment, per L1.hole.change-effective-time), so no effective_from handoff is created from them.",
-      "gap": "L1.hole.change-effective-time"
+      "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker in an incremental change file means for a customer's or account's kept history is unresolved."
     },
     {
       "id": "sg.current-version",
@@ -1151,7 +1151,7 @@
       ],
       "mode": "all_required",
       "coverage_claim": "The is_current flag, true for exactly the statement of a customer or account with no later statement and false for every other, together with the single-current invariants, is a direct restatement of L1.current-version's 'exactly one current statement per customer and per account.' This determination depends on every statement's effective_from being known; where a statement's only source is an incremental CDC file, its order relative to the customer's or account's other statements is not yet resolvable, so its current-ness cannot yet be determined either.",
-      "gap": "L1.hole.change-effective-time"
+      "gap": "L1.hole.change-effective-time; also bounded by L1.hole.deletions, since what a deletion marker means for which statement of a customer or account is current is unresolved."
     },
     {
       "id": "sg.owner-standing",
@@ -1173,7 +1173,7 @@
       ],
       "mode": "conditional",
       "coverage_claim": "Every account statement sourced from a feed that itself supplies the account's own effective moment carries the identity of its owning customer: directly, from the historical action file's own c_id (the incremental account CDC file's own c_id handoff is deferred pending its own effective-time hole); and, for a statement sourced from the labeled constructed scenario ce.account_changes, which carries no owner field of its own, from this same attribute's own carried_forward_from_previous_statement derivation under L1.omitted-facts-stand, which holds that a constructed change not mentioning the owner leaves it as it last stood. L1.identity and L1.history make 'the account's immediately preceding statement' well defined, and L1.constructed-scenarios together with inv.constructed_account_change_refers_to_known_account guarantee that a preceding statement exists to carry from. The account_asof_carries_customer_asof invariant requires that owning-customer value be used to pair the account's as-of answer with the customer's as-of answer at the same moment — exactly L1.owner-standing's 'an account's standing includes its owner's standing,' using L1.as-of's same-moment lookup rule. L1.statement-content additionally names 'which customer owns it' as part of what an account statement carries, which this same attribute satisfies.",
-      "gap": "L1.hole.owner-change-reversions-account"
+      "gap": "L1.hole.owner-change-reversions-account; also bounded by L1.hole.change-effective-time (the incremental account CDC file's owner handoff remains deferred pending its own effective moment) and L1.hole.deletions (what a deletion marker in that file means for owner-standing is unresolved)."
     },
     {
       "id": "sg.statement-content",
@@ -1208,7 +1208,7 @@
       ],
       "mode": "conditional",
       "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes — the one account source with no pending effective-time hole of its own — status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred.",
-      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action."
+      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved."
     },
     {
       "id": "sg.constructed-scenarios",

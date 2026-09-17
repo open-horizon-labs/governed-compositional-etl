@@ -92,6 +92,14 @@
       ],
       "type": "object"
     },
+    "group_fingerprints": {
+      "additionalProperties": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "description": "Harness-stamped after review: fingerprint of each L2 sufficiency group the artifacts derive from. A later L2 change that leaves these unchanged does not invalidate the projection even if the review sha changes.",
+      "type": "object"
+    },
     "job": {
       "type": "string"
     },

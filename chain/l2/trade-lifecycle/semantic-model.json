@@ -23,12 +23,12 @@
     },
     {
       "id": "trade_owning_account_reference",
-      "derived_from": ["L1.attribution-at-placement", "L1.identity"],
+      "derived_from": ["L1.attribution-at-placement", "L1.identity", "L1.lifecycle-mutates-outcome"],
       "disposition": "candidate",
       "feedback": ["sketch-review"],
       "history_role": "none",
       "mutation_role": "frozen_from_first_encounter",
-      "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under, and requires that a later change does not move a trade that was already placed; a value naming that account, set once and never replaced by a later report, is required to express that. L1.identity supplies the account's own persistent number as the value this reference carries.",
+      "necessity": "L1.attribution-at-placement requires a trade to belong to the account it was placed under, and requires that a later change does not move a trade that was already placed; a value naming that account, set once and never replaced by a later report, is required to express that. L1.identity supplies the account's own persistent number as the value this reference carries. L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is the clause that, alongside L1.attribution-at-placement, makes this value's role frozen_from_first_encounter rather than mutable.",
       "owner_hat": "semantic-modeler",
       "parallel_assumption": "Credible while a trade's account assignment is settled at the trade's first-encountered report and never legitimately contradicted by a later report of the same trade.",
       "physical_type": "integer",
@@ -94,7 +94,6 @@
       "derived_from": ["L1.placement-moment", "L1.attribution-at-placement"],
       "disposition": "candidate",
       "feedback": ["sketch-review"],
-      "history_role": "status_observation",
       "mutation_role": "frozen_from_first_encounter",
       "necessity": "L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; a dedicated value carrying that marking is required to express it. L1.attribution-at-placement's 'do not move a trade that was already placed' requires this marking, once made at first encounter, never to be reconsidered by a later report -- frozen_from_first_encounter, not mutable.",
       "owner_hat": "semantic-modeler",
@@ -103,6 +102,7 @@
       "review_trigger": "a trade's first-encountered report carries a status outside the anchored status codes, making this marking undeterminable",
       "semantic_kind": "trade_first_seen_late_flag",
       "sufficiency_group": "sg.placement-moment",
+      "history_role": "none",
       "time_role": "none",
       "unit": "none"
     },
@@ -300,11 +300,11 @@
           },
           "disposition": "candidate",
           "feedback": ["inv.trade_first_seen_late_matches_status_order", "sketch-review"],
-          "necessity": "L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; using the anchored trade_code_meanings.status_order (PNDG, SBMT, CMPT), a first-encountered report whose status is not PNDG -- the order's first status -- is exactly such a trade (SBMT for a trade never seen pending; CMPT or CNCL for a trade never seen submitted). L1.attribution-at-placement requires this marking, once made, to be fixed at first encounter and not reconsidered by a later report.",
+          "necessity": "Under the premise that every trade's lifecycle begins at PNDG (the first status in the anchored trade_code_meanings.status_order), L1.placement-moment requires a trade whose first-encountered report is not its true earliest lifecycle report to be marked first seen late, so the ownership placement fixes can be reviewed; a first-encountered report whose status is not PNDG -- the order's first status -- would then be exactly such a trade (SBMT for a trade never seen pending; CMPT or CNCL for a trade never seen submitted). L1.attribution-at-placement requires this marking, once made, to be fixed at first encounter and not reconsidered by a later report.",
           "nullable": false,
           "owner_hat": "data-product-owner",
-          "parallel_assumption": "Credible while trade_code_meanings.status_order and terminal_status_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) and every trade report carries one of them, and while report_order's (batch_date, cdc_dsn) ordering correctly identifies the first-encountered report; if the business states a status outside this enumeration, or an ordering other than file production order, this derivation must be revisited.",
-          "review_trigger": "a trade's first-encountered report carries a status outside {PNDG, SBMT, CMPT, CNCL}",
+          "parallel_assumption": "Credible while every trade's lifecycle begins at PNDG, the first status in the anchored status_order, and while trade_code_meanings.status_order and terminal_status_codes exhaustively enumerate a trade's lifecycle statuses (PNDG, SBMT, CMPT, CNCL) with every trade report carrying one of them, and while report_order's (batch_date, cdc_dsn) ordering correctly identifies the first-encountered report. PNDG is anchored as a limit order recorded but not yet submitted; a trade whose life legitimately begins at submitted (for example, a market order) would be mismarked first seen late under this premise, which is not resolved here.",
+          "review_trigger": "a trade's first-encountered report carries a status outside {PNDG, SBMT, CMPT, CNCL}, or the business states a trade legitimately first reported at SBMT (for example, a market order whose life does not begin at PNDG)",
           "sufficiency_group": "sg.placement-moment"
         },
         {
@@ -606,12 +606,12 @@
     {
       "id": "inv.trade_ownership_provenance_reachable",
       "entity": "logical.trade",
-      "statement": "For any trade_number, the pair (owning_account_number, owning_account_effective_from) identifies exactly one statement of ownership-history's logical.account entity; that statement's own provenance value (non-null only when it is sourced from the labeled ce.account_changes scenario) is the provenance reachable for this trade, and this job defines no separate provenance attribute of its own that could omit, duplicate, or contradict it.",
+      "statement": "For any trade_number whose (owning_account_number, owning_account_effective_from) pair resolves, that pair identifies exactly one statement of ownership-history's logical.account entity, and that statement's own provenance value (non-null only when it is sourced from the labeled ce.account_changes scenario) is the provenance reachable for this trade.",
       "derived_from": ["L1.constructed-scenarios", "L1.attribution-at-placement"],
       "deterministic": true,
       "disposition": "candidate",
       "feedback": ["sketch-review"],
-      "necessity": "L1.constructed-scenarios requires a constructed scenario to remain labeled wherever it appears; L1.attribution-at-placement is what fixes owning_account_number and owning_account_effective_from as the frozen pair identifying the exact account statement a trade's ownership pins. Together they entail that the referenced statement's own provenance label -- if any -- stays reachable through that pair rather than needing a copy on the trade, and this invariant is the checkable restatement of that reachability.",
+      "necessity": "L1.constructed-scenarios requires a constructed scenario to remain labeled wherever it appears; L1.attribution-at-placement is what fixes owning_account_number and owning_account_effective_from as the frozen pair identifying the exact account statement a trade's ownership pins. Together they entail that the referenced statement's own provenance label -- if any -- stays reachable through that pair rather than needing a copy on the trade; this job defines no separate provenance attribute of its own that could omit, duplicate, or contradict it, and this invariant is the checkable restatement of the reachability that makes that omission safe.",
       "owner_hat": "data-product-owner",
       "parallel_assumption": "Holds while ownership-history's logical.account entity carries at most one statement per (account_number, effective_from) and continues to be the only source of a trade's ownership reference.",
       "review_trigger": "the pair (owning_account_number, owning_account_effective_from) for a trade resolves to zero or more than one ownership-history account statement",
@@ -640,8 +640,8 @@
         "inv.trade_first_seen_late_matches_status_order"
       ],
       "mode": "conditional",
-      "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time: placed_at, handed off from raw.trade_cdc's t_dts with selector first_encounter_only (the earliest report per trade_code_meanings.report_order's (batch_date, cdc_dsn) ordering), carries exactly that moment, frozen. L1.attribution-at-placement requires the trade's ownership to reference the account (and through it the customer) as they stood at that moment, not the account's current statement; L1.as-of defines that answer as the upstream logical.account statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from and owning_customer_number as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account entity they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies that exact statement. owning_customer_number is handed off directly from that same pinned statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it, satisfying the 'and through it the customer' half of the clause. inv.trade_placement_reference_frozen restates that these attributes are set once, at first encounter, and never replaced. first_seen_late, using the anchored trade_code_meanings.status_order and report_order, marks a trade whose first-encountered report's status is not PNDG as first seen late, which inv.trade_first_seen_late_matches_status_order restates directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account-statement pin against any upstream statement ownership-history has deferred (a CDC-sourced account update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order), not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change, though it does not currently block any member here.",
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, and L1.hole.deletions each bound part of this group's coverage; see coverage_claim."
+      "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time: placed_at, handed off from raw.trade_cdc's t_dts with selector first_encounter_only (the earliest report per trade_code_meanings.report_order's (batch_date, cdc_dsn) ordering), carries exactly that moment, frozen. L1.attribution-at-placement requires the trade's ownership to reference the account (and through it the customer) as they stood at that moment, not the account's current statement; L1.as-of defines that answer as the upstream logical.account statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from and owning_customer_number as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account entity they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies that exact statement. owning_customer_number is handed off directly from that same pinned statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it, satisfying the 'and through it the customer' half of the clause. inv.trade_placement_reference_frozen restates that these attributes are set once, at first encounter, and never replaced. first_seen_late, using the anchored trade_code_meanings.status_order and report_order, marks a trade whose first-encountered report's status is not PNDG as first seen late, which inv.trade_first_seen_late_matches_status_order restates directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account-statement pin against any upstream statement ownership-history has deferred (a CDC-sourced account update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order), not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, and L1.hole.owner-change-reversions-account each bound part of this group's coverage; see coverage_claim."
     },
     {
       "id": "sg.trade-identity",
@@ -674,7 +674,7 @@
       "parent_clauses": ["L1.constructed-scenarios", "L1.attribution-at-placement"],
       "members": ["inv.trade_not_constructed", "inv.trade_ownership_provenance_reachable"],
       "mode": "all_required",
-      "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from raw.trade_cdc alone. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it.",
+      "coverage_claim": "chain/anchors/sources-v1.json anchors no labeled constructed source for trades (only ce.account_changes exists, and that is for accounts); this job therefore has no handoff that could mix an unlabeled constructed fact into the trade entity, which inv.trade_not_constructed restates: every trade statement this model can produce originates from raw.trade_cdc alone. Separately, owning_account_number and owning_account_effective_from (frozen_from_first_encounter, sg.trade-shape and sg.placement-moment) are the (account_number, effective_from) pair fixed by L1.attribution-at-placement that identifies the exact upstream ownership-history statement a trade's ownership pins; for any trade whose pin resolves to such a statement, inv.trade_ownership_provenance_reachable makes checkable that this pair reaches that statement's own provenance value (populated only when it is sourced from the labeled ce.account_changes scenario), so a trade whose ownership pins a constructed account statement has that label reachable through the pair, without this job needing, or introducing, a separate trade-level provenance attribute that could omit, duplicate, or contradict it. This claim is scoped to trades whose pin resolves; a trade whose pin does not yet resolve (bounded by L1.hole.change-effective-time, already sg.placement-moment's gap) has no statement to reach a provenance value from in the first place, which is not a further gap of this group's own claim.",
       "gap": "none"
     }
   ],
@@ -691,7 +691,8 @@
       "question": "Trades appear on accounts the brokerage recorded as closed years earlier. Is that a data error, a reopening the records omit, or does a closed account still own trades? Until answered, a trade's ownership reference (once resolvable) may point to an account statement whose closed status this job cannot verify against the trade's own later activity.",
       "derived_from_hole": "L1.hole.closed-account-activity",
       "owner_hat": "data-product-owner",
-      "disposition": "deferred"
+      "disposition": "deferred",
+      "blocks": ["sg.placement-moment"]
     },
     {
       "id": "hole.change_effective_time",
@@ -703,7 +704,7 @@
     },
     {
       "id": "hole.deletions",
-      "question": "What does a deletion marker (cdc_flag D) in raw.trade_cdc mean for a trade's history, its recorded ownership, and the outcome facts this job carries? Anchored trade_code_meanings state I and U's meanings but leave D's meaning to this hole. This job excludes D-flagged reports from latest_change's candidate set (a deletion is not one of the clause's four named lifecycle statuses) but does not decide what a D-flagged report means for the trade otherwise -- whether it stands, is voided, or something else -- nor what it would mean if a trade's first-encountered report were itself D-flagged.",
+      "question": "What does a deletion marker (cdc_flag D) in raw.trade_cdc mean for a trade's history, its recorded ownership, and the outcome facts this job carries? Anchored trade_code_meanings state I and U's meanings but leave D's meaning to this hole. This job's current handling -- excluding D-flagged reports from latest_change's candidate set, so the last I- or U-flagged outcome stands -- is provisional, pending this hole's resolution; it does not decide what a D-flagged report means for the trade otherwise, whether it stands, is voided, or something else, nor what it would mean if a trade's first-encountered report were itself D-flagged.",
       "derived_from_hole": "L1.hole.deletions",
       "owner_hat": "data-product-owner",
       "disposition": "deferred",
