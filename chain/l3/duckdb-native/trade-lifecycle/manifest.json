@@ -84,16 +84,26 @@
       "entity": "logical.trade",
       "file": "audits/inv.trade_ownership_provenance_reachable.sql",
       "invariant": "inv.trade_ownership_provenance_reachable"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.trade_ownership_pin_present.sql",
+      "invariant": "inv.trade_ownership_pin_present"
+    },
+    {
+      "entity": "logical.trade",
+      "file": "audits/inv.every_received_trade_persisted.sql",
+      "invariant": "inv.every_received_trade_persisted"
     }
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/semantic-model.json",
-    "review_sha256": "fcc77f8450301dc7b03a7817f08008b9d1dd79818475e2c05edff1ebbc88a78e"
+    "review_sha256": "fe25c77e5000a970f46f4d42b41818ff0f1bd110f39d294a56fa5dcb4051e750"
   },
   "group_fingerprints": {
     "sg.outcome": "02e133cd339e85445015725d1be9605001f760aaffe2c75067fdc8c714845c6a",
-    "sg.placement-moment": "bd7afd32cf4ec4af7d915ce63ce440f09184540fc2d35ec538321979ddfcabfb",
-    "sg.trade-identity": "6b52f9f4ab8b68689702ab59805148623986477305549e876d702457b4851253",
+    "sg.placement-moment": "b3a1bac643b067f4a794eb538879e633906a676790bd8b2c9ed360eaa011ceee",
+    "sg.trade-identity": "aac9f60fd0cb1ca39e5ff833e639308ac579b82eadccd1aed1ecb4131ec2efcc",
     "sg.trade-shape": "b536db354e2889989da51790856665fd8f7b6fcd2392fcc5003ab38b903c9849"
   },
   "job": "trade-lifecycle",
