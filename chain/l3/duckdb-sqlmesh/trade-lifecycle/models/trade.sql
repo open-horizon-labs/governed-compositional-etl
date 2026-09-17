@@ -31,7 +31,6 @@ MODEL (
     "inv.trade_order_type_frozen",
     "inv.trade_first_seen_late_matches_status_order",
     "inv.trade_first_seen_late_defined_or_held",
-    "inv.trade_market_order_seen_pending_held",
     "inv.trade_placed_at_matches_earliest_report",
     "inv.trade_outcome_updates_in_place",
     "inv.trade_ownership_provenance_reachable",
@@ -126,12 +125,12 @@ first_history_report AS (
 -- same first report's own status against the anchored status_order (PNDG, SBMT, CMPT, with
 -- CNCL terminal and later than any of them), ranked relative to order_type's own first
 -- lifecycle event -- PNDG for a limit order (TLB, TLS), SBMT for a market order (TMB, TMS)
--- sent straight to market and so never pending. Held cases leave first_seen_late NULL, with no
--- rank arithmetic reaching them: a market order whose first-encountered report is PNDG
--- (L1.hole.market-order-seen-pending; reported by inv.trade_market_order_seen_pending_held). A
--- trade whose earliest report, from either source, or whose earliest cdc report specifically, is
--- held has no row at all (excluded below via earliest_report_held), so first_seen_late is never
--- computed against a held first report here.
+-- sent straight to market -- recorded pending on receipt, before routing, per L1.placement-moment
+-- amended: PNDG or SBMT is the order's own first lifecycle event for a market order, and only
+-- CMPT or CNCL (later than SBMT) is first seen late; L1.hole.market-order-seen-pending is closed.
+-- The only remaining held reason is an unknown code on the first-encountered report, and such a
+-- trade has no row at all (excluded below via earliest_report_held), so first_seen_late is never
+-- computed against a held first report here; no rank arithmetic reaches a held case.
 first_report AS (
   SELECT
     c.trade_number,
@@ -148,23 +147,22 @@ first_seen_late_computed AS (
     owning_account_number,
     order_type,
     placed_at,
-    CASE
-      WHEN order_type IN ('TMB', 'TMS') AND status_at_first_report = 'PNDG' THEN NULL
-      ELSE
-        (CASE status_at_first_report
-           WHEN 'PNDG' THEN 0
-           WHEN 'SBMT' THEN 1
-           WHEN 'CMPT' THEN 2
-           WHEN 'CNCL' THEN 3
-         END)
-        >
-        (CASE order_type
-           WHEN 'TLB' THEN 0
-           WHEN 'TLS' THEN 0
-           WHEN 'TMB' THEN 1
-           WHEN 'TMS' THEN 1
-         END)
-    END AS first_seen_late
+    -- order_type's own first lifecycle event: PNDG (rank 0) for a limit order; PNDG or SBMT
+    -- (rank 1) for a market order, since the brokerage records it pending on receipt before
+    -- routing it. Late iff the first-encountered status outranks that event.
+    (CASE status_at_first_report
+       WHEN 'PNDG' THEN 0
+       WHEN 'SBMT' THEN 1
+       WHEN 'CMPT' THEN 2
+       WHEN 'CNCL' THEN 3
+     END)
+    >
+    (CASE order_type
+       WHEN 'TLB' THEN 0
+       WHEN 'TLS' THEN 0
+       WHEN 'TMB' THEN 1
+       WHEN 'TMS' THEN 1
+     END) AS first_seen_late
   FROM first_report
 ),
 -- handoff.logical.account.effective_from->logical.trade.owning_account_effective_from and

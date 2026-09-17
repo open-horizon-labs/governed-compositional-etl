@@ -93,17 +93,18 @@
 -- selector as_of_event_time: owning_customer_effective_from <- the
 -- governed.customer statement of owning_customer_number whose effective_from
 -- is latest at or before placed_at.
--- first_seen_late (computed_within_entity, L1.placement-moment amended,
--- L1.hole.market-order-seen-pending): among trades reaching this point
--- (earliest report anchored), the only remaining held case is
--- L1.hole.market-order-seen-pending: null when order_type is a market order
--- (TMB, TMS) and first_status is PNDG (held for review, not decided).
--- Otherwise: true when first_status is later, in
+-- first_seen_late (computed_within_entity, L1.placement-moment amended;
+-- L1.hole.market-order-seen-pending answered and closed): among trades
+-- reaching this point (earliest report anchored, so no held case remains
+-- here), true when first_status is later, in
 -- trade_code_meanings.status_order (PNDG, SBMT, CMPT, with terminal CNCL
--- treated as later than any of them), than order_type's first lifecycle
--- event -- PNDG for a limit order (TLB, TLS), SBMT for a market order (TMB,
--- TMS), since an order sent straight to market has no pending stage; false
--- when it carries exactly that event.
+-- treated as later than any of them), than order_type's own first
+-- lifecycle event -- PNDG for a limit order (TLB, TLS); PNDG or SBMT for a
+-- market order (TMB, TMS), since the brokerage's own systems record a
+-- market order as pending on receipt, before routing it, so PNDG or SBMT is
+-- the order's own first lifecycle event and only CMPT or CNCL is late;
+-- false when it carries exactly that event (or, for a market order, either
+-- opening event).
 -- selector latest_change (report_order descending; D rows excluded,
 -- provisional pending L1.hole.deletions; a later report held under
 -- L1.unknown-codes -- any of cdc_flag, t_st_id, t_tt_id unanchored -- is not
@@ -262,24 +263,24 @@ USING (
         ap.owning_account_effective_from,
         ap.owning_customer_number,
         cp.owning_customer_effective_from,
-        CASE
-            -- L1.hole.market-order-seen-pending: a market order whose
-            -- first-encountered report is PNDG is held for review, not
-            -- decided either way. This is the only remaining held case,
-            -- since a trade whose earliest report is unanchored under
-            -- L1.unknown-codes never reaches first_report at all.
-            WHEN fr.order_type IN ('TMB', 'TMS') AND fr.first_status = 'PNDG' THEN NULL
-            ELSE (
-                CASE fr.first_status
-                    WHEN 'PNDG' THEN 0 WHEN 'SBMT' THEN 1 WHEN 'CMPT' THEN 2 WHEN 'CNCL' THEN 3
-                END
-                >
-                CASE fr.order_type
-                    WHEN 'TLB' THEN 0 WHEN 'TLS' THEN 0
-                    WHEN 'TMB' THEN 1 WHEN 'TMS' THEN 1
-                END
-            )
-        END AS first_seen_late,
+        (
+            -- L1.placement-moment (amended, hole answered): the brokerage
+            -- records a market order as pending on receipt, so PNDG or SBMT
+            -- is a market order's own first lifecycle event and only CMPT
+            -- or CNCL, later than SBMT, is late; a limit order's first
+            -- lifecycle event remains PNDG alone. No held case remains here:
+            -- a trade whose first-encountered report carries an unknown
+            -- code never reaches first_report at all (see
+            -- inv.trade_held_first_report_unclaimed, inv.unknown_codes_held).
+            CASE fr.first_status
+                WHEN 'PNDG' THEN 0 WHEN 'SBMT' THEN 1 WHEN 'CMPT' THEN 2 WHEN 'CNCL' THEN 3
+            END
+            >
+            CASE fr.order_type
+                WHEN 'TLB' THEN 0 WHEN 'TLS' THEN 0
+                WHEN 'TMB' THEN 1 WHEN 'TMS' THEN 1
+            END
+        ) AS first_seen_late,
         fr.order_type,
         lo.t_st_id AS status,
         lo.t_trade_price AS executed_price,

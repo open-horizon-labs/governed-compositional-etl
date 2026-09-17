@@ -1,16 +1,19 @@
--- inv.trade_first_seen_late_matches_status_order (restated): for any
+-- inv.trade_first_seen_late_matches_status_order (restated,
+-- L1.hole.market-order-seen-pending answered and closed): for any
 -- trade_number whose first-encountered report's status and order type are
--- not held under L1.unknown-codes (per inv.unknown_codes_held) and that is
--- not held as a market order seen pending (per
--- inv.trade_market_order_seen_pending_held), first_seen_late is true if and
--- only if that report -- across both anchored sources, the trade's
--- earliest raw.trade_history row if any exist, otherwise its earliest
--- valid_cdc_rows row -- carries a status later, in
--- trade_code_meanings.status_order (PNDG, SBMT, CMPT, with terminal CNCL
--- treated as later than any of them), than order_type's first lifecycle
--- event: PNDG for a limit order (TLB, TLS); SBMT for a market order (TMB,
--- TMS). A trade whose first-encountered report is held, or that is held as
--- a market order seen pending, is not claimed by this invariant and is
+-- not held under L1.unknown-codes (per inv.unknown_codes_held),
+-- first_seen_late is true if and only if that report -- across both
+-- anchored sources, the trade's earliest raw.trade_history row if any
+-- exist, otherwise its earliest valid_cdc_rows row -- carries a status
+-- later, in trade_code_meanings.status_order (PNDG, SBMT, CMPT, with
+-- terminal CNCL treated as later than any of them), than order_type's own
+-- first lifecycle event: PNDG for a limit order (TLB, TLS); PNDG or SBMT
+-- for a market order (TMB, TMS), since the brokerage's own systems record a
+-- market order as pending on receipt, before routing it, so PNDG or SBMT is
+-- the order's own first lifecycle event and only CMPT or CNCL is late. A
+-- market order first reported PNDG is claimed by this invariant, as
+-- first_seen_late false, not excluded from it. A trade whose
+-- first-encountered report is held is not claimed by this invariant and is
 -- excluded from scope entirely (not merely defaulted). order_type's own
 -- freeze is checked separately by inv.trade_order_type_frozen. Zero rows
 -- means the invariant holds.
@@ -61,14 +64,13 @@ ranked AS (
     FROM first_report
 ),
 in_scope AS (
-    -- order_type and first_status must both be anchored, and a market
-    -- order whose first-encountered report is PNDG is excluded from this
-    -- invariant's claim (held under the hole instead).
+    -- order_type and first_status must both be anchored; a market order
+    -- first reported PNDG is now claimed (first_lifecycle_rank 1, same as
+    -- SBMT), not excluded.
     SELECT *
     FROM ranked
     WHERE order_type IN ('TLB', 'TLS', 'TMB', 'TMS')
       AND first_status IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-      AND NOT (order_type IN ('TMB', 'TMS') AND first_status = 'PNDG')
 ),
 expected AS (
     SELECT

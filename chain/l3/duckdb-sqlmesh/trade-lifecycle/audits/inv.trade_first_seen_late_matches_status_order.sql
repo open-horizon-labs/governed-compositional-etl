@@ -1,19 +1,20 @@
 AUDIT (name "inv.trade_first_seen_late_matches_status_order");
 
 -- For any trade_number whose first-encountered report's status and order type are not held
--- under L1.unknown-codes (per inv.unknown_codes_held) and that is not held as a market order
--- seen pending (per inv.trade_market_order_seen_pending_held), first_seen_late is true if and
--- only if that report -- across both anchored sources, the trade's earliest raw.trade_history
--- row if any exist, otherwise its earliest raw.trade_cdc row among those with an anchored
--- cdc_flag -- carries a status (th_st_id or t_st_id, respectively) later, in
--- trade_code_meanings.status_order (PNDG, SBMT, CMPT, with CNCL terminal and later than any of
--- them), than order_type's first lifecycle event: PNDG for a limit order (TLB, TLS), per
--- status_order's first entry; SBMT for a market order (TMB, TMS), per L1.placement-moment's
--- amended sentence that an order sent straight to market has no pending stage. A trade whose
--- first-encountered report's status or order type is held, or that is held as a market order
--- seen pending, is not claimed by this invariant; inv.trade_first_seen_late_defined_or_held
--- covers those cases instead. order_type's own freeze is inv.trade_order_type_frozen's own
--- audit, not this one's.
+-- under L1.unknown-codes (per inv.unknown_codes_held), first_seen_late is true if and only if
+-- that report -- across both anchored sources, the trade's earliest raw.trade_history row if
+-- any exist, otherwise its earliest raw.trade_cdc row -- carries a status (th_st_id or
+-- t_st_id, respectively) later, in trade_code_meanings.status_order (PNDG, SBMT, CMPT, with
+-- CNCL terminal and later than any of them), than order_type's own first lifecycle event: PNDG
+-- for a limit order (TLB, TLS), per status_order's first entry; PNDG or SBMT, whichever the
+-- first-encountered report states, for a market order (TMB, TMS), per L1.placement-moment's
+-- amended sentence that the brokerage's own systems record a market order as pending on
+-- receipt, before routing it, so PNDG or SBMT is the order's own first lifecycle event and only
+-- CMPT or CNCL is late. A market order first reported PNDG is claimed by this invariant, as
+-- first_seen_late false, not excluded from it; L1.hole.market-order-seen-pending is closed. A
+-- trade whose first-encountered report's status or order type is held is not claimed by this
+-- invariant; inv.trade_first_seen_late_defined_or_held covers that case instead. order_type's
+-- own freeze is inv.trade_order_type_frozen's own audit, not this one's.
 WITH first_cdc_report AS (
   SELECT
     t_id AS trade_number,
@@ -47,7 +48,6 @@ FROM @this_model AS m
 JOIN expected AS e ON e.trade_number = m.trade_number
 WHERE e.order_type IN ('TLB', 'TLS', 'TMB', 'TMS')
   AND e.status_at_first_report IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-  AND NOT (e.order_type IN ('TMB', 'TMS') AND e.status_at_first_report = 'PNDG')
   AND m.first_seen_late IS DISTINCT FROM (
     (CASE e.status_at_first_report
        WHEN 'PNDG' THEN 0

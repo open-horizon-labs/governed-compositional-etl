@@ -246,6 +246,39 @@ class L3ProvenanceUnderL1Tests(unittest.TestCase):
         self.assertTrue(any(moved in p and "moved" in p for p in problems), problems)
 
 
+class StampIsAcceptanceTests(unittest.TestCase):
+    def test_a_projection_edited_after_its_review_cannot_be_stamped(self):
+        """Stamping records that a reviewed projection is accepted, so it is the reviewer's step. A Developer that edits
+        SQL and stamps would be accepting its own work; the guard is on content, so a touched-but-identical file passes."""
+        import shutil, tempfile
+        target, job = "duckdb-native", "trade-lifecycle"
+        base_src = ROOT / "chain/l3" / target / job
+        if not (base_src / "review.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3_dir = Path(tmp) / "l3"
+            shutil.copytree(base_src, l3_dir / target / job)
+            base = l3_dir / target / job
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3_dir
+            try:
+                L3.stamp(target, job)  # a reviewed projection stamps and records what the acceptance covers
+                self.assertTrue(json.loads((base / "review.json").read_text())["projection_sha256"])
+                sql = next(iter(sorted(base.glob("*.sql")) + sorted(base.glob("models/*.sql"))))
+                sql.touch()
+                L3.stamp(target, job)  # identical content, new timestamp: same projection
+                sql.write_text(sql.read_text() + "\n-- an edit the reviewer never saw\n")
+                with self.assertRaises(L3.L3Error):
+                    L3.stamp(target, job)
+                record = json.loads((base / "review.json").read_text())
+                record["verdict"] = "fail"
+                (base / "review.json").write_text(json.dumps(record))
+                with self.assertRaises(L3.L3Error):
+                    L3.stamp(target, job)  # and a failed review is never stamped
+            finally:
+                L3.L3_DIR = saved
+
+
 class WeaveTests(unittest.TestCase):
     def test_weave_reports_uncovered_clauses_as_gaps(self):
         out = L2.weave()

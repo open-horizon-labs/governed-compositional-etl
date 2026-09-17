@@ -120,10 +120,30 @@ def groups_of(model: dict, element_ids: list[str]) -> set[str]:
     return {steps[e]["sufficiency_group"] for e in element_ids if e in steps and steps[e].get("sufficiency_group")}
 
 
+def projection_digest(base: Path) -> str:
+    """What the reviewer judged: every SQL file of the projection, by content, so a touched-but-identical file is the same
+    projection and an edited one is not."""
+    files = sorted(list(base.glob("*.sql")) + list(base.glob("models/*.sql")) + list(base.glob("audits/*.sql")))
+    material = json.dumps([[f.relative_to(base).as_posix(), hashlib.sha256(f.read_bytes()).hexdigest()] for f in files], sort_keys=True)
+    return hashlib.sha256(material.encode()).hexdigest()
+
+
 def stamp(target: str, job: str) -> dict:
-    """After a passed projection review: record the fingerprints of the L2 groups the artifacts derive from."""
+    """After a passed projection review: record the fingerprints of the L2 groups this projection derives from.
+    Stamping is the acceptance step, so it is the reviewer's, not the Developer's: it refuses when the projection has
+    changed since the review that judged it, which is exactly the case where a Developer would be accepting its own work."""
     model, review = load_job(job)
     base = L3_DIR / target / job
+    projection_review = base / "review.json"
+    if not projection_review.exists():
+        raise L3Error(f"{target}/{job} has no projection review; stamping is acceptance and needs one")
+    verdict = json.loads(projection_review.read_text()).get("verdict")
+    if verdict != "pass":
+        raise L3Error(f"{target}/{job} review verdict is {verdict}; only a passed projection is stamped")
+    record = json.loads(projection_review.read_text())
+    digest = projection_digest(base)
+    if record.get("projection_sha256") and record["projection_sha256"] != digest:
+        raise L3Error(f"{target}/{job} changed after the review that judged it; review the change, then stamp")
     manifest = json.loads((base / "manifest.json").read_text())
     # a projection derives from the groups its artifacts cite and from the groups whose invariants its audits check;
     # a group with only an invariant member (like sg.unknown-codes) reaches L3 through an audit alone
@@ -132,6 +152,8 @@ def stamp(target: str, job: str) -> dict:
     manifest["group_fingerprints"] = current
     manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]
     (base / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    record["projection_sha256"] = digest  # what this acceptance covers; a later edit no longer passes as reviewed
+    projection_review.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
     return {"target": target, "job": job, "groups": sorted(current)}
 
 

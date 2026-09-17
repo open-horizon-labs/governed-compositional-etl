@@ -2,6 +2,7 @@
   "job": "positions",
   "manifest_sha256": "163074fb459fe0c1be030aa8ecdba50ef54dd581fab9b797ed52075d1d4a6e1e",
   "notes": "see review-1..4",
+  "projection_sha256": "3e1268114f4726b16a39befeeea1212dbaf4325f02502dd1fa691ba120822cc6",
   "rejected_artifacts": [],
   "reviewer": "coordinator, bookkeeping review 4 (unknown-codes audit)",
   "schema_version": "l3-review/v1",

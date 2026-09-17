@@ -1,9 +1,10 @@
 {
   "job": "trade-lifecycle",
-  "manifest_sha256": "131f3725ccc27c473e8ea92a467b345d778247601a9b783464a38cb9f38077b7",
-  "notes": "see review-1..8",
+  "manifest_sha256": "1d7a707950563dcb9913ee495589ab863b6d7d33a10ab245d73e69a41a290531",
+  "notes": "see review-1..9",
+  "projection_sha256": "7034fdcc7ec0606f08faa2c5326a492c65729a945bd89b7eec54731b9eb7cdba",
   "rejected_artifacts": [],
-  "reviewer": "Opus sketch reviewer, scoped review 8 (both engines)",
+  "reviewer": "coordinator, bookkeeping review 9 (business answered the pending-market-order hole)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
   "verdict": "pass"

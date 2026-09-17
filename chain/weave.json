@@ -181,7 +181,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, L1.hole.market-order-seen-pending, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
       "group": "sg.placement-moment",
       "job": "trade-lifecycle",
       "relation": "named-gap"

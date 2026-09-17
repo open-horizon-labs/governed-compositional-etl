@@ -85,11 +85,6 @@
     },
     {
       "entity": "logical.trade",
-      "file": "audits/inv.trade_market_order_seen_pending_held.sql",
-      "invariant": "inv.trade_market_order_seen_pending_held"
-    },
-    {
-      "entity": "logical.trade",
       "file": "audits/inv.trade_first_seen_late_defined_or_held.sql",
       "invariant": "inv.trade_first_seen_late_defined_or_held"
     },
@@ -126,12 +121,12 @@
   ],
   "derived_from_model": {
     "path": "chain/l2/trade-lifecycle/selected-model.json",
-    "review_sha256": "ba947c83d724f841726a07a697a2d452e6c8554d3547ff6a9d23216d5b623a8b"
+    "review_sha256": "8087a81bdfb7bb6a413a3e0cbeb4d35291df592bb0da8c2ba18db34d72af4d51"
   },
   "group_fingerprints": {
     "sg.constructed-scenarios": "bc19bc4df49822f826102ef0b0209f1d9e13e35cf16ae1680e88994b77f33ec7",
     "sg.outcome": "87ed9eecd8a20f3806dc2288a52c50d761356d744f7af18f53a5f7dc6e40653d",
-    "sg.placement-moment": "69c7d5427257e83e6bcd567274e6d9bce1a4d72609cb890c30f17e1007514f52",
+    "sg.placement-moment": "2aa580fa0906fc31c56402ff910903a5b686b9bb87856a9989d9c4f6be1ccbce",
     "sg.trade-identity": "3489a66c0d6c654e9a2b4f304e6b6ffaa241008cf7934cab8d0565a0ad9c4011",
     "sg.trade-shape": "22d93dbbdc979acef6c1e8d3e59ddcca44c398ca23b13b254dce40606b6fd3e4",
     "sg.unknown-codes": "c13c1f63bc7d85d45fede6048d666339171a920b1f5bba94101a60314294759a"

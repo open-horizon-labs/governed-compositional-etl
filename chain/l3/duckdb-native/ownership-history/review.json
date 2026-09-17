@@ -2,6 +2,7 @@
   "job": "ownership-history",
   "manifest_sha256": "595d18d101e70036b665aa8b20b980d7d1df7d872d6d54ffc328b38002fc832c",
   "notes": "see review-1..4",
+  "projection_sha256": "2f7a096bac590cc8c35bd12e4e0b0be2becc70ea3b8e80116973ca3305019383",
   "rejected_artifacts": [],
   "reviewer": "coordinator, bookkeeping review 4 (unknown-codes audit)",
   "schema_version": "l3-review/v1",
