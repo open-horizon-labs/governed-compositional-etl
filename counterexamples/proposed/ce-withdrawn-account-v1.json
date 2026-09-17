@@ -6,6 +6,10 @@
     "recomputing any position backwards"
   ],
   "approved_or_rejected_by": "L1.deletion-withdraws approved 2026-09-17; this document proposed, awaiting the L2 recompile it demands",
+  "blocked_on": {
+    "L1.constructed-scenarios": "The D-only trade case. Claiming a D-only trade absent requires a scenario naming a trade number the records do not carry, which the clause's second sentence forbids a constructed scenario from introducing. The pair (372101, 353232) in this document is a holding, not a trade, so it is admissible; a D-only trade is not.",
+    "L1.hole.change-effective-time": "The account and customer halves. ownership-history's CDC handoffs are deferred under this hole, so the job does not read the sources that carry the flag. Answering L1.hole.deletions did not make the account case testable; it made visible that the case sits behind a second open hole."
+  },
   "constructed_by_hat": "sketch-reviewer",
   "deterministic_assertion": "On both engines, with this scenario loaded: account 624 has no current statement and no as-of answer at or after 2017-07-08; its 2008-03-14 and 2010-02-07 statements and every as-of answer before 2017-07-08 match a run without the scenario; no holding_change exists for the pair (372101, 353232); and account 428's statements, trades and holding changes are byte-identical to a run without the scenario. Every must-hold audit is at zero and the two engines agree.",
   "expected": {
@@ -50,7 +54,7 @@
     "L1.current-version",
     "L1.hole.deletion-reversal"
   ],
-  "observed": "Measured on duckdb-native before the L2 recompile, with this scenario loaded: the withdrawal is invisible. Account 624 still carries its 2010-02-07 statement with is_current true and status ACTV, exactly as in a run without the scenario, so an as-of question in 2018 answers with a statement the brokerage has withdrawn. No audit fires and the run reports ok. The deletion-only pair (372101, 353232) does produce no holding_change row, which is the required outcome, but it is reached by the D row supplying no candidate quantity rather than by any rule, so nothing holds it: this is the accident the positions Developer declined to call an answer. governed.trade and the two existing holding changes are unaffected.",
+  "observed": "Measured on duckdb-native, and the reason matters more than the result. The withdrawal of account 624 is invisible -- 624 still carries its 2010-02-07 statement with is_current true and status ACTV, so an as-of question in 2018 answers with a statement the brokerage has withdrawn -- but not because ownership-history reads the flag and ignores it. ownership-history reads only raw.customer_mgmt_action; it never reads raw.account_cdc or raw.customer_cdc at all, because every one of its declared CDC handoffs is still deferred under L1.hole.change-effective-time. So the account half of this counterexample cannot be exercised until that separate hole is answered, and no re-projection under L1.deletion-withdraws alone can discharge it. trade-lifecycle is the opposite case and the sharper one: valid_cdc_rows admits D, while only latest_outcome narrows to I and U, so a D-only trade today gets a persisted row with a placement, a frozen owner and a null outcome -- the direct opposite of a thing whose only reports are withdrawals having never been held. positions produces no holding_change for the deletion-only pair, which is the required outcome reached by the D row supplying no candidate quantity rather than by any rule, so nothing holds it.",
   "proposed_on": "2026-09-17",
   "provenance": "controlled_counterexample",
   "schema_version": "counterexample/v1",
