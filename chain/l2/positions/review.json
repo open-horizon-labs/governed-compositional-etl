@@ -7,10 +7,10 @@
     "sg.unknown-codes"
   ],
   "job": "positions",
-  "model_sha256": "e3d5796935ac35f2030ec53f8037ce54b2ba04458db0108f57ee58227bf27df4",
-  "notes": "see review-8.md and review-9.md",
+  "model_sha256": "06fba23777a1f4ab2b89411e0dc055115cb3b8ab6676f274cc976a14fa14ad14",
+  "notes": "see review-1..11. review-11 passed the rework with no rejected element ids, judged the held-report resolution genuinely forced rather than convenient, and verified the report-ordering predicate empirically (no pair with more than one historical row, none mixing historical and incremental, cdc_dsn globally unique). It also independently verified the coordinator's pair correction and identified review-10's F3 as reading the two id fields transposed. The five residuals it raised were prescribed and cleared: the quantity handoffs now cite L1.deletion-withdraws and describe the freeze at the last pre-D report rather than an unbounded latest; sg.holding-shape's gap names L1.hole.batch-identity because its predicate rests on report_order, and the hole's blocks lists it; the absence invariant now also covers a pair known only through held reports; two ambiguous wordings match their own parallel_assumption. On the one ambiguity that is the coordinator's -- L1.deletion-withdraws specifies the marked-withdrawn treatment for a trade only and never says whether a withdrawn holding gets an equivalent marker -- the model takes no position and says so in its coverage claim, which is correct: it is an open question for the business.",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 9 after prescribed corrections",
+  "reviewer": "capable-model verification review 11, plus coordinator verification of the five prescribed residuals",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.holding_change.quantity_change->logical.account_position.net_quantity",
@@ -30,6 +30,7 @@
     "inv.customer_position_key_matches_holding_change",
     "inv.customer_position_not_negative",
     "inv.eligible_holding_report_persisted",
+    "inv.holding_change_absent_for_withdrawn_only_pair",
     "inv.holding_change_current_trade_known",
     "inv.holding_change_not_constructed",
     "inv.holding_change_ownership_frozen",
