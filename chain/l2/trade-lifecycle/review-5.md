@@ -1,0 +1,7 @@
+# Sketch review 5 (scoped): job trade-lifecycle (verdict: fail, consistency)
+
+Reviewer: Opus judge. All six scope items satisfied: placed_at over both anchored sources with the history row preferred as anchored fact; first_seen_late's rule and invariant agree; account sourcing stated; review-4 notes applied; completion timing still a hole; 25 field changes all inside authorized elements.
+
+Defect: `inv.trade_not_constructed` and `sg.constructed-scenarios.coverage_claim` still say every trade statement originates from raw.trade_cdc alone; false once placed_at can come from raw.trade_history, and its own review trigger is tripped. An L3 Developer reading it literally would exclude the history source. Correction: enumerate both anchored received sources.
+
+Recommendations for the next authorized change: a deterministic invariant that placed_at equals th_dts of the earliest raw.trade_history row when any exist, otherwise t_dts of the earliest raw.trade_cdc row (currently only "set once" is checked, so a snapshot-time placed_at would pass); record in the history handoff's parallel assumption that two history rows sharing th_dts would make the earliest status ambiguous; update hole.batch_identity's text (the history-sourced first encounter rests on th_dts, not file order); note in hole.trade_timestamps that history now supplies per-status times so the hole is purely the completion-policy question; owning_account_number's necessity should list batch_date among the history fields; the entity's parallel assumption should mention both sources.
