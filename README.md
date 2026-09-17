@@ -18,6 +18,10 @@ The issue #4 [semantic contracts and change authority](docs/semantic-contracts.m
 
 The issue #5 [replaceable SQLMesh projection](docs/executable-projection.md) compiles only the current Sketch, structural anchors, and contracts into SQLGlot-built expressions, deterministic SQLMesh audits, and persistent DuckDB results.
 
+## Phase 2: the compile chain
+
+Phase 2 reframes composition as a chain of compilations: a business-language intent Sketch compiles to per-job semantic models, which compile to per-engine projections, each element recording what it derives from. Developers are low-competence models under explicit change contracts; reviewers judge against the level above; gate rules are mechanized from reviews; a fingerprint cache with Jev deciding above the hash floor re-projects only what a change touches. Start with [chain/README.md](chain/README.md).
+
 ## Intended architecture
 
 ```text

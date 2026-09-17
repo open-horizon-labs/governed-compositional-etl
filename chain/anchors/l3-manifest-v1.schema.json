@@ -1,0 +1,121 @@
+{
+  "$id": "urn:open-horizon-labs:governed-compositional-etl:l3-manifest:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_from": {
+            "description": "L2 element ids (entity, attributes, handoffs) this file implements",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "entity": {
+            "pattern": "^logical\\.[a-z_]+$",
+            "type": "string"
+          },
+          "file": {
+            "pattern": "^[a-z_]+\\.sql$",
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "reads": {
+            "description": "tables the SQL reads, schema-qualified",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "strategy": {
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "entity",
+          "strategy",
+          "derived_from",
+          "reads"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "audits": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "file": {
+            "pattern": "^audits/inv\\.[a-z0-9_.-]+\\.sql$",
+            "type": "string"
+          },
+          "invariant": {
+            "pattern": "^inv\\.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "invariant",
+          "entity"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "derived_from_model": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "review_sha256": {
+          "description": "model_sha256 from the job's review.json you compiled from",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "review_sha256"
+      ],
+      "type": "object"
+    },
+    "job": {
+      "type": "string"
+    },
+    "questions_for_authority": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "l3-manifest/v1"
+    },
+    "target": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "target",
+    "job",
+    "derived_from_model",
+    "artifacts",
+    "audits"
+  ],
+  "title": "L3 projection manifest v1",
+  "type": "object"
+}
