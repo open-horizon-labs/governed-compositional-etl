@@ -829,3 +829,9 @@ Five cycles on one job with a Sonnet Developer and an Opus reviewer. Every failu
 
 - Ownership-history cycle 9 changed four gap strings and nothing else (element-level diff: zero elements, zero holes). Coordinator reviewed it as bookkeeping and selected it. Cache plan: six hits. The native L3 projection's manifest pinned the cycle-8 review sha, which changed; the L3 check now accepts when every group an artifact derives from has an unchanged fingerprint, and reports that the sha was superseded by a behavior-neutral change. Stamping added (`chain_l3.py stamp`) after a passed projection review. This is the cache reaching across levels: a change that touches no fingerprinted input re-projects nothing at L3, mechanically.
 - Trade-lifecycle cycle 4 applied review-3's corrections; gate ok; scoped review 4 in flight.
+
+### Engine independence: two targets, one L2, identical tables (2026-09-17)
+
+- `ownership-history` projected on `duckdb-sqlmesh` by a second Sonnet Developer from the model alone (the native projection was off limits). Check ok; SQLMesh plan and audit clean, 11 of 11. `chain_l3.py compare` shows `governed.customer` and `governed.account` identical row for row across the two engines. The SQLMesh profile's custom-materialization workaround was correctly not used: no entity in this job is incremental_by_identity. The workaround will appear only when trade-lifecycle projects to that target, and only in that profile.
+- Developer mechanics recorded in the L2 to L3 contract: dotted audit names must be quoted in SQLMesh; a model whose audit joins another model declares depends_on.
+- The Developer also noticed the working tree change under it (the bookkeeping re-selection) and updated its manifest sha after diffing the selection set. With fingerprint provenance stamped it would not have needed to.

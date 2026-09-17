@@ -1,4 +1,4 @@
-AUDIT (name inv.account_asof_carries_customer_asof);
+AUDIT (name "inv.account_asof_carries_customer_asof");
 
 -- For any account_number and moment T, the account's as-of statement's
 -- owning_customer_number, looked up as of the same moment T in the customer entity,

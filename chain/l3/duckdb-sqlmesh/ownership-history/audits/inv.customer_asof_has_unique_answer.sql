@@ -1,4 +1,4 @@
-AUDIT (name inv.customer_asof_has_unique_answer);
+AUDIT (name "inv.customer_asof_has_unique_answer");
 
 -- For any customer_number and any moment T, exactly one statement is the latest one
 -- effective at or before T. This holds exactly when every statement has a determinable

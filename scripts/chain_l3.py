@@ -291,11 +291,38 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
     return report
 
 
+def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> dict:
+    """Engine independence: the same selected L2 projected on two targets must yield identical tables."""
+    ra = run(target_a, job, phase, database=ROOT / f"build/chain-compare-{target_a}.duckdb")
+    rb = run(target_b, job, phase, database=ROOT / f"build/chain-compare-{target_b}.duckdb")
+    model, _ = load_job(job)
+    tables = ["governed." + e["id"].split(".")[-1] for e in model["entities"]]
+    out = {"job": job, "targets": [target_a, target_b], "both_ok": ra["ok"] and rb["ok"], "tables": {}}
+    ca = duckdb.connect(str(ROOT / f"build/chain-compare-{target_a}.duckdb"), read_only=True)
+    cb = duckdb.connect(str(ROOT / f"build/chain-compare-{target_b}.duckdb"), read_only=True)
+    try:
+        for table in tables:
+            try:
+                a_rows = ca.execute(f"SELECT * FROM {table} ORDER BY 1, 2").fetchall()
+                b_rows = cb.execute(f"SELECT * FROM {table} ORDER BY 1, 2").fetchall()
+            except duckdb.Error as error:
+                out["tables"][table] = {"identical": False, "error": str(error)}
+                continue
+            a_cols = [d[0] for d in ca.execute(f"SELECT * FROM {table} LIMIT 0").description]
+            b_cols = [d[0] for d in cb.execute(f"SELECT * FROM {table} LIMIT 0").description]
+            out["tables"][table] = {"identical": a_rows == b_rows and a_cols == b_cols, "rows": [len(a_rows), len(b_rows)], "columns_match": a_cols == b_cols}
+    finally:
+        ca.close(); cb.close()
+    out["identical"] = out["both_ok"] and all(v.get("identical") for v in out["tables"].values())
+    return out
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=("check", "run", "stamp"))
+    p.add_argument("command", choices=("check", "run", "stamp", "compare"))
     p.add_argument("target")
     p.add_argument("job")
+    p.add_argument("--against", help="compare: the second target")
     p.add_argument("--phase", default="rollover", choices=("first_encounter", "rollover"))
     a = p.parse_args()
     try:
@@ -303,6 +330,8 @@ def main() -> int:
             r = check(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["status"] == "ok" else 3
         if a.command == "stamp":
             print(json.dumps(stamp(a.target, a.job), indent=2)); return 0
+        if a.command == "compare":
+            r = compare(a.job, a.target, a.against, a.phase); print(json.dumps(r, indent=2)); return 0 if r["identical"] else 3
         r = run(a.target, a.job, a.phase); print(json.dumps(r, indent=2)); return 0 if r["ok"] else 3
     except (L3Error, OSError, json.JSONDecodeError, duckdb.Error) as error:
         print(f"l3 error: {error}", file=sys.stderr); return 2

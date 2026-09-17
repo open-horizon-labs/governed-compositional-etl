@@ -1,4 +1,4 @@
-AUDIT (name inv.constructed_account_change_refers_to_known_account);
+AUDIT (name "inv.constructed_account_change_refers_to_known_account");
 
 -- Every account statement sourced from the labeled constructed scenario ce.account_changes
 -- (provenance IS NOT NULL) names an account_number that already has an earlier statement

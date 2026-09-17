@@ -1,4 +1,4 @@
-AUDIT (name inv.account_single_current);
+AUDIT (name "inv.account_single_current");
 
 -- For any account_number, at most one statement has is_current = true, and if any
 -- statement of that account exists, exactly one does.

@@ -1,4 +1,4 @@
-AUDIT (name inv.customer_single_current);
+AUDIT (name "inv.customer_single_current");
 
 -- For any customer_number, at most one statement has is_current = true, and if any
 -- statement of that customer exists, exactly one does. A group is a violation when its

@@ -3,13 +3,13 @@ MODEL (
   kind FULL,
   dialect duckdb,
   audits (
-    inv.account_single_current,
-    inv.account_statements_no_overlap,
-    inv.account_asof_has_unique_answer,
-    inv.account_statement_has_content,
-    inv.constructed_scenarios_labeled,
-    inv.constructed_account_change_refers_to_known_account,
-    inv.account_asof_carries_customer_asof
+    "inv.account_single_current",
+    "inv.account_statements_no_overlap",
+    "inv.account_asof_has_unique_answer",
+    "inv.account_statement_has_content",
+    "inv.constructed_scenarios_labeled",
+    "inv.constructed_account_change_refers_to_known_account",
+    "inv.account_asof_carries_customer_asof"
   ),
   depends_on (governed.customer)
 );

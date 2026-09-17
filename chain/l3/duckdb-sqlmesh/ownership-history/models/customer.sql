@@ -3,10 +3,10 @@ MODEL (
   kind FULL,
   dialect duckdb,
   audits (
-    inv.customer_single_current,
-    inv.customer_statements_no_overlap,
-    inv.customer_asof_has_unique_answer,
-    inv.customer_statement_has_content
+    "inv.customer_single_current",
+    "inv.customer_statements_no_overlap",
+    "inv.customer_asof_has_unique_answer",
+    "inv.customer_statement_has_content"
   )
 );
 

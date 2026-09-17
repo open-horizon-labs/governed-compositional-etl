@@ -1,4 +1,4 @@
-AUDIT (name inv.account_asof_has_unique_answer);
+AUDIT (name "inv.account_asof_has_unique_answer");
 
 -- For any account_number and any moment T, exactly one statement is the latest one
 -- effective at or before T: every statement must have a determinable effective_from and

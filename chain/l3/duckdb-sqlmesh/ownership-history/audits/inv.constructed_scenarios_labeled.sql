@@ -1,4 +1,4 @@
-AUDIT (name inv.constructed_scenarios_labeled);
+AUDIT (name "inv.constructed_scenarios_labeled");
 
 -- Every account statement whose source is a labeled constructed scenario carries a
 -- non-null, non-blank provenance value. By construction (models/account.sql), provenance

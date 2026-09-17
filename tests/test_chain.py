@@ -221,6 +221,15 @@ class L3ProvenanceTests(unittest.TestCase):
             (base / "manifest.json").write_text(original)
 
 
+class EngineIndependenceTests(unittest.TestCase):
+    def test_two_targets_project_identical_tables_from_one_l2(self):
+        base = ROOT / "chain/l3"
+        if not all((base / t / "ownership-history/manifest.json").exists() for t in ("duckdb-native", "duckdb-sqlmesh")):
+            self.skipTest("both targets not projected")
+        report = L3.compare("ownership-history", "duckdb-native", "duckdb-sqlmesh")
+        self.assertTrue(report["identical"], report)
+
+
 class L3GateTests(unittest.TestCase):
     def test_l3_requires_a_passed_review(self):
         with self.assertRaises(L3.L3Error):

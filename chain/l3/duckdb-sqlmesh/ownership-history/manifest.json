@@ -4,7 +4,7 @@
   "job": "ownership-history",
   "derived_from_model": {
     "path": "chain/l2/ownership-history/semantic-model.json",
-    "review_sha256": "bf7b63a4dfa6d73b1616bece8cf6dac5c9df6d47dfaac098c7532ad5d93e4cd2"
+    "review_sha256": "51615cd92c4738f46f60a421107e08dc8f7da7f3b7e49f55859c572dcf991235"
   },
   "artifacts": [
     {
