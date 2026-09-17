@@ -1,0 +1,13 @@
+# Change contract, cycle 12: L1 -> L2, job trade-lifecycle (what review 11 found)
+
+- **Prior policy authority:** unchanged; `selected-model.json` at cycle 10; the amended `L1.placement-moment`.
+- **Exact active change authority:** `review-11.md`.
+- **Authorized corrections:**
+  1. `logical.trade.first_seen_late.derivation.rule`: first_seen_late is true when the first-encountered report's status is later, in `trade_code_meanings.status_order`, than the order type's first lifecycle event (PNDG for a limit order, SBMT for a market order); false when it is that event. A market order whose first-encountered report is PNDG is not decided here: the flag is undefined for it and the case is a review trigger. An order type outside the anchored four is likewise undefined and a review trigger. Say so in the rule, not only in the trigger.
+  2. Remove "anchored" from every phrase about an order type's first lifecycle event in `first_seen_late.necessity`, `first_seen_late.parallel_assumption` and `inv.trade_first_seen_late_matches_status_order`; attribute the market-order meaning to the amended `L1.placement-moment` sentence and the limit-order meaning to `status_order`'s first entry. The anchor supplies only which codes exist and which are market or limit.
+  3. `inv.trade_first_seen_late_matches_status_order`: restate over rule 1 with the two undefined cases explicitly unclaimed ("for a trade whose order type is one of the anchored four and whose first-encountered status is not PNDG for a market order"), so the iff has a truth value everywhere it claims one; deterministic stays true.
+  4. `type.trade_order_type.derived_from`: replace `L1.attribution-at-placement` with `L1.lifecycle-mutates-outcome` (a later report changes the enumerated outcome fields and leaves ownership as first recorded; order type is in neither set, so nothing a later report does moves it); rewrite its necessity accordingly.
+  5. `sg.placement-moment.coverage_claim`: amend the pre-amendment sentence ("other than PNDG") so the claim states the order-type-dependent rule once.
+  6. `questions_for_authority`: add one question: whether a market order whose earliest held report is PNDG is first seen late or an incoherent observation, naming `L1.placement-moment` and the two elements that leave it undefined. Do not answer it.
+- **Current rules that must be preserved:** all else as in cycle 11; no other group moves; holes untouched.
+- **Acceptance:** `.venv/bin/python scripts/chain_l2.py check trade-lifecycle` ok or question (the filed question is expected) with zero problems; diff against `selected-model.json` confined to cycle 11's elements plus these corrections.

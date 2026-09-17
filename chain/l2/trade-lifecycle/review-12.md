@@ -1,0 +1,5 @@
+# Review 12 (coordinator, bookkeeping): job trade-lifecycle (verdict: pass)
+
+Scope: cycle 12 under `change-contract-12.md`, the six corrections review 11 prescribed. Element-level diff against `selected-model.json` (cycle 10): three elements added in cycle 11 (type `trade_order_type`, attribute `order_type`, the `t_tt_id` handoff); `first_seen_late` derivation now "later than the order type's first lifecycle event" with the market-PNDG and unanchored-type cases stated undefined; the invariant restated with those two cases explicitly unclaimed, deterministic; "anchored" no longer applied to the first-lifecycle-event meaning; the type cites `L1.lifecycle-mutates-outcome`; the coverage claim states the rule once; one question filed for the business (market order first reported PNDG). Gate status question, zero problems. Nothing outside `sg.placement-moment` moved; holes untouched.
+
+Reviewer: coordinator acting as sketch reviewer for corrections the prior review prescribed line by line. Review 11's findings stand as the record. Rejected element ids: none. Selected: cycles 11 and 12 together.
