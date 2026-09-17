@@ -27,7 +27,7 @@ A handoff moves a value from a source field (`raw.<entity>.<field>` from `chain/
 - Do not read the received data to decide policy. Field names and types are shape, not meaning.
 - Do not name engines, SQL, tables, or files. That is level 3.
 - Leave every L1 hole that touches your job as a hole in your model, with the L1 hole id, and do not fill it.
-- If the Sketch and anchors conflict or leave the permitted derivation ambiguous, put exactly one precise question in `questions_for_authority`, omit the affected elements, and return.
+- If the Sketch and anchors conflict or leave the permitted derivation ambiguous, put one precise question per independent gap in `questions_for_authority`, omit the affected elements, and finish everything else. A filed question marks the model `question`; the gate still validates the rest, and the coordinator answers before the next cycle. Questions are the cheap path; inventing is the expensive one.
 
 ## Every element is a step, not a row
 
@@ -47,15 +47,15 @@ Sufficiency is a claim about a set, never about one element. For every clause yo
 ## Rules the gate enforces because a review found them missing (cycle 1)
 
 - A `versioned` entity's non-identity attributes carry `per_statement`, not `mutable`.
-- A `versioned` entity carries at least one attribute that is not an identifier, an effective time, or a current flag; otherwise its as-of answers are content-free. If the Sketch does not say what a statement carries, that is a question for authority, not a gap to paper over.
+- If the Sketch does not say what a statement carries, file that as a question for authority and leave the statement with identity and time only; the gate will report the statement as content-free, and that report is the expected outcome of an honest compile against an under-specified Sketch. Never supply content from anchored code meanings or field names to satisfy the gate. When the Sketch does say, a `versioned` entity carries at least one attribute that is not an identifier, an effective time, or a current flag.
 - A handoff into a `versioned` entity from a source that supplies no effective-time handoff to that entity is not projectable; mark it `deferred` and cite the hole that blocks it.
 - A group's `gap` is `none` or names an L1 hole id. Anchor limitations go in `questions_for_authority`.
 - An element's `derived_from` is a subset of its group's `parent_clauses`.
 - A hole's `blocks` lists every group that contains a deferred member.
 
-## Interpreting received codes is not inventing policy
+## Interpreting received codes is not inventing policy, but it needs a place to land
 
-`chain/anchors/sources-v1.json` states what each received action code and status code means, with its authority. Handing off "the customer is inactive" from an `INACT` action is interpreting a named reference the source defines, and is allowed. Deciding what "standing" consists of is policy, and comes only from the Sketch. When a code's meaning is not stated in the anchors, that is a question for authority.
+`chain/anchors/sources-v1.json` states what each received action code and status code means, with its authority. Decoding `INACT` as "the customer became inactive" is interpreting a named reference and is allowed. Whether a statement carries a status at all is policy and comes only from the Sketch: a decoder is not a licence to create the attribute it would fill. When a code's meaning is not stated in the anchors, that is a question for authority.
 
 ## Questions never block the gate
 
@@ -74,3 +74,7 @@ Some statement values are not received from any source. If a clause says which s
 - A type may be `frozen_from_first_encounter` only when a cited clause says the value is fixed at first recording and not moved by later reports; cite that clause, not only the clause that supplies the value.
 - A handoff from an upstream job's attribute must use a type whose `semantic_kind` and `physical_type` match the upstream type. The mutation role may differ: an upstream `per_statement` value becomes a `frozen_from_first_encounter` reference on a trade, because role belongs to the consuming entity's lifecycle.
 - Trade status and change-flag codes have anchored meanings in `sources-v1.json` (`trade_code_meanings`). Interpreting them is allowed; ordering them into a lifecycle is stated there as a source fact; what a deletion means is not, and stays a hole.
+
+## Record what you declined
+
+When you consider a derivation the anchors make tempting and the clauses do not support (a field that is present, a code that could be decoded), record it as a `rejected` step with `rejected_because`. Silent restraint is invisible to the reviewer and to the next Developer; recorded restraint is evidence.

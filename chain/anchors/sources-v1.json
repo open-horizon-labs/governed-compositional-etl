@@ -62,9 +62,9 @@
         "c_id",
         "c_tier"
       ],
-      "note": "Which received fields an action row carries, as the source defines it. action_type and action_ts are the row envelope and are present on every action. This is shape only; what an omitted field means is the Sketch's to say (L1.omitted-facts-stand)."
+      "note": "Which received fields an action row carries, as the source defines it. action_type and action_ts are the row envelope and are present on every action. Shape only: whether and how an omitted field bears on a statement is for the Sketch to say."
     },
-    "note": "What each received CustomerMgmt action code means, as the source defines it. Using this meaning to derive a statement's status is interpreting a named reference, not inventing policy. The clause locator is unverified; see the adjudication.",
+    "note": "What each received CustomerMgmt action code means, as the source defines it. Meanings of codes are shape: they say what a received row reports, not what any statement or entity carries. The clause locator is unverified; see the adjudication.",
     "status_codes": {
       "ACTV": "active or open",
       "INAC": "inactive or closed"
@@ -396,7 +396,7 @@
     "trade": "t_id / trade number",
     "trade report": "(t_id, batch_date, cdc_dsn) for change records; (th_t_id, th_dts, th_st_id) for historical per-status reports"
   },
-  "note": "Structural anchors K. Field names, physical types, and natural identifiers only. They authorize no rule; see sketches/l1-brokerage-intent-v1.md.",
+  "note": "Structural anchors K. Field names, physical types, and natural identifiers only. They authorize no rule.",
   "schema_version": "source-anchors/v1",
   "trade_code_meanings": {
     "authority": {
@@ -412,7 +412,7 @@
       "U": "the record updates an existing record"
     },
     "historical_load": "Batch1 Trade.txt rows carry no change flag; the loader marks them I with sequence 0",
-    "note": "What received trade status codes and change flags mean, as the source defines them (StatusType and TradeType reference files; incremental file conventions). Shape and reference interpretation only; the clause locator is unverified.",
+    "note": "What received trade status codes and change flags mean, as the source defines them (StatusType and TradeType reference files; incremental file conventions). Shape and reference meaning only; the clause locator is unverified.",
     "report_order": {
       "first_report_of_a_trade": "the row with the smallest (batch_date, cdc_dsn) for that t_id",
       "latest_report_of_a_trade": "the row with the largest (batch_date, cdc_dsn) for that t_id",

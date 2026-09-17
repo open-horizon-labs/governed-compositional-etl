@@ -214,8 +214,8 @@ def check(job: str, l1: dict | None = None) -> dict:
                 problems.append(f"{e['id']}.{a['name']} is mutable inside a versioned entity; statement values are per_statement, never replaced in place")
             if a["name"] not in e["identifiers"] and a["semantic_type"] not in time_types and a["semantic_type"] not in flag_types and role != "identity":
                 content.append(a["name"])
-        if not content:
-            problems.append(f"{e['id']} is versioned but carries no statement content; its as-of answers are content-free (ask authority what a statement carries)")
+        if not content and not questions:
+            problems.append(f"{e['id']} is versioned but carries no statement content and no question is filed; if the Sketch does not say what a statement carries, file the question rather than supply content from anchors")
         # handoffs into this entity: a source supplying no effective-time handoff cannot produce a dated statement
         sources_into = {}
         for h in doc.get("handoffs", []):

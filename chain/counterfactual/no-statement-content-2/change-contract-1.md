@@ -1,0 +1,3 @@
+# Change contract (counterfactual compile): L1 -> L2, job ownership-history, Sketch without statement content
+
+Identical to `chain/anchors/DEVELOPER-CONTRACT-L1-L2.md` except: the Sketch is `chain/counterfactual/no-statement-content-2/l1-brokerage-intent-counterfactual.md`; the output is `chain/counterfactual/no-statement-content-2/l2/ownership-history/semantic-model.json`; the gate command is prefixed with `CHAIN_L1=chain/counterfactual/no-statement-content-2/l1-brokerage-intent-counterfactual.md CHAIN_L2_DIR=chain/counterfactual/no-statement-content-2/l2`. Exact active change authority: none. Do not read `chain/l2/` (the real compilation) or `sketches/`.

@@ -142,7 +142,7 @@
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.batch-identity: owning_account_number comes from the first-encountered report selected by anchored report_order, not from a report carrying which file delivered it.",
+      "gap": "L1.hole.batch-identity bounds owning_account_number's reliance on report_order rather than a report carrying which file delivered it; L1.hole.deletions bounds what a D-flagged first-encountered report would mean for owning_account_number.",
       "group": "sg.trade-shape",
       "job": "trade-lifecycle",
       "relation": "named-gap"

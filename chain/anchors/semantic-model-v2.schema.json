@@ -4,7 +4,9 @@
   "additionalProperties": false,
   "properties": {
     "derived_from_sketch": {
-      "const": "sketches/l1-brokerage-intent-v1.md"
+      "description": "The Sketch this model was compiled from. A counterfactual compile names its counterfactual Sketch.",
+      "pattern": "^(sketches|chain/counterfactual)/.+\\.md$",
+      "type": "string"
     },
     "entities": {
       "items": {

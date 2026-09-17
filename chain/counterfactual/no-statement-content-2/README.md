@@ -1,0 +1,3 @@
+# Counterfactual round 2: same Sketch without statement content, after the anchor and format repairs
+
+Round 1 was mixed: no field-name derivations, but a status attribute licensed by an anchor sentence and a carry-forward re-homed after an anchor named the removed clause. The anchors now state code meanings and shape only, the format makes filing questions the cheap path (one per independent gap; validation continues), rejected entries are asked for, and the schema records the actual Sketch compiled from. Expected: a question about what a statement carries; identity-and-time-only statements; rejected entries for the tempting decodes.
