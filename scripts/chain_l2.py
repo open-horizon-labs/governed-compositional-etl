@@ -488,6 +488,25 @@ def stamped_everywhere(job: str, group_id: str, fingerprint: str) -> bool:
     return True
 
 
+def cache_decision(decisions: set[str | None]) -> str:
+    """Combine one group's per-clause invalidation verdicts into its cache decision.
+
+    Precedence is invalidate, then review, then keep, and the order matters. An invalidate verdict is an answer -- this
+    group must be re-projected -- while a review verdict is the absence of one. Letting review win, as this did, turned
+    a group Jev was confident about (0.83, high, under an amended L1.current-version) into one awaiting a human decision
+    the chain had already made, because a second clause touching the same group scored 0.29. Worse, it reported
+    l3_reprojection_required false while a confidently invalidated group sat in the model. It also downgraded the
+    not-run verdict, which invalidation() returns as "invalidate" by design so an unavailable Jev never keeps anything.
+
+    Uncertainty about one clause can add work. It cannot remove work another clause has already shown to be needed.
+    """
+    if "invalidate" in decisions:
+        return "stale"
+    # Only an explicit, unanimous keep is a hit. A verdict that is missing, None, or a value this function does not
+    # recognize must not become one by falling through: keeping is the one decision that skips work.
+    return "hit-by-jev" if decisions == {"keep"} else "review"
+
+
 def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
     """Recompute fingerprints and report the stale set. Hash-unchanged never re-projects. Hash-changed asks Jev."""
     l1 = parse_l1()
@@ -537,8 +556,7 @@ def plan(previous: dict | None = None, use_jev: bool = True) -> dict:
             decision, jev = ("stale-new", None) if before is None else ("stale", None)
             if before is not None and touched and JEV is not None:
                 verdicts = [JEV.invalidation(c, prev_texts.get(c, ""), l1["clauses"].get(c) or l1["holes"].get(c) or "(answered and removed)", {"id": eid, "kind": "sufficiency_group", "statement": info.get("coverage_claim"), "note": json.dumps(info.get("justifications"), sort_keys=True)[:3000]}) for c in touched]
-                decisions = {v.get("decision") for v in verdicts}
-                decision = "review" if "review" in decisions else ("stale" if "invalidate" in decisions else "hit-by-jev")
+                decision = cache_decision({v.get("decision") for v in verdicts})
                 if decision == "review":
                     # a reviewer's recorded adjudication (chain/cache-adjudications.jsonl) settles what Jev could not
                     adjudicated = adjudication_for(eid, touched)

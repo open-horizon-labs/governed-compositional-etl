@@ -351,7 +351,10 @@ class AcceptanceTests(unittest.TestCase):
                 L3.L3_DIR = saved
         if any("moved since this projection was stamped" in p for p in report["problems"]):
             self.skipTest("the chain is mid-cycle: an L1 change staled this projection, which is what it should say")
-        self.assertEqual(report["status"], "ok", report["problems"])  # still well-formed: the Developer loop is unaffected
+        # Well-formedness is the absence of problems. A question is not a defect: an L1 move on a projection that has
+        # been recompiled since its acceptance is reported as one, and the Developer loop is still unaffected by it.
+        self.assertFalse(report["problems"], report["problems"])
+        self.assertIn(report["status"], ("ok", "question"), report)
         self.assertFalse(report["acceptance"]["accepted"])
         self.assertIn("changed after the review", report["acceptance"]["reason"])
 
@@ -482,6 +485,30 @@ class CounterexampleSimulationTests(unittest.TestCase):
 
     def test_two_phase_on_duckdb_native(self):
         self.check_target("duckdb-native")
+
+
+class CacheDecisionPrecedenceTests(unittest.TestCase):
+    """One group can derive from several clauses, so Jev returns several verdicts and they must be combined. The order
+    was wrong: review beat invalidate, so a group Jev was confident about (0.83, high, under an amended
+    L1.current-version) was downgraded to awaiting adjudication because a second clause touching it scored 0.29 -- and
+    the plan reported l3_reprojection_required false while a confidently invalidated group sat in the model."""
+
+    def test_an_invalidate_is_never_downgraded_by_an_uncertain_sibling(self):
+        self.assertEqual(L2.cache_decision({"invalidate", "review"}), "stale")
+        self.assertEqual(L2.cache_decision({"invalidate", "keep", "review"}), "stale")
+
+    def test_uncertainty_still_beats_keep(self):
+        self.assertEqual(L2.cache_decision({"review", "keep"}), "review")
+
+    def test_only_unanimous_keep_is_a_hit(self):
+        self.assertEqual(L2.cache_decision({"keep"}), "hit-by-jev")
+
+    def test_a_missing_or_unrecognized_verdict_is_not_a_keep(self):
+        """invalidation() returns decision 'invalidate' when Jev cannot run, so an unavailable selector never keeps
+        anything. Nothing should quietly become a hit by arriving as None or by arriving not at all."""
+        self.assertEqual(L2.cache_decision({None}), "review")
+        self.assertEqual(L2.cache_decision(set()), "review")
+        self.assertEqual(L2.cache_decision({"something-new"}), "review")
 
 
 class NonBlockingMatchesTheL2Tests(unittest.TestCase):
