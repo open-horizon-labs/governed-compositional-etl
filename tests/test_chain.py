@@ -273,9 +273,56 @@ class CounterexampleSimulationTests(unittest.TestCase):
 
 
 class L3GateTests(unittest.TestCase):
+    def test_a_newly_selected_deterministic_invariant_demands_an_audit(self):
+        """The L2-to-L3 seam: when a re-selected L2 adds a deterministic invariant, the L3 gate rejects every projection
+        of that job until an audit exists for it. Non-deterministic invariants demand nothing. Exercised on a scratch copy."""
+        import shutil, tempfile
+        target = "duckdb-native"
+        if not (ROOT / "chain/l3" / target / JOB / "manifest.json").exists():
+            self.skipTest(f"{JOB} not projected on {target}")
+        with tempfile.TemporaryDirectory() as tmp:
+            l2_dir, l3_dir = Path(tmp) / "l2", Path(tmp) / "l3"
+            shutil.copytree(ROOT / "chain/l2" / JOB, l2_dir / JOB)
+            shutil.copytree(ROOT / "chain/l3" / target / JOB, l3_dir / target / JOB)
+            snapshot = l2_dir / JOB / "selected-model.json"
+            model = json.loads(snapshot.read_text())
+            review = json.loads((l2_dir / JOB / "review.json").read_text())
+            template = next(i for i in model["invariants"] if i["deterministic"] and i["id"] in review["selected_element_ids"])
+            for iid, deterministic in (("inv.synthetic_deterministic", True), ("inv.synthetic_judgement", False)):
+                model["invariants"].append({**template, "id": iid, "deterministic": deterministic})
+                review["selected_element_ids"].append(iid)
+            snapshot.write_text(json.dumps(model))
+            (l2_dir / JOB / "review.json").write_text(json.dumps(review))
+            saved = (L3.L2_DIR, L3.L3_DIR, L3.L2.L2_DIR)
+            L3.L2_DIR, L3.L3_DIR, L3.L2.L2_DIR = l2_dir, l3_dir, l2_dir
+            try:
+                problems = L3.check(target, JOB)["problems"]
+            finally:
+                L3.L2_DIR, L3.L3_DIR, L3.L2.L2_DIR = saved
+        self.assertIn("deterministic invariant inv.synthetic_deterministic has no audit", problems)
+        self.assertFalse(any("inv.synthetic_judgement" in p for p in problems), problems)
+
     def test_l3_requires_a_passed_review(self):
+        """L3 compiles only from a selected L2: no model, no review, or a verdict other than pass all refuse."""
+        import shutil, tempfile
         with self.assertRaises(L3.L3Error):
-            L3.load_job("positions")
+            L3.load_job("no-such-job")
+        with tempfile.TemporaryDirectory() as tmp:
+            l2_dir = Path(tmp) / "l2"
+            shutil.copytree(ROOT / "chain/l2" / JOB, l2_dir / JOB)
+            review_path = l2_dir / JOB / "review.json"
+            review = json.loads(review_path.read_text())
+            review_path.write_text(json.dumps({**review, "verdict": "needs-authority"}))
+            saved = L3.L2_DIR
+            L3.L2_DIR = l2_dir
+            try:
+                with self.assertRaises(L3.L3Error):
+                    L3.load_job(JOB)
+                review_path.unlink()
+                with self.assertRaises(L3.L3Error):
+                    L3.load_job(JOB)
+            finally:
+                L3.L2_DIR = saved
 
     def test_containment_derives_from_selected_handoffs_only(self):
         model = json.loads((ROOT / "chain/l2" / JOB / "semantic-model.json").read_text())
