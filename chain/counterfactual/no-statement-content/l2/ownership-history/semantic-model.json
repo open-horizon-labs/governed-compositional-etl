@@ -303,14 +303,18 @@
         },
         {
           "name": "owning_customer_id",
-          "derived_from": ["L1.owner-standing"],
+          "derived_from": ["L1.owner-standing", "L1.constructed-scenarios"],
           "disposition": "candidate",
-          "necessity": "L1.owner-standing requires that an account's standing include its owner's standing at the same moment; this attribute names which customer that is, so the join can be made.",
-          "parallel_assumption": "Credible as long as an account statement names exactly one owning customer.",
+          "necessity": "L1.owner-standing requires that an account's standing include its owner's standing at the same moment; this attribute names which customer that is, so the join can be made. L1.constructed-scenarios defines a constructed scenario as changing something the received records already know, not restating the whole statement, so a scenario source that carries no customer reference of its own leaves this fact standing as last known.",
+          "parallel_assumption": "Credible as long as an account statement names exactly one owning customer, and as long as every ce.-sourced statement changes an account the received records already carry an owning customer for.",
           "feedback": ["inv.account_as_of_carries_customer_as_of"],
           "owner_hat": "data-product-owner (business authority)",
-          "review_trigger": "a source states two owning customers for one account statement",
+          "review_trigger": "a source states two owning customers for one account statement, or a constructed scenario names an account with no prior owning customer",
           "nullable": false,
+          "derivation": {
+            "kind": "carried_forward_from_previous_statement",
+            "rule": "When a logical.account statement is sourced from ce.account_changes, which carries no customer-reference field of its own, owning_customer_id carries forward unchanged from the account's previous statement (raw.- or ce.-sourced), per L1.constructed-scenarios' definition of a constructed scenario as changing something the received records already know."
+          },
           "semantic_type": "account_owner_reference",
           "sufficiency_group": "sg.owner-standing"
         }
@@ -785,7 +789,7 @@
     },
     {
       "id": "sg.owner-standing",
-      "parent_clauses": ["L1.owner-standing"],
+      "parent_clauses": ["L1.owner-standing", "L1.constructed-scenarios"],
       "members": [
         "type.account_owner_reference",
         "logical.account.owning_customer_id",
@@ -795,7 +799,7 @@
         "inv.account_revalidated_on_customer_change"
       ],
       "mode": "all_required",
-      "coverage_claim": "The owner reference attribute, fed whenever an account statement's source names its customer, lets any account statement be joined to its customer's statement at the same moment, and the invariant states that the account's as-of answer must include that joined customer answer, which is what L1.owner-standing requires. Whether the reverse also holds -- that a customer-only change alone must mint a new account statement -- is not decided by the clause and is carried as a deferred, unresolved member.",
+      "coverage_claim": "The owner reference attribute, fed whenever an account statement's source names its customer, lets any account statement be joined to its customer's statement at the same moment, and the invariant states that the account's as-of answer must include that joined customer answer, which is what L1.owner-standing requires. Its carry-forward derivation covers the one source that never names a customer (ce.account_changes), per L1.constructed-scenarios' definition of a constructed scenario as changing something already known rather than restating it. Whether the reverse also holds -- that a customer-only change alone must mint a new account statement -- is not decided by the clause and is carried as a deferred, unresolved member.",
       "gap": "L1.hole.owner-change-reversions-account"
     },
     {

@@ -1,0 +1,10 @@
+{
+  "job": "trade-lifecycle",
+  "manifest_sha256": "aa3a191c7a3a11a5f3592673a85d15e403f2df033ec92185488e24f4c1e1ea1d",
+  "notes": "see review-1.md",
+  "rejected_artifacts": [],
+  "reviewer": "opus projection reviewer, L3 cycle 1",
+  "schema_version": "l3-review/v1",
+  "target": "duckdb-sqlmesh",
+  "verdict": "pass"
+}
