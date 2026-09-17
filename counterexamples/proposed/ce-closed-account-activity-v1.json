@@ -1,0 +1,38 @@
+{
+  "adjacent_not_authorized": [
+    "deciding whether the closure or the trade is wrong",
+    "unwinding or re-attributing either trade",
+    "inferring from the constructed 2017 reopening that the closure was the error"
+  ],
+  "approved_or_rejected_by": "approved, business authority (2026-09-17)",
+  "constructed_by_hat": "none: this is the brokerage's own data",
+  "deterministic_assertion": "On the received fixture, run reports exactly two rows under inv.trade_on_closed_account_reported, naming trades 353232 and 372101, with ok true and every other audit at zero, on duckdb-native and duckdb-sqlmesh alike.",
+  "expected": {
+    "not_failed": "the run stays ok: these are findings for the business, not projection defects, and every must-hold invariant stays at zero",
+    "reported": "inv.trade_on_closed_account_reported reports exactly trades 353232 and 372101, both pinning account 428's 2012-11-15 closing statement, on both engines",
+    "unchanged": "attribution is untouched; both trades keep the ownership they already had"
+  },
+  "fixture": {
+    "ce_account_changes": [],
+    "raw_additions": {},
+    "raw_anchor": "oracle/fixtures/public/chain-fixture-v1.json"
+  },
+  "id": "ce.l1.closed-account-activity",
+  "labels": [
+    "received",
+    "L1",
+    "trade-lifecycle",
+    "reported-invariant"
+  ],
+  "proposal": "chain/ce/accepted/ce.l1.closed-account-activity.md",
+  "proposed_on": "2026-09-17",
+  "provenance": "received_records",
+  "schema_version": "ce-document/v1",
+  "status": "accepted",
+  "tempting_wrong_repair": [
+    "making the invariant a must-hold, which asserts the brokerage's own records are impossible",
+    "dropping such trades",
+    "reopening the account"
+  ],
+  "why_constructed": "Nothing is constructed. Account 428 carries a CLOSEACCT statement effective 2012-11-15 and the received trade files report trades 353232 and 372101 on it in 2017. The chain was silent about this for the whole session because every invariant it had was a must-hold and the projection was doing exactly what it was told. This document is the counterexample the format now requires for a reporting invariant: it names the rows the chain is expected to hand back to the business."
+}

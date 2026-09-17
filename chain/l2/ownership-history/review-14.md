@@ -1,0 +1,3 @@
+# Review 14 (coordinator, bookkeeping): job ownership-history (verdict: pass)
+
+Scope: cycle 14, the three corrections review 13 prescribed: the coverage claim now states which part of `L1.closed-account-activity` this job covers and that the post-closure report belongs to trade-lifecycle; the two review triggers no longer treat the settled condition as a reason to reassess; the account-change producer is tied to its deferred handoffs. Gate question (the standing vocabulary question), zero problems, diff confined. The cheap screen was re-run and reported no field left treating the answered question as open. Rejected element ids: none.

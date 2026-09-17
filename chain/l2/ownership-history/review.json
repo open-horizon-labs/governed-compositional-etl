@@ -6,10 +6,10 @@
     "sg.unknown-codes"
   ],
   "job": "ownership-history",
-  "model_sha256": "93ad098e0c9231e37c24efae1404c695b7e5d3713bd5e72d1c82c3f91bbf7572",
-  "notes": "see review-11.md and review-12.md",
+  "model_sha256": "16f960d70a6e2f803d8f56955434e8409f1a36228d77f7ffab1e0a03019eb67b",
+  "notes": "see review-13.md and review-14.md",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 12 after prescribed corrections",
+  "reviewer": "coordinator, bookkeeping review 14",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.ce.account_changes.account_id->logical.account.account_number",
@@ -31,6 +31,7 @@
     "inv.account_owner_matches_producing_source",
     "inv.account_single_current",
     "inv.account_statement_has_content",
+    "inv.account_statement_never_created_by_activity",
     "inv.account_statements_no_overlap",
     "inv.account_status_matches_producing_source",
     "inv.account_tax_treatment_matches_producing_source",

@@ -8,10 +8,10 @@
     "sg.unknown-codes"
   ],
   "job": "trade-lifecycle",
-  "model_sha256": "8087a81bdfb7bb6a413a3e0cbeb4d35291df592bb0da8c2ba18db34d72af4d51",
-  "notes": "see review-18.md",
+  "model_sha256": "040535420f59ec57f2010b28824082dfaec08e18d19219fd4125fe8d2670c7f6",
+  "notes": "see review-19.md and review-20.md",
   "rejected_element_ids": [],
-  "reviewer": "coordinator, bookkeeping review 18 (business answered a hole)",
+  "reviewer": "coordinator, bookkeeping review 20",
   "schema_version": "l2-review/v1",
   "selected_element_ids": [
     "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from",
@@ -33,6 +33,7 @@
     "inv.trade_first_seen_late_matches_status_order",
     "inv.trade_held_first_report_unclaimed",
     "inv.trade_not_constructed",
+    "inv.trade_on_closed_account_reported",
     "inv.trade_order_type_frozen",
     "inv.trade_outcome_updates_in_place",
     "inv.trade_ownership_pin_present",

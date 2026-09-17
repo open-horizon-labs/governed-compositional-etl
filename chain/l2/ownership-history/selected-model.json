@@ -474,8 +474,8 @@
           "necessity": "L1.statement-content requires an account's dated statement to carry whether the account is open or closed; this attribute carries that fact directly on the statement.",
           "nullable": false,
           "owner_hat": "data-product-owner",
-          "parallel_assumption": "Credible where the source of this statement supplies its open/closed fact directly, or entails it through a stated code meaning: the historical action file entails it through the anchored meaning of action_type (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed), the labeled constructed scenario supplies it directly through status_id, and an incremental account change record supplies it directly through ca_st_id though its effective moment is not yet resolvable (L1.hole.change-effective-time). Whether a CLOSEACCT-derived closed status remains accurate after any later, unrecorded reopening is bounded by L1.hole.closed-account-activity, not resolved by any handoff.",
-          "review_trigger": "an account statement is recorded with no determinable open/closed fact from a source that is expected to supply or entail one, or a closed account is found to carry activity after its closing statement with no reopening action recorded",
+          "parallel_assumption": "Credible where the source of this statement supplies its open/closed fact directly, or entails it through a stated code meaning: the historical action file entails it through the anchored meaning of action_type (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed), the labeled constructed scenario supplies it directly through status_id, and an incremental account change record supplies it directly through ca_st_id though its effective moment is not yet resolvable (L1.hole.change-effective-time).",
+          "review_trigger": "an account statement is recorded with no determinable open/closed fact from a source that is expected to supply or entail one, or the business amends L1.closed-account-activity, or states that a recorded action revises a closure",
           "sufficiency_group": "sg.statement-content"
         },
         {
@@ -733,8 +733,8 @@
       ],
       "necessity": "L1.history requires every change to an account be kept as a new dated statement, and this row's action_type marks exactly such a change (NEW, ADDACCT, UPDACCT, CLOSEACCT); L1.statement-content requires that statement carry whether the account is open or closed. chain/anchors/sources-v1.json states what each code means (NEW, ADDACCT, UPDACCT: open; CLOSEACCT: closed) with its own cited authority; interpreting that stated meaning to populate this statement's status is reading a named reference the source defines, not inventing a mapping from action codes to status values.",
       "owner_hat": "semantic-modeler",
-      "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. Whether a CLOSEACCT statement's closed status remains accurate if the account is later found active again (activity recorded after closure with no reopening action) is bounded by L1.hole.closed-account-activity, not resolved by this handoff. An action_type value outside the anchored set {NEW, ADDACCT, UPDACCT, CLOSEACCT} is held under L1.unknown-codes and yields no derived fact for this statement; per inv.unknown_codes_held, the row is reported naming the record and the code instead.",
-      "review_trigger": "an account action row carries an action_type outside {NEW, ADDACCT, UPDACCT, CLOSEACCT}, or the business states a meaning for one of these codes that differs from the anchored one, or a closed account is found to carry activity after its closing statement",
+      "parallel_assumption": "Credible while the anchored action_type_meanings correctly and exhaustively state NEW, ADDACCT, and UPDACCT as open and CLOSEACCT as closed for an account statement. An action_type value outside the anchored set {NEW, ADDACCT, UPDACCT, CLOSEACCT} is held under L1.unknown-codes and yields no derived fact for this statement; per inv.unknown_codes_held, the row is reported naming the record and the code instead. A CLOSEACCT statement closes the account and unwinds nothing already attributed to it — no trade or holding already attributed to the account moves or is undone because of the closure; per L1.closed-account-activity, whether a closure or a later trade attributed to the account after closing is itself wrong is for the business to decide, not this handoff, and the trade side of that rule belongs to job:trade-lifecycle.",
+      "review_trigger": "an account action row carries an action_type outside {NEW, ADDACCT, UPDACCT, CLOSEACCT}, or the business states a meaning for one of these codes that differs from the anchored one, or the business amends L1.closed-account-activity, or states that a recorded action revises a closure",
       "selector": "status_from_action_meaning",
       "sufficiency_group": "sg.statement-content"
     },
@@ -1222,6 +1222,26 @@
       "parallel_assumption": "Holds while chain/anchors/sources-v1.json's action_type_meanings remains the exhaustive, correct naming of raw.customer_mgmt_action's action_type codes.",
       "review_trigger": "a raw.customer_mgmt_action row carries an action_type outside {NEW, ADDACCT, UPDACCT, UPDCUST, CLOSEACCT, INACT}",
       "sufficiency_group": "sg.unknown-codes"
+    },
+    {
+      "id": "inv.account_statement_never_created_by_activity",
+      "entity": "logical.account",
+      "statement": "Every logical.account statement is produced by an anchored customer management action row (raw.customer_mgmt_action), an incremental account change record (raw.account_cdc, whose own handoffs into logical.account remain deferred under L1.hole.change-effective-time), or a labeled constructed scenario row (ce.account_changes); no logical.account statement is ever produced by a trade report or a holding-history report. This is the checkable form of L1.closed-account-activity's 'activity never reopens an account: no trade creates a statement.'",
+      "derived_from": [
+        "L1.closed-account-activity",
+        "L1.identity",
+        "L1.history"
+      ],
+      "deterministic": true,
+      "disposition": "candidate",
+      "feedback": [
+        "sketch-review"
+      ],
+      "necessity": "L1.closed-account-activity requires that activity never reopens an account because no trade creates a statement; L1.identity and L1.history require that every account statement be a new dated statement about the same account, kept beside the earlier ones, produced by a change to the account itself. This job's handoffs into logical.account are drawn only from raw.customer_mgmt_action, raw.account_cdc, and ce.account_changes; this invariant is the direct, deterministic check that no statement instead traces to a trade or holding report, which would silently reopen or amend a closed account's history through activity rather than through a recorded change to the account.",
+      "owner_hat": "data-product-owner",
+      "parallel_assumption": "Holds while this job's only producing sources for a logical.account statement remain raw.customer_mgmt_action, raw.account_cdc, and ce.account_changes; this job does not read raw.trade_cdc or raw.holding_history at all, so no statement can trace to either today.",
+      "review_trigger": "a logical.account statement is found whose producing source is a trade report or a holding-history report rather than raw.customer_mgmt_action, raw.account_cdc, or ce.account_changes",
+      "sufficiency_group": "sg.statement-content"
     }
   ],
   "sufficiency_groups": [
@@ -1315,7 +1335,8 @@
         "L1.history",
         "L1.constructed-scenarios",
         "L1.identity",
-        "L1.omitted-facts-stand"
+        "L1.omitted-facts-stand",
+        "L1.closed-account-activity"
       ],
       "members": [
         "type.customer_standing_status",
@@ -1341,11 +1362,12 @@
         "inv.customer_status_matches_producing_source",
         "inv.customer_tier_matches_producing_source",
         "inv.account_status_matches_producing_source",
-        "inv.account_tax_treatment_matches_producing_source"
+        "inv.account_tax_treatment_matches_producing_source",
+        "inv.account_statement_never_created_by_activity"
       ],
       "mode": "conditional",
-      "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes — the one account source with no pending effective-time hole of its own — status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred. Four value-correctness invariants (inv.customer_status_matches_producing_source, inv.customer_tier_matches_producing_source, inv.account_status_matches_producing_source, inv.account_tax_treatment_matches_producing_source) additionally check that each populated value equals what its producing source states, directly or by carry-forward, rather than merely being non-null.",
-      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved."
+      "coverage_claim": "For every customer statement sourced from the historical action file: tier is handed off directly from c_tier on NEW and UPDCUST rows, and carried forward from the customer's preceding statement under L1.omitted-facts-stand on INACT rows, which omit c_tier; status is derived from action_type on every one of NEW, UPDCUST, and INACT, since the anchored action_type_meanings state a status for each. Both standing facts L1.statement-content names for a customer are therefore populated for every statement this source produces, by direct handoff or carry-forward. For every account statement sourced from the historical action file: tax_treatment is handed off directly from ca_tax_st on NEW, ADDACCT, and UPDACCT rows, and carried forward from the account's preceding statement under L1.omitted-facts-stand on CLOSEACCT rows, which omit ca_tax_st; status is derived from action_type on every one of NEW, ADDACCT, UPDACCT, and CLOSEACCT. Both facts L1.statement-content names for an account are therefore populated for every statement this source produces; the owning-customer fact it also names is covered under sg.owner-standing instead, since it is the more specific claim about that attribute. For every account statement sourced from the labeled constructed scenario ce.account_changes — the one account source with no pending effective-time hole of its own — status and tax treatment are handed off directly from that source's own status_id and tax_status_id fields, present on every row, so this fully projectable source's statements are not content-free. The incremental CDC files carry the same tier, tax-treatment, and status values but supply no effective moment of their own, so all of their content handoffs into these versioned entities remain deferred. Four value-correctness invariants (inv.customer_status_matches_producing_source, inv.customer_tier_matches_producing_source, inv.account_status_matches_producing_source, inv.account_tax_treatment_matches_producing_source) additionally check that each populated value equals what its producing source states, directly or by carry-forward, rather than merely being non-null. Of L1.closed-account-activity, this group covers the part that bears on an account statement's own content: that activity never reopens an account because no trade creates a statement, checked directly by inv.account_statement_never_created_by_activity, and that a CLOSEACCT statement's closed status, once derived, is not itself revised by later activity, since closing unwinds nothing already attributed to the account (per the action_type -> logical.account.status handoff's parallel_assumption). The clause's other part — reporting a trade report placed on an account after its closing statement — is covered by job:trade-lifecycle under the same clause, not by this job.",
+      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Also bounded by L1.hole.deletions: what a deletion marker in an incremental change file means for the standing facts it would otherwise carry is unresolved."
     },
     {
       "id": "sg.constructed-scenarios",
@@ -1417,16 +1439,6 @@
         "sg.history-asof",
         "sg.current-version",
         "sg.owner-standing",
-        "sg.statement-content"
-      ]
-    },
-    {
-      "id": "hole.closed_account_activity",
-      "question": "Activity appears on accounts this job would derive as closed (via a CLOSEACCT action recorded years earlier). Is that a data error, an unrecorded reopening the historical action file omits, or does a closed account still own activity? Until answered, an account's status history derived by this job may be incomplete: once a statement's status is derived as closed, this model does not revise it even if later activity suggests the account reopened.",
-      "derived_from_hole": "L1.hole.closed-account-activity",
-      "owner_hat": "data-product-owner",
-      "disposition": "deferred",
-      "blocks": [
         "sg.statement-content"
       ]
     },

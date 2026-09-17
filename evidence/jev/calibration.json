@@ -38,7 +38,9 @@
         "control": 0.72,
         "separation": 0.01
       },
-      "verdict": "usable once the settled question is in the state; useless without it. Added after a capable reviewer found two review triggers still firing on a question the business had answered, and observed that a screen comparing a changed field against the unchanged fields of the same element would have caught it."
+      "verdict": "usable once the settled question is in the state; useless without it. Added after a capable reviewer found two review triggers still firing on a question the business had answered, and observed that a screen comparing a changed field against the unchanged fields of the same element would have caught it.",
+      "false_positive_mode": "On first use it flagged the very invariants written to implement the answer: an element about the settled subject scores high on any phrasing, and a reporting invariant literally says 'reported for review' while the settled answer contains 'review'. Narrowed to what the reviewer actually described: fields that did NOT change, on elements that did. The defect is the field left behind, not the field written fresh.",
+      "live_result": "One flag on its first real cycle, and it was a false positive: inv.trade_placement_reference_frozen's review_trigger is about a later report carrying an earlier event time and never mentions closure; it was flagged because its element had gained the clause. Demoted from a finding to a labelled hint. It scores on subject overlap, which correlates with an element being related to the answer rather than stale against it."
     }
   },
   "rule_learned": "Ask the selector what a text says. Ask the counterexample what the code does. Ask a capable model what a rule implies. And put the discriminating fact in the state: every selector that failed here failed because it had to infer which thing to compare against."

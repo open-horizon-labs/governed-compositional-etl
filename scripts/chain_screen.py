@@ -81,6 +81,18 @@ def screen(job: str, contract: Path | None = None) -> dict:
             by_id[f"{entity['id']}.{attr['name']}"] = attr
     for handoff in working.get("handoffs", []):
         by_id[f"handoff.{handoff['from']}->{handoff['to']}"] = handoff
+    selected_path = ROOT / "chain/l2" / job / "selected-model.json"
+    before_by_id = {}
+    if selected_path.exists():
+        selected = json.loads(selected_path.read_text())
+        for inv in selected.get("invariants", []):
+            before_by_id[inv["id"]] = inv
+        for ent in selected.get("entities", []):
+            before_by_id[ent["id"]] = ent
+            for attr in ent.get("attributes", []):
+                before_by_id[f"{ent['id']}.{attr['name']}"] = attr
+        for h in selected.get("handoffs", []):
+            before_by_id[f"handoff.{h['from']}->{h['to']}"] = h
     baseline = json.loads(BASELINE.read_text()) if BASELINE.exists() else {"p90": 0.74, "max": 0.82, "median": 0.5}
     holes = {h: l1["holes"][h] for h in l1["holes"]}
 
@@ -101,20 +113,25 @@ def screen(job: str, contract: Path | None = None) -> dict:
         # mechanical, not judged: an element inside a group a hole bounds, whose own text never names that hole, is
         # where an unauthorized answer has historically hidden. Whether it actually answers the question is for a
         # runnable counterexample and a capable reader, not for a selector that reads rather than derives.
-        for question, text in settled.items():
+        # A hint, not a finding. Only fields this cycle left alone, on elements it did touch: an element written fresh
+        # against the answer discusses the settled subject by design. Even so it scores on subject overlap rather than on
+        # staleness, and its first live flag was a false positive (a frozen-reference trigger that never mentions closure,
+        # flagged because its element gained the clause). Worth a reviewer's eye over a handful of fields; never a verdict.
+        previous = before_by_id.get(eid) or {}
+        for question, text in settled.items() if eid in delta["changed"] else []:
             for field in ("statement", "necessity", "parallel_assumption", "review_trigger"):
-                if not element.get(field):
+                if not element.get(field) or element.get(field) != previous.get(field):
                     continue
                 r = JEV.treats_a_settled_question_as_open(text, field, element[field])
                 if r.get("verdict") == "ran" and r["flag"]:
-                    entry.setdefault("still_treats_settled_questions_as_open", []).append({"question": question, "field": field, "p": round(r["p_treats_as_open"], 2)})
+                    entry.setdefault("fields_worth_rereading_against_the_answer", []).append({"question": question, "field": field, "p": round(r["p_treats_as_open"], 2)})
         bounding = relevant_holes(working, eid, holes)
         silent = [h for h in bounding if h.replace("L1.hole.", "").replace("-", "_") not in json.dumps(element)]
         if silent:
             entry["bounded_by_holes_it_never_names"] = silent
         findings.append(entry)
 
-    findings.sort(key=lambda f: (-len(f.get("still_treats_settled_questions_as_open", [])), -len(f.get("bounded_by_holes_it_never_names", [])), -f.get("p_adds_a_decision", 0)))
+    findings.sort(key=lambda f: (-len(f.get("fields_worth_rereading_against_the_answer", [])), -len(f.get("bounded_by_holes_it_never_names", [])), -f.get("p_adds_a_decision", 0)))
     out = {"job": job, "added": delta["added"], "removed": delta["removed"], "changed": delta["changed"], "findings": findings}
 
     if contract and contract.exists():
@@ -123,7 +140,7 @@ def screen(job: str, contract: Path | None = None) -> dict:
             out["contract_scope"] = {"p_outside_scope": round(w["p_outside_scope"], 3), "confidence": w["confidence_band"]}
     summary = {"job": job, "added": len(delta["added"]), "removed": len(delta["removed"]), "changed": len(delta["changed"]),
                "elements": (delta["added"] + delta["changed"])[:12],
-               "top_flags": [f["element"] for f in findings[:3] if f.get("rank_against_reviewed") in ("top decile", "above every reviewed element") or f.get("bounded_by_holes_it_never_names")]}
+               "top_flags": [f["element"] for f in findings[:3] if f.get("rank_against_reviewed") in ("top decile", "above every reviewed element") or f.get("fields_worth_rereading_against_the_answer") or f.get("bounded_by_holes_it_never_names")]}
     t = JEV.review_needed(summary)
     if t.get("verdict") == "ran":
         out["triage"] = {"depth": t["depth"], "confidence": t.get("confidence"), "probabilities": {k: round(v, 2) for k, v in (t.get("probabilities") or {}).items()}}

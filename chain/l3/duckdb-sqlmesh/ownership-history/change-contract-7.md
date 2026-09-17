@@ -1,0 +1,6 @@
+# Change contract, L3 cycle 7: ownership-history on duckdb-sqlmesh (no trade creates a statement)
+
+- **Exact active change authority:** the re-selected L2 (model_sha256 from `chain/l2/ownership-history/review.json`), compiled under the new clause `L1.closed-account-activity`: an account recorded as closed keeps everything it already held, closing unwinds nothing already attributed to it, and activity never reopens an account because no trade creates a statement. One new deterministic invariant, `inv.account_statement_never_created_by_activity`. Cache: `sg.statement-content` stale.
+- **Stale artifacts:** one audit for that invariant (an AUDIT file over @this_model, registered in the model's audits list), registered in `manifest.json`. It checks that every persisted account statement corresponds to a row in one of the permitted producers, the anchored customer management actions or the labeled constructed change rows, and to nothing else. Reads: `governed.account` and those sources only. Update manifest provenance; leave `group_fingerprints` to the coordinator.
+- **Hit artifacts:** the entity SQL and every other audit are unchanged; nothing about attribution or status moves.
+- **Acceptance:** check ok or question with zero problems; run ok with every audit at zero; twophase ok; mutate zero unprotected. Report briefly.
