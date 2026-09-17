@@ -1,0 +1,7 @@
+# Projection review 1: trade-lifecycle on duckdb-native (verdict: pass, unconditional)
+
+Reviewer: Opus judge with the L2 model as Sketch; ran check, run, twophase, idempotency, and audit mutation tests.
+
+Holds: one source row per trade (first report, latest I/U outcome, pinned account statement); MERGE matched update names exactly the six mutable attributes; frozen attributes inserted only; pin by effective_from at or before placed_at, is_current absent; owner read from the pinned statement; D excluded provisionally as the model states; reads confined to raw.trade_cdc and governed.account; five audits, each non-vacuous: ten mutations (frozen account moved, pin moved to constructed or current statement, placed_at from latest report, customer changed, marker flipped, status stale, price nulled, quantity changed, pin nulled) each fired exactly its audit. Two-phase: outcome fields change, five frozen columns untouched while the constructed 2017 statement is current. Re-run without new reports is byte-identical.
+
+Policy decided in SQL: none that changes a model answer. Model-side corners named, all inside declared holes: a D-flagged first report; a trade with only D rows disappears; an unresolvable pin inserts NULLs into non-nullable attributes (sg.placement-moment is conditional on change-effective-time). One strictness: inv.trade_placement_reference_frozen's second leg checks its own parallel assumption (no report before placed_at), which the reviewer read as faithful escalation.

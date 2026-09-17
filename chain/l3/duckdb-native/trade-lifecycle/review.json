@@ -1,0 +1,10 @@
+{
+  "job": "trade-lifecycle",
+  "manifest_sha256": "2f28a0f728841a803d9f0d81190f54e6ef74b7c2f80629cb22ea3d21c70e9c42",
+  "notes": "see review-1.md",
+  "rejected_artifacts": [],
+  "reviewer": "opus projection reviewer, L3 cycle 1",
+  "schema_version": "l3-review/v1",
+  "target": "duckdb-native",
+  "verdict": "pass"
+}
