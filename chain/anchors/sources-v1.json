@@ -414,6 +414,7 @@
     "historical_load": "Batch1 Trade.txt rows carry no change flag; the loader marks them I with sequence 0",
     "note": "What received trade status codes and change flags mean, as the source defines them (StatusType and TradeType reference files; incremental file conventions). Shape and reference meaning only; the clause locator is unverified.",
     "report_order": {
+      "applies_to": "reports of one trade (raw.trade_cdc, raw.trade_history) and reports of one holding change (raw.holding_history rows carry the same batch_date and cdc_dsn envelope; historical rows have no cdc columns and precede all incremental rows)",
       "first_report_of_a_trade": "the row with the smallest (batch_date, cdc_dsn) for that t_id",
       "latest_report_of_a_trade": "the row with the largest (batch_date, cdc_dsn) for that t_id",
       "note": "How reports of the same trade are ordered, as the source files are produced: historical Batch1 rows come first (loader sequence 0, batch 1); incremental rows follow in batch order and, within a batch, by cdc_dsn. This is file production order, shape only. Whether a report must carry which file delivered it is L1.hole.batch-identity. For historical-load trades, the held reports are the TradeHistory rows (each with its own th_dts) together with the snapshot Trade row; the earliest held report of such a trade is its earliest TradeHistory row.",

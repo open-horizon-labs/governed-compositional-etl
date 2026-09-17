@@ -1,0 +1,8 @@
+# Change contract, cycle 6: L1 -> L2, job trade-lifecycle (after cycle 5 is selected)
+
+- **Prior policy authority:** `sketches/l1-brokerage-intent-v1.md`, the clauses listed for `job:trade-lifecycle`. Unchanged.
+- **Exact active change authority:** none new. Correction entailed by L1.attribution-at-placement ("and through it the customer, as they stood at the moment the trade was placed") and L1.as-of, adjudicated in `.oh/metis/issue-8-statement-content-assumed.md` (addendum on the customer statement) after the positions review found the customer statement pin missing.
+- **Authorized correction:** add a frozen attribute `owning_customer_effective_from` (type in the same semantic kind as the upstream customer statement's effective time, role frozen_from_first_encounter): the effective_from of the `logical.customer` statement, for the customer named by the pinned account statement, with the latest effective_from at or before placed_at (handoff from `logical.customer.effective_from`, selector as_of_event_time; cite L1.attribution-at-placement, L1.as-of, L1.placement-moment). Extend `inv.trade_placement_reference_frozen` to cover it. State in the coverage claim of sg.placement-moment that the ownership reference is now the pair of statements, account and customer, as they stood at placement.
+- **Current rules that must be preserved:** all clauses; cycle-5 elements stand.
+- **Explicit holes that must remain open:** unchanged.
+- **Stable projection contracts / forbidden shortcuts / conflict protocol:** unchanged. logical.customer is an upstream entity of ownership-history; consuming it through this handoff is within upstream_jobs.

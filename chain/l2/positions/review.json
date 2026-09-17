@@ -1,0 +1,11 @@
+{
+  "groups_selected": [],
+  "job": "positions",
+  "model_sha256": "4e90d02bf73c6238612a0f6067e0894544dd4531408190588af50b38c5c850fb",
+  "notes": "see review-1.md; customer statement pin missing upstream",
+  "rejected_element_ids": [],
+  "reviewer": "opus sketch reviewer, positions cycle 1",
+  "schema_version": "l2-review/v1",
+  "selected_element_ids": [],
+  "verdict": "needs-authority"
+}
