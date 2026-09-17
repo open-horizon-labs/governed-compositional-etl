@@ -885,3 +885,9 @@ After the trade-history anchor amendment and trade-lifecycle cycle 5, the cache 
 ### Weave across three L2s (2026-09-17)
 
 With positions compiled, the weave covers every L1 clause: zero gaps, six cross-job dependencies (account statement and owner into trades; trade ownership into holdings; holdings into positions), three overlaps where one meaning carries per_statement at the source, frozen on the copy, and identity as an aggregate key, and ten named gaps each pointing at an open hole. The contradiction rule now reserves the word for a downstream mutable on a meaning fixed upstream. Cache after cycle 6: one stale group in trade-lifecycle, all ownership-history groups hit, positions stale-new (never baselined).
+
+### Trade-lifecycle re-selected at cycle 7; the cone rejects exactly two artifacts (2026-09-17)
+
+- Cycles 5 to 7 landed placement from the anchored history, the customer statement pin, a deterministic placed_at invariant, and two rounds of consistency text. Cycle 7 was an enumerated text change reviewed by the coordinator after the model reviewer judged 5 and 6.
+- On re-selection: cache plan one stale group (sg.placement-moment); L3 checks reject duckdb-native/trade-lifecycle and duckdb-sqlmesh/trade-lifecycle on that group's changed fingerprint and accept both ownership-history projections unchanged. Re-projection dispatched to both trade Developers; positions cycle 2 dispatched with the customer statement key. Counterfactual round 2 still running.
+- Lesson from cycles 5 and 6: adding a source or a pin falsifies nearby prose claims that the gate cannot read. Two reviews in a row caught the same class. The model reviewer earns its cost precisely there.
