@@ -1,0 +1,7 @@
+# Change contract, cycle 7: L1 -> L2, job trade-lifecycle (text consistency after the customer pin)
+
+- **Prior policy authority:** `sketches/l1-brokerage-intent-v1.md`, the clauses listed for `job:trade-lifecycle`. Unchanged.
+- **Exact active change authority:** none new. Text corrections authorized by `review-6.md`.
+- **Authorized corrections:** `inv.trade_ownership_provenance_reachable.parallel_assumption` restated over the two pinned upstream entities (account and customer statements), recording that logical.customer carries no provenance attribute and no ce.customer_* source is anchored, so the customer pin cannot carry an unlabeled constructed fact; its review_trigger extended to a ce.customer_* source appearing or logical.customer gaining a provenance value. `sg.constructed-scenarios.coverage_claim` gains the customer-pin sentence and speaks of the pinned statements in the plural. `placed_at` and both handoffs into it list `inv.trade_placed_at_matches_earliest_report` in feedback. The entity's review_trigger spans both received sources. The three customer-pin elements also cite L1.lifecycle-mutates-outcome (already a parent of sg.placement-moment). `hole.change_effective_time` names owning_customer_effective_from among the pins that may be unavailable.
+- **Current rules that must be preserved:** all clauses; cycle-6 elements stand; no element other than those listed may change.
+- **Stable projection contracts / forbidden shortcuts / conflict protocol:** unchanged.
