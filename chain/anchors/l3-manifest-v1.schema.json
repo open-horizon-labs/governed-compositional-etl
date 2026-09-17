@@ -20,7 +20,7 @@
             "type": "string"
           },
           "file": {
-            "pattern": "^[a-z_]+\\.sql$",
+            "pattern": "^(models/)?[a-z_]+\\.sql$",
             "type": "string"
           },
           "note": {

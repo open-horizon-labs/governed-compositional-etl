@@ -73,6 +73,21 @@ def containment(model: dict, selected: set[str]) -> dict[str, set[str]]:
     return allowed
 
 
+def is_sqlmesh(profile: dict) -> bool:
+    return str(profile.get("orchestrator", "")).startswith("sqlmesh")
+
+
+def body_of(sql: str, sqlmesh_target: bool) -> str:
+    """For SQLMesh targets, strip the MODEL (...) or AUDIT (...) header and resolve @this_model for parsing."""
+    if not sqlmesh_target:
+        return sql
+    text = sql.lstrip()
+    if text.startswith(("MODEL", "AUDIT")):
+        idx = text.find(");")
+        text = text[idx + 2:] if idx >= 0 else text
+    return text.replace("@this_model", "this_model_placeholder")
+
+
 def column_roles(model: dict, entity_id: str) -> dict[str, str]:
     types = {t["id"]: t["mutation_role"] for t in model["types"]}
     entity = next(e for e in model["entities"] if e["id"] == entity_id)
@@ -98,6 +113,7 @@ def check(target: str, job: str) -> dict:
     if manifest.get("target") != target or manifest.get("job") != job:
         problems.append("manifest target/job do not match the directory")
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
+    sqlmesh_target = is_sqlmesh(profile)
     allowed_reads = containment(model, selected)
     entities_selected = {e["id"] for e in model["entities"] if e["id"] in selected}
     projected = {a["entity"] for a in manifest.get("artifacts", [])}
@@ -121,12 +137,16 @@ def check(target: str, job: str) -> dict:
             elif did not in selected:
                 problems.append(f"artifact {art['file']} derives from {did}, which is not selected (deferred or rejected)")
         sql = path.read_text()
+        if sqlmesh_target and not sql.lstrip().startswith("MODEL"):
+            problems.append(f"artifact {art['file']} must be a SQLMesh MODEL file on target {target}")
+        if sqlmesh_target and f"name governed.{art['entity'].split('.')[-1]}" not in sql:
+            problems.append(f"artifact {art['file']} MODEL name must be governed.{art['entity'].split('.')[-1]}")
         try:
-            statements = [s for s in parse(sql, dialect="duckdb") if s is not None]
+            statements = [s for s in parse(body_of(sql, sqlmesh_target), dialect="duckdb") if s is not None]
         except Exception as error:  # noqa: BLE001
             problems.append(f"artifact {art['file']} does not parse: {error}"); continue
         target_table = "governed." + art["entity"].split(".")[-1]
-        allowed = allowed_reads.get(art["entity"], set()) | {target_table}
+        allowed = allowed_reads.get(art["entity"], set()) | {target_table, "this_model_placeholder"}
         roles = column_roles(model, art["entity"])
         for s in statements:
             ctes = {c.alias_or_name.lower() for c in s.find_all(exp.CTE)}
@@ -141,7 +161,7 @@ def check(target: str, job: str) -> dict:
         observed = set()
         for s in statements:
             ctes = {c.alias_or_name.lower() for c in s.find_all(exp.CTE)}
-            observed |= {(f"{t.db}.{t.name}" if t.db else t.name).lower() for t in s.find_all(exp.Table) if t.name.lower() not in ctes} - {target_table.lower()}
+            observed |= {(f"{t.db}.{t.name}" if t.db else t.name).lower() for t in s.find_all(exp.Table) if t.name.lower() not in ctes} - {target_table.lower(), "this_model_placeholder"}
         if declared != observed:
             problems.append(f"artifact {art['file']} declares reads {sorted(declared)} but the SQL reads {sorted(observed)}")
     invariants = {inv["id"]: inv for inv in model["invariants"] if inv["id"] in selected and inv["deterministic"]}
@@ -153,6 +173,8 @@ def check(target: str, job: str) -> dict:
             problems.append(f"audit {a['file']} names {a['invariant']}, not a selected deterministic invariant")
         if not (base / a["file"]).exists():
             problems.append(f"audit {a['file']} missing")
+        elif sqlmesh_target and not (base / a["file"]).read_text().lstrip().startswith("AUDIT"):
+            problems.append(f"audit {a['file']} must be a SQLMesh AUDIT file on target {target}")
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"],
             "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", []))}
@@ -163,6 +185,52 @@ def execute(con, base: Path, manifest: dict) -> None:
         con.execute((base / art["file"]).read_text())
 
 
+def run_sqlmesh(target: str, job: str, database: Path, fixture_report: dict) -> dict:
+    """Assemble one SQLMesh project from this job's and its upstream jobs' model files, plan it, audit it."""
+    import shutil
+    import subprocess
+    project = ROOT / f"build/chain-{target}-{job}"
+    if project.exists():
+        shutil.rmtree(project)
+    (project / "models").mkdir(parents=True)
+    (project / "audits").mkdir()
+    (project / "materializations").mkdir()
+    HARNESS = _mod("chain_harness", "scripts/chain_harness.py")
+    (project / "materializations/governed_merge.py").write_text(HARNESS.MATERIALIZATION)
+    (project / "config.yaml").write_text(
+        "gateways:\n  duckdb:\n    connection:\n      type: duckdb\n" f"      database: '{database.as_posix()}'\n"
+        "default_gateway: duckdb\nmodel_defaults:\n  dialect: duckdb\n  start: '2012-01-01'\n  cron: '@daily'\nlinter:\n  enabled: false\n")
+    jobs = JOB_ORDER[: JOB_ORDER.index(job) + 1]
+    for j in jobs:
+        base = L3_DIR / target / j
+        manifest_path = base / "manifest.json"
+        if not manifest_path.exists():
+            raise L3Error(f"job {j} has no {target} projection")
+        manifest = json.loads(manifest_path.read_text())
+        for art in manifest["artifacts"]:
+            shutil.copy(base / art["file"], project / "models" / Path(art["file"]).name)
+        for a in manifest["audits"]:
+            shutil.copy(base / a["file"], project / "audits" / Path(a["file"]).name)
+    result = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "plan", "prod", "--auto-apply", "--no-prompts", "--skip-tests", "--skip-linter"], cwd=ROOT, text=True, capture_output=True)
+    if result.returncode or "Failed models" in result.stdout:
+        raise L3Error(f"SQLMesh plan failed:\n{result.stdout[-4000:]}\n{result.stderr[-2000:]}")
+    audit = subprocess.run([str(ROOT / ".venv/bin/sqlmesh"), "-p", str(project), "audit"], cwd=ROOT, text=True, capture_output=True)
+    fixture_report["sqlmesh"] = {"plan_tail": result.stdout[-800:], "audit_ok": audit.returncode == 0 and "0 audit errors" in audit.stdout, "audit_tail": (audit.stdout + audit.stderr)[-1500:]}
+    manifest = json.loads((L3_DIR / target / job / "manifest.json").read_text())
+    con = duckdb.connect(str(database), read_only=True)
+    try:
+        for a in manifest["audits"]:
+            fixture_report["audits"][a["invariant"]] = {"violations": 0 if fixture_report["sqlmesh"]["audit_ok"] else None, "via": "sqlmesh audit"}
+        for art in manifest["artifacts"]:
+            table = "governed." + art["entity"].split(".")[-1]
+            cur = con.execute(f"SELECT * FROM {table} ORDER BY 1, 2 LIMIT 12")
+            fixture_report["samples"][table] = {"columns": [d[0] for d in cur.description], "rows": [list(map(str, r)) for r in cur.fetchall()], "count": con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]}
+    finally:
+        con.close()
+    fixture_report["ok"] = fixture_report["sqlmesh"]["audit_ok"]
+    return fixture_report
+
+
 def run(target: str, job: str, phase: str = "rollover", database: Path | None = None) -> dict:
     """Load the fixture (and labeled CE rows for the rollover phase), run upstream jobs' projections, then this job, then audits."""
     fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
@@ -170,8 +238,11 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
     changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"]["ce_account_changes"]]
     database = database or ROOT / f"build/chain-{target}.duckdb"
     LOADER.load_fixture(database, fixture, phase, changes if phase == "rollover" else None)
-    con = duckdb.connect(str(database))
     report = {"target": target, "job": job, "phase": phase, "upstream": [], "audits": {}, "samples": {}}
+    profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
+    if is_sqlmesh(profile):
+        return run_sqlmesh(target, job, database, report)
+    con = duckdb.connect(str(database))
     try:
         for up in JOB_ORDER[: JOB_ORDER.index(job)]:
             up_manifest = L3_DIR / target / up / "manifest.json"
