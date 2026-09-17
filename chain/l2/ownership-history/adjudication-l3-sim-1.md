@@ -1,0 +1,15 @@
+# Sketch review adjudication: ownership-history, found by L3 simulation (2026-09-17)
+
+- Case: `chain_l3.py run duckdb-native ownership-history` on the bounded fixture. Audits `inv.customer_statement_has_content` and `inv.account_statement_has_content` each report one violation: customer 238's INACT statement has null tier; account 428's CLOSEACCT statement has null tax treatment. The L3 Developer verified against the source rows that INACT carries only c_id and CLOSEACCT only c_id and ca_id, refused to invent a carry-forward, and filed two questions.
+- Original verdict and rationale: cycle-5 review passed the L2 model; it accepted `carried_forward_from_previous_statement` on the owner under L1.identity and L1.history but did not ask whether the other standing facts need the same when an action omits them.
+- Sketch clauses and case evidence: L1.identity (a change makes a new statement about the same thing), L1.history (nothing overwritten; a later statement sits beside the earlier), L1.statement-content (a statement carries the standing facts at that moment). An action that omits tier or tax treatment reports no change to it; the fact stands as last stated. The same reasoning the reviewer accepted for the owner applies to tier and tax treatment.
+- Adjudicated verdict: fail on `sg.statement-content` (tier and tax_treatment lack a carry-forward derivation). The rest of the model stands.
+- Why the original judgment was wrong or unresolved: the reviewer judged against the clause text without the source's field-presence facts, which were not anchored. The L3 simulation supplied the missing evidence. The anchors now state `fields_present` per action code and the gate rejects the case mechanically.
+- Level classification: L2 projection defect. L1 entails the correction; no clause changes. Jev's classification is recorded beside this file as evidence, not authority.
+- Policy change approved by this adjudication: none.
+- Adjudicator: coordinator under the data-architect hat for the anchor fact; domain-reviewer hat for the adjudicated verdict.
+- Consequence for the cache: `sg.statement-content` re-projects at L2, then the L3 artifacts deriving from it (customer.sql, account.sql on every target) re-project. Other groups and their L3 artifacts are hits.
+
+## Jev classification (evidence, not authority)
+
+`jev_select.ce_level` over the four relevant clauses, the account entity's tax_treatment and owner attributes, the observed CLOSEACCT statement, and the corrected one: l1_gap 0.46, l2_gap 0.06, l3_defect 0.48, confidence 0.23. Low confidence, routed to the adjudicator. Jev does not see this as an L2 gap; it splits between "the Sketch never says omitted facts stand" and "the projection should have carried them." The adjudicator keeps the L2 classification for the repair, because the reviewer already accepted the same entailment for the owner, and files `chain/ce/proposed/ce.l1.omitted-facts-stand.md` so the business can make the entailment explicit. If the business rejects that clarification, the carry-forward derivations become an L1 gap and re-adjudicate.

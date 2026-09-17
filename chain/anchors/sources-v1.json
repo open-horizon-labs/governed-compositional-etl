@@ -19,6 +19,51 @@
       "logical.account": "account",
       "logical.customer": "customer"
     },
+    "fields_present": {
+      "ADDACCT": [
+        "action_ts",
+        "action_type",
+        "c_id",
+        "ca_b_id",
+        "ca_id",
+        "ca_tax_st"
+      ],
+      "CLOSEACCT": [
+        "action_ts",
+        "action_type",
+        "c_id",
+        "ca_id"
+      ],
+      "INACT": [
+        "action_ts",
+        "action_type",
+        "c_id"
+      ],
+      "NEW": [
+        "action_ts",
+        "action_type",
+        "c_id",
+        "c_tier",
+        "ca_b_id",
+        "ca_id",
+        "ca_tax_st"
+      ],
+      "UPDACCT": [
+        "action_ts",
+        "action_type",
+        "c_id",
+        "ca_b_id",
+        "ca_id",
+        "ca_tax_st"
+      ],
+      "UPDCUST": [
+        "action_ts",
+        "action_type",
+        "c_id",
+        "c_tier"
+      ],
+      "note": "Which received fields an action row carries, as the source defines it. action_type and action_ts are the row envelope and are present on every action. This is shape only; what an omitted field means is the Sketch's to say (L1.omitted-facts-stand)."
+    },
     "note": "What each received CustomerMgmt action code means, as the source defines it. Using this meaning to derive a statement's status is interpreting a named reference, not inventing policy. The clause locator is unverified; see the adjudication.",
     "status_codes": {
       "ACTV": "active or open",
@@ -324,5 +369,36 @@
     "trade": "t_id / trade number"
   },
   "note": "Structural anchors K. Field names, physical types, and natural identifiers only. They authorize no rule; see sketches/l1-brokerage-intent-v1.md.",
-  "schema_version": "source-anchors/v1"
+  "schema_version": "source-anchors/v1",
+  "trade_code_meanings": {
+    "authority": {
+      "adjudication": ".oh/metis/issue-8-scd2-versioning-adjudication.md",
+      "kind": "tpc_di_source_definition",
+      "locator": "StatusType.txt and incremental Trade.txt conventions (unverified locator)",
+      "source": "https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-di_v1.1.0.pdf",
+      "status": "assumed"
+    },
+    "cdc_flag": {
+      "D": "the record is marked deleted; meaning is L1.hole.deletions",
+      "I": "the record is newly inserted in this incremental file",
+      "U": "the record updates an existing record"
+    },
+    "historical_load": "Batch1 Trade.txt rows carry no change flag; the loader marks them I with sequence 0",
+    "note": "What received trade status codes and change flags mean, as the source defines them (StatusType and TradeType reference files; incremental file conventions). Shape and reference interpretation only; the clause locator is unverified.",
+    "status_codes": {
+      "CMPT": "completed",
+      "CNCL": "cancelled",
+      "PNDG": "pending: a limit order recorded but not yet submitted to market",
+      "SBMT": "submitted to market"
+    },
+    "status_order": [
+      "PNDG",
+      "SBMT",
+      "CMPT"
+    ],
+    "terminal_status_codes": [
+      "CMPT",
+      "CNCL"
+    ]
+  }
 }

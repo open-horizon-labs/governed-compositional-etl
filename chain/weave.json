@@ -1,17 +1,54 @@
 {
   "jobs": [
-    "ownership-history"
+    "ownership-history",
+    "trade-lifecycle"
   ],
   "relations": [
     {
-      "clause": "L1.attribution-at-placement",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
+      "note": "same meaning realized in several jobs; keep one definition",
+      "relation": "overlap",
+      "semantic_kind": "statement_effective_time",
+      "uses": [
+        [
+          "ownership-history",
+          "statement_effective_from",
+          "per_statement"
+        ],
+        [
+          "trade-lifecycle",
+          "trade_owning_account_effective_from",
+          "per_statement"
+        ]
+      ]
     },
     {
-      "clause": "L1.lifecycle-mutates-outcome",
-      "note": "no job's sufficiency group covers this clause",
-      "relation": "gap"
+      "note": "same meaning realized in several jobs; keep one definition",
+      "relation": "overlap",
+      "semantic_kind": "account_owner_identity_reference",
+      "uses": [
+        [
+          "ownership-history",
+          "account_owner_reference",
+          "per_statement"
+        ],
+        [
+          "trade-lifecycle",
+          "trade_owning_customer_reference",
+          "per_statement"
+        ]
+      ]
+    },
+    {
+      "from_job": "ownership-history",
+      "handoff": "logical.account.effective_from->logical.trade.owning_account_effective_from",
+      "relation": "dependency",
+      "to_job": "trade-lifecycle"
+    },
+    {
+      "from_job": "ownership-history",
+      "handoff": "logical.account.owning_customer_number->logical.trade.owning_customer_number",
+      "relation": "dependency",
+      "to_job": "trade-lifecycle"
     },
     {
       "clause": "L1.holdings-follow-trade",
@@ -24,52 +61,32 @@
       "relation": "gap"
     },
     {
-      "hole": "L1.hole.closed-account-activity",
-      "note": "no job carries this hole; either it touches no job or a job filled it silently",
-      "relation": "gap"
-    },
-    {
-      "hole": "L1.hole.trade-timestamps",
-      "note": "no job carries this hole; either it touches no job or a job filled it silently",
-      "relation": "gap"
-    },
-    {
-      "hole": "L1.hole.securities-and-brokers",
-      "note": "no job carries this hole; either it touches no job or a job filled it silently",
-      "relation": "gap"
-    },
-    {
-      "hole": "L1.hole.batch-identity",
-      "note": "no job carries this hole; either it touches no job or a job filled it silently",
-      "relation": "gap"
-    },
-    {
-      "gap": "none, for customer and account; L1.identity also names a trade number, but trade identity is out of this job's scope (see job:trade-lifecycle).",
+      "gap": "L1.hole.change-effective-time",
       "group": "sg.identity",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.change-effective-time: incremental customer and account change records carry no moment of their own; this model assigns them no effective_from, so as-of coverage does not extend to any customer or account whose only statements come from those files.",
+      "gap": "L1.hole.change-effective-time",
       "group": "sg.history-asof",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "current-version coverage depends on effective_from being known for every statement of a thing (see sg.history-asof's gap); where it is not, the current statement for that customer or account cannot yet be determined.",
+      "gap": "L1.hole.change-effective-time",
       "group": "sg.current-version",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "L1.hole.owner-change-reversions-account: whether a change to a customer's own standing alone causes a new statement of that customer's accounts is not decided here; this model requires only that whatever account statements exist carry the current owner link, not that a customer change triggers a new account statement.",
+      "gap": "L1.hole.owner-change-reversions-account",
       "group": "sg.owner-standing",
       "job": "ownership-history",
       "relation": "named-gap"
     },
     {
-      "gap": "chain/anchors/sources-v1.json anchors no constructed-scenario source for customer-level changes, so this model cannot yet label a constructed customer statement; coverage is limited to account-level constructed scenarios.",
-      "group": "sg.constructed-scenarios",
+      "gap": "L1.hole.change-effective-time bounds the deferred CDC-sourced handoffs above, which cannot yet be projected. Separately, L1.hole.closed-account-activity bounds the account status this group now derives from action_type: a CLOSEACCT statement's closed status is not revised by this model if the account's activity later resumes without a recorded reopening action.",
+      "group": "sg.statement-content",
       "job": "ownership-history",
       "relation": "named-gap"
     }
@@ -77,9 +94,9 @@
   "schema_version": "l2-weave/v1",
   "summary": {
     "contradiction": 0,
-    "dependency": 0,
-    "gap": 8,
+    "dependency": 2,
+    "gap": 2,
     "named-gap": 5,
-    "overlap": 0
+    "overlap": 2
   }
 }

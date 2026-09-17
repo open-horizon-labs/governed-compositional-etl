@@ -1,0 +1,133 @@
+{
+  "schema_version": "l3-manifest/v1",
+  "target": "duckdb-native",
+  "job": "ownership-history",
+  "derived_from_model": {
+    "path": "chain/l2/ownership-history/semantic-model.json",
+    "review_sha256": "a9f548b1bad619f6876b04939ae672aff7ce5e74429ee159f3ea97e3963ba440"
+  },
+  "artifacts": [
+    {
+      "file": "customer.sql",
+      "entity": "logical.customer",
+      "strategy": "CREATE OR REPLACE TABLE AS from the complete change feed",
+      "derived_from": [
+        "logical.customer",
+        "logical.customer.customer_number",
+        "logical.customer.effective_from",
+        "logical.customer.is_current",
+        "logical.customer.status",
+        "logical.customer.tier",
+        "type.customer_number",
+        "type.statement_effective_from",
+        "type.statement_is_current",
+        "type.customer_standing_status",
+        "type.customer_tier",
+        "handoff.raw.customer_mgmt_action.c_id->logical.customer.customer_number",
+        "handoff.raw.customer_mgmt_action.action_ts->logical.customer.effective_from",
+        "handoff.raw.customer_mgmt_action.action_type->logical.customer.status",
+        "handoff.raw.customer_mgmt_action.c_tier->logical.customer.tier"
+      ],
+      "reads": [
+        "raw.customer_mgmt_action"
+      ]
+    },
+    {
+      "file": "account.sql",
+      "entity": "logical.account",
+      "strategy": "CREATE OR REPLACE TABLE AS from the complete change feed",
+      "derived_from": [
+        "logical.account",
+        "logical.account.account_number",
+        "logical.account.effective_from",
+        "logical.account.is_current",
+        "logical.account.owning_customer_number",
+        "logical.account.status",
+        "logical.account.tax_treatment",
+        "logical.account.provenance",
+        "type.account_number",
+        "type.statement_effective_from",
+        "type.statement_is_current",
+        "type.account_owner_reference",
+        "type.account_standing_status",
+        "type.account_tax_treatment",
+        "type.constructed_scenario_label",
+        "handoff.raw.customer_mgmt_action.ca_id->logical.account.account_number",
+        "handoff.raw.customer_mgmt_action.action_ts->logical.account.effective_from",
+        "handoff.raw.customer_mgmt_action.c_id->logical.account.owning_customer_number",
+        "handoff.raw.customer_mgmt_action.action_type->logical.account.status",
+        "handoff.raw.customer_mgmt_action.ca_tax_st->logical.account.tax_treatment",
+        "handoff.ce.account_changes.account_id->logical.account.account_number",
+        "handoff.ce.account_changes.action_at->logical.account.effective_from",
+        "handoff.ce.account_changes.status_id->logical.account.status",
+        "handoff.ce.account_changes.tax_status_id->logical.account.tax_treatment",
+        "handoff.ce.account_changes.provenance->logical.account.provenance"
+      ],
+      "reads": [
+        "raw.customer_mgmt_action",
+        "ce.account_changes"
+      ]
+    }
+  ],
+  "audits": [
+    {
+      "file": "audits/inv.customer_single_current.sql",
+      "invariant": "inv.customer_single_current",
+      "entity": "logical.customer"
+    },
+    {
+      "file": "audits/inv.account_single_current.sql",
+      "invariant": "inv.account_single_current",
+      "entity": "logical.account"
+    },
+    {
+      "file": "audits/inv.customer_statements_no_overlap.sql",
+      "invariant": "inv.customer_statements_no_overlap",
+      "entity": "logical.customer"
+    },
+    {
+      "file": "audits/inv.account_statements_no_overlap.sql",
+      "invariant": "inv.account_statements_no_overlap",
+      "entity": "logical.account"
+    },
+    {
+      "file": "audits/inv.customer_asof_has_unique_answer.sql",
+      "invariant": "inv.customer_asof_has_unique_answer",
+      "entity": "logical.customer"
+    },
+    {
+      "file": "audits/inv.account_asof_has_unique_answer.sql",
+      "invariant": "inv.account_asof_has_unique_answer",
+      "entity": "logical.account"
+    },
+    {
+      "file": "audits/inv.account_asof_carries_customer_asof.sql",
+      "invariant": "inv.account_asof_carries_customer_asof",
+      "entity": "logical.account"
+    },
+    {
+      "file": "audits/inv.constructed_scenarios_labeled.sql",
+      "invariant": "inv.constructed_scenarios_labeled",
+      "entity": "logical.account"
+    },
+    {
+      "file": "audits/inv.constructed_account_change_refers_to_known_account.sql",
+      "invariant": "inv.constructed_account_change_refers_to_known_account",
+      "entity": "logical.account"
+    },
+    {
+      "file": "audits/inv.customer_statement_has_content.sql",
+      "invariant": "inv.customer_statement_has_content",
+      "entity": "logical.customer"
+    },
+    {
+      "file": "audits/inv.account_statement_has_content.sql",
+      "invariant": "inv.account_statement_has_content",
+      "entity": "logical.account"
+    }
+  ],
+  "questions_for_authority": [
+    "raw.customer_mgmt_action INACT rows carry a null c_tier in the fixture (confirmed structurally: every INACT row is null, every NEW row is non-null); the model hands off logical.customer.tier directly from c_tier with no carried_forward_from_previous_statement derivation declared for it (unlike owning_customer_number), so an INACT-sourced customer statement projects with tier = NULL, which fails inv.customer_statement_has_content (nullable: false) as currently stated. Should tier carry forward from the customer's previous statement on an INACT action (mirroring owning_customer_number's declared derivation), should the invariant exempt statements produced by an action the anchored action_type_meanings associate with no detail payload, or is a null tier acceptable here? customer.sql and inv.customer_statement_has_content.sql are written as literally specified (direct handoff, no invented carry-forward); the run reports 1 residual violation for this row pending this decision.",
+    "raw.customer_mgmt_action CLOSEACCT rows carry a null ca_tax_st in the fixture (confirmed structurally: every CLOSEACCT row is null, every NEW/ADDACCT/UPDACCT row is non-null); the model hands off logical.account.tax_treatment directly from ca_tax_st with no carried_forward_from_previous_statement derivation declared for it (unlike owning_customer_number), so a CLOSEACCT-sourced account statement projects with tax_treatment = NULL, which fails inv.account_statement_has_content (nullable: false) as currently stated. Should tax_treatment carry forward from the account's previous statement on a CLOSEACCT action (mirroring owning_customer_number's declared derivation), should the invariant exempt statements produced by an action the anchored action_type_meanings associate with no detail payload, or is a null tax_treatment acceptable here? account.sql and inv.account_statement_has_content.sql are written as literally specified (direct handoff, no invented carry-forward); the run reports 1 residual violation for this row pending this decision."
+  ]
+}

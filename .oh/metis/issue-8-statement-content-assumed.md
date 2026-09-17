@@ -37,3 +37,11 @@ The business confirms or amends the enumeration. On amendment, the clause finger
 ## Addendum, 2026-09-17: constructed scenarios never introduce new things
 
 Cycle 4 of `ownership-history` filed one question: what determines an account's owner when a constructed change is the account's first statement. No clause settled it. Under the same hat and protocol, clarify `L1.constructed-scenarios`: a constructed scenario changes something the received records already know and never introduces a customer, account, or trade the brokerage does not have. This is evidence discipline, not business policy; it settles no open hole. Consequence: the carried-forward owner always has a previous received statement to carry from, and a constructed change naming an unknown account is a labeling error to reject. Review trigger: business confirmation.
+
+## Addendum, 2026-09-17: placement moment
+
+The trade-lifecycle Developer filed: which received report and field is the moment of placement, given a later report can arrive without earlier ones. This is L1.hole.trade-timestamps. Under the same hat and protocol, add `L1.placement-moment`: a trade is placed at the moment of the earliest report the brokerage holds, as that report states its own time; a trade first seen through a later report is treated as placed then and marked first-seen-late for review. Completion timing stays a hole. Justification: the received records' own timestamps are the only moment the brokerage states; batch dates are not. Marking late first encounters keeps the assumption visible in the data. Review trigger: business confirmation.
+
+## Addendum, 2026-09-17: omitted facts stand
+
+The cycle-6 reviewer observed that the rule "a change that does not mention a fact leaves it as it last stood" had migrated into an anchor note and the L2 format, both of which declare they authorize no rule, and that Jev's split on the level question showed the entailment from identity and history was not self-evident. Under the same hat and protocol, add `L1.omitted-facts-stand` to the Sketch and remove the policy sentence from the anchors, which keep only the structural fact of which fields each action carries. Review trigger: business confirmation.

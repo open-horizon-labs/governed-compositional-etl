@@ -63,4 +63,14 @@ Filing a question in `questions_for_authority` marks the model `question` and om
 
 ## Derived attributes are not handoffs
 
-Some statement values are not received from any source. The current flag follows from there being no later statement. A constructed change that omits the owner carries the owner forward from the previous statement of the same account. Declare these with `derivation` on the attribute (`computed_within_entity` or `carried_forward_from_previous_statement`) and a rule a reader can check, and cite the clause that makes the rule follow. The gate does not require a handoff for a derived attribute. Do not invent a source handoff for a value the sources do not carry.
+Some statement values are not received from any source. The current flag follows from there being no later statement. If a clause says an unmentioned fact stands as last stated, a change that omits a fact carries it forward from the previous statement of the same thing. Declare these with `derivation` on the attribute (`computed_within_entity` or `carried_forward_from_previous_statement`) and a rule a reader can check, and cite the clause that makes the rule follow. This document states shape and mechanism; the Sketch says whether a fact carries. The gate does not require a handoff for a derived attribute. Do not invent a source handoff for a value the sources do not carry.
+
+## Fields an action omits
+
+`sources-v1.json` states which fields each received action carries (`fields_present`). That is shape. What an omitted field means is the Sketch's to say; if a clause says an unmentioned fact stands as last stated, declare `carried_forward_from_previous_statement` on the attribute and cite that clause. The gate rejects a non-nullable statement attribute handed off from a field that some statement-producing action omits, unless the attribute declares a carry-forward derivation or is nullable with a note. This gate rule came from an L3 simulation: two statements projected with empty standing.
+
+## Rules Developers found non-obvious (recorded so the next one does not rediscover them)
+
+- A type may be `frozen_from_first_encounter` only when a cited clause says the value is fixed at first recording and not moved by later reports; cite that clause, not only the clause that supplies the value.
+- A handoff from an upstream job's attribute must use a type whose `semantic_kind` and `physical_type` match the upstream type. The mutation role may differ: an upstream `per_statement` value becomes a `frozen_from_first_encounter` reference on a trade, because role belongs to the consuming entity's lifecycle.
+- Trade status and change-flag codes have anchored meanings in `sources-v1.json` (`trade_code_meanings`). Interpreting them is allowed; ordering them into a lifecycle is stated there as a source fact; what a deletion means is not, and stays a hole.

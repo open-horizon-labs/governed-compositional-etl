@@ -161,8 +161,8 @@ def check(job: str, l1: dict | None = None) -> dict:
             elif h["from"] in upstream:
                 up_t = upstream[h["from"]]
                 my_t = types.get(target["semantic_type"], {})
-                if (up_t.get("semantic_kind"), up_t.get("mutation_role"), up_t.get("physical_type")) != (my_t.get("semantic_kind"), my_t.get("mutation_role"), my_t.get("physical_type")):
-                    problems.append(f"handoff {h['from']} -> {h['to']}: this job's type {target['semantic_type']} does not match the upstream type (kind, role, physical)")
+                if (up_t.get("semantic_kind"), up_t.get("physical_type")) != (my_t.get("semantic_kind"), my_t.get("physical_type")):
+                    problems.append(f"handoff {h['from']} -> {h['to']}: this job's type {target['semantic_type']} does not match the upstream type in meaning (semantic_kind) or physical type; mutation role may differ because it belongs to the consuming entity's lifecycle")
             else:
                 problems.append(f"handoff source {h['from']} is neither a local attribute, an anchored source, nor an attribute of a listed upstream job")
     for inv in doc.get("invariants", []):
@@ -269,6 +269,24 @@ def check(job: str, l1: dict | None = None) -> dict:
             wrong = sorted(c for c in named if subject and subject not in subjects.get(c, []))
             if wrong:
                 problems.append(f"handoff {src}->{ent} names {wrong}, which the anchors define as not about a {subject}")
+    # L3-simulation mechanization: an action that omits a fact must not leave a non-nullable statement attribute empty
+    fields_present = meanings.get("fields_present", {})
+    for e in doc.get("entities", []):
+        if e["history"] != "versioned":
+            continue
+        subject = entity_subjects.get(e["id"])
+        producing = [c for c, subj in subjects.items() if subject in subj]
+        by_attr = {}
+        for h in doc.get("handoffs", []):
+            if h["to"].startswith(e["id"] + ".") and h["from"].startswith("raw.customer_mgmt_action.") and h.get("disposition") == "candidate":
+                by_attr.setdefault(h["to"].rsplit(".", 1)[1], set()).add(h["from"].rsplit(".", 1)[1])
+        for a in e["attributes"]:
+            fields = by_attr.get(a["name"], set())
+            if not fields or a["nullable"] or a.get("derivation"):
+                continue
+            omitted_by = sorted(c for c in producing if isinstance(fields_present.get(c), list) and not fields <= set(fields_present[c]) and "action_type" not in fields)
+            if omitted_by:
+                problems.append(f"{e['id']}.{a['name']} is handed off from {sorted(fields)}, which actions {omitted_by} omit; declare carried_forward_from_previous_statement, or make it nullable with a note")
     for g in groups.values():
         gap = g["gap"].strip()
         if gap.lower() != "none" and not re.search(r"L1\.hole\.[a-z0-9-]+", gap):

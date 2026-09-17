@@ -110,6 +110,21 @@ class L2GateTests(unittest.TestCase):
         self.assertTrue(any("INACT" in p for p in report["problems"]), report["problems"])
 
 
+    def test_attribute_from_a_field_some_action_omits_needs_carry_forward(self):
+        def fn(d):
+            for e in d["entities"]:
+                for a in e["attributes"]:
+                    if a["name"] == "tier":
+                        a.pop("derivation", None)
+        report = self.mutate(fn)
+        self.assertTrue(any("INACT" in p and "carried_forward" in p for p in report["problems"]), report["problems"])
+
+    def test_upstream_handoff_may_change_mutation_role_but_not_meaning(self):
+        report = L2.check("trade-lifecycle")
+        self.assertIn(report["status"], ("ok", "question"), report.get("problems"))
+        self.assertFalse(any("does not match the upstream type" in p for p in report.get("problems", [])))
+
+
 class CacheTests(unittest.TestCase):
     def test_group_fingerprints_change_only_for_groups_citing_a_changed_clause(self):
         l1 = L2.parse_l1()
@@ -122,7 +137,8 @@ class CacheTests(unittest.TestCase):
             self.assertEqual(before[gid]["fingerprint"] != after[gid]["fingerprint"], cites, gid)
 
     def test_plan_reports_hits_and_stale_without_jev(self):
-        manifest = json.loads((ROOT / "chain/manifest.json").read_text())
+        l1 = L2.parse_l1()
+        manifest = {"l1": {"clauses": l1["clauses"], "clause_fingerprints": l1["clause_fingerprints"]}, "jobs": {JOB: {"elements": L2.fingerprints(JOB, l1)}}}
         report = L2.plan(previous=manifest, use_jev=False)
         job = report["jobs"][JOB]
         self.assertEqual(job["status"], "ok")
@@ -153,8 +169,10 @@ class L3GateTests(unittest.TestCase):
             L3.load_job("positions")
 
     def test_containment_derives_from_selected_handoffs_only(self):
-        model, review = L3.load_job(JOB)
-        allowed = L3.containment(model, set(review["selected_element_ids"]))
+        model = json.loads((ROOT / "chain/l2" / JOB / "semantic-model.json").read_text())
+        steps = L2.element_steps(model)
+        selected = {eid for eid, st in steps.items() if st.get("disposition") == "candidate"}
+        allowed = L3.containment(model, selected)
         self.assertIn("raw.customer_mgmt_action", allowed["logical.account"])
         self.assertIn("ce.account_changes", allowed["logical.account"])
         self.assertNotIn("raw.account_cdc", allowed["logical.account"])  # deferred handoffs never grant reads
