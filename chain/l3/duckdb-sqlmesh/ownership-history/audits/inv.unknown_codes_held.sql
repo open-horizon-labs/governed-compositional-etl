@@ -13,4 +13,5 @@ SELECT
   c_id,
   action_type
 FROM raw.customer_mgmt_action
-WHERE action_type NOT IN ('NEW', 'ADDACCT', 'UPDACCT', 'UPDCUST', 'CLOSEACCT', 'INACT');
+WHERE action_type IS NULL
+   OR action_type NOT IN ('NEW', 'ADDACCT', 'UPDACCT', 'UPDCUST', 'CLOSEACCT', 'INACT');

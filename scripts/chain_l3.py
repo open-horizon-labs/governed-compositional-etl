@@ -328,14 +328,22 @@ def run_sqlmesh(target: str, job: str, database: Path, fixture_report: dict) -> 
     return fixture_report
 
 
-def run_two_phase(target: str, job: str, database: Path | None = None, watch: str = "SELECT * FROM governed.trade WHERE trade_number = 372101") -> dict:
+WATCH = {"ownership-history": "SELECT account_number, effective_from, is_current, provenance FROM governed.account WHERE account_number = 428 ORDER BY effective_from",
+         "trade-lifecycle": "SELECT * FROM governed.trade WHERE trade_number = 372101",
+         "positions": "SELECT * FROM governed.holding_change ORDER BY 1, 2"}
+
+
+def run_two_phase(target: str, job: str, database: Path | None = None, watch: str | None = None) -> dict:
     """The counterexample as a simulation: project the first-encounter batch, then load the later batch and the labeled
     constructed change without dropping governed tables, project again, and report what changed on the watched row."""
     fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
     ce = json.loads((ROOT / "counterexamples/archive/ce-account-428-rollover-v1.json").read_text())
     changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"]["ce_account_changes"]]
     database = database or ROOT / f"build/chain-{target}-twophase.duckdb"
+    watch = watch or WATCH.get(job, WATCH["trade-lifecycle"])  # the watched row belongs to the job being simulated
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
+    if database.exists():
+        database.unlink()  # a two-phase simulation starts from nothing; leftovers from another job would mask a missing upstream
     first = run(target, job, "first_encounter", database=database)
     if not first["ok"]:
         raise L3Error("first-encounter phase failed its audits")

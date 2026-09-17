@@ -1,9 +1,9 @@
 {
   "job": "ownership-history",
-  "manifest_sha256": "3f318c55a66a0be0a20dc8ba405b97dfa3afb62a3aa9ad62ca805874749f4f9c",
-  "notes": "see review-1..2",
+  "manifest_sha256": "6c25097d72ee39c7473760bfeaf8c80b9f3f2f1e3e220539ca966cb198f6822c",
+  "notes": "see review-1..4",
   "rejected_artifacts": [],
-  "reviewer": "Opus sketch reviewer, scoped review 2 (cycle-3 audits)",
+  "reviewer": "coordinator, bookkeeping review 4 (unknown-codes audit)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-native",
   "verdict": "pass"

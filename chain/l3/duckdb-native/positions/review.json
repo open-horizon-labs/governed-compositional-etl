@@ -1,9 +1,9 @@
 {
   "job": "positions",
-  "manifest_sha256": "16850f222a77f078222bb35457b16f482c20a3c647cab5f7bbc4970b249b0f3e",
-  "notes": "see review-1..4",
+  "manifest_sha256": "ab53bcd78779634e974c11eb10b24855f27e2a68bcc94fa5df063d9103d4be6b",
+  "notes": "see review-1..5",
   "rejected_artifacts": [],
-  "reviewer": "coordinator, bookkeeping review 4 after the prescribed fix",
+  "reviewer": "coordinator, bookkeeping review 5 (unknown-codes audit)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-native",
   "verdict": "pass"

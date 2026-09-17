@@ -1,9 +1,9 @@
 {
   "job": "positions",
-  "manifest_sha256": "a105ec1446f6c9ef57e612ea414d3ec25ba583b8a39496cd842d7f4ee4bb879a",
-  "notes": "see review-1..3",
+  "manifest_sha256": "b9333be727b05a7f1c23a0905539e2d86bb3e0c1db6837a9fd5e0e8d825f2b99",
+  "notes": "see review-1..4",
   "rejected_artifacts": [],
-  "reviewer": "Opus sketch reviewer, scoped projection review 3",
+  "reviewer": "coordinator, bookkeeping review 4 (unknown-codes audit)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
   "verdict": "pass"
