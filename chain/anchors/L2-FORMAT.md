@@ -78,3 +78,7 @@ Some statement values are not received from any source. If a clause says which s
 ## Record what you declined
 
 When you consider a derivation the anchors make tempting and the clauses do not support (a field that is present, a code that could be decoded), record it as a `rejected` step with `rejected_because`. Silent restraint is invisible to the reviewer and to the next Developer; recorded restraint is evidence.
+
+## Aggregate keys and frozen copies within one job
+
+A handoff inside one job may land on a type with a different id when the two types share semantic_kind and physical_type and the target's role is identity (an aggregate's group key) or frozen_from_first_encounter (a copy fixed at first encounter). Any other type change needs a conversion clause. This rule came from the positions Developer, whose aggregate keys the gate wrongly rejected.

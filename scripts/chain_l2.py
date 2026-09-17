@@ -158,7 +158,10 @@ def check(job: str, l1: dict | None = None) -> dict:
             local = next((a for a in entities.get(from_entity, {}).get("attributes", []) if a["name"] == from_attr), None)
             if local is not None:
                 if local["semantic_type"] != target["semantic_type"]:
-                    problems.append(f"handoff {h['from']} -> {h['to']} changes semantic type {local['semantic_type']} -> {target['semantic_type']} without a conversion clause")
+                    lt, tt = types.get(local["semantic_type"], {}), types.get(target["semantic_type"], {})
+                    same_meaning = (lt.get("semantic_kind"), lt.get("physical_type")) == (tt.get("semantic_kind"), tt.get("physical_type"))
+                    if not (same_meaning and tt.get("mutation_role") in ("identity", "frozen_from_first_encounter")):
+                        problems.append(f"handoff {h['from']} -> {h['to']} changes semantic type {local['semantic_type']} -> {target['semantic_type']} without a conversion clause; a same-job handoff may change the type id only when semantic_kind and physical_type match and the target role is identity or frozen (an aggregate key or a frozen copy)")
             elif h["from"] in upstream:
                 up_t = upstream[h["from"]]
                 my_t = types.get(target["semantic_type"], {})
