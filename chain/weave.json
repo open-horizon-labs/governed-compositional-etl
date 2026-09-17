@@ -5,8 +5,8 @@
   ],
   "relations": [
     {
-      "note": "same meaning must carry one mutation role across jobs",
-      "relation": "contradiction",
+      "note": "downstream job freezes a copy of an upstream statement value; meaning shared, role differs by lifecycle",
+      "relation": "overlap",
       "semantic_kind": "statement_effective_time",
       "uses": [
         [
@@ -22,8 +22,8 @@
       ]
     },
     {
-      "note": "same meaning must carry one mutation role across jobs",
-      "relation": "contradiction",
+      "note": "downstream job freezes a copy of an upstream statement value; meaning shared, role differs by lifecycle",
+      "relation": "overlap",
       "semantic_kind": "account_owner_identity_reference",
       "uses": [
         [
@@ -89,14 +89,26 @@
       "group": "sg.statement-content",
       "job": "ownership-history",
       "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, and L1.hole.deletions each bound part of this group's coverage; see coverage_claim.",
+      "group": "sg.placement-moment",
+      "job": "trade-lifecycle",
+      "relation": "named-gap"
+    },
+    {
+      "gap": "L1.hole.deletions",
+      "group": "sg.outcome",
+      "job": "trade-lifecycle",
+      "relation": "named-gap"
     }
   ],
   "schema_version": "l2-weave/v1",
   "summary": {
-    "contradiction": 2,
+    "contradiction": 0,
     "dependency": 2,
     "gap": 2,
-    "named-gap": 5,
-    "overlap": 0
+    "named-gap": 7,
+    "overlap": 2
   }
 }

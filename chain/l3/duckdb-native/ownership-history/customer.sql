@@ -23,6 +23,13 @@
 -- status_codes exactly as chain/anchors/sources-v1.json states them
 -- (NEW, UPDCUST -> ACTV; INACT -> INAC).
 --
+-- tier selector "carried_forward_from_previous_statement" (L2 cycle 2): INACT
+-- omits c_tier (L1.omitted-facts-stand: the omitted fact stands as it last
+-- stood), so tier equals the value carried by this customer's immediately
+-- preceding statement, ordered by effective_from. INACT's anchored meaning
+-- presupposes an existing customer (only NEW first records one), so a
+-- preceding statement is guaranteed to exist.
+--
 -- is_current selector "computed_within_entity": true when no statement of the
 -- same customer_number has a later effective_from than this one.
 
@@ -39,6 +46,20 @@ WITH historical AS (
         c_tier AS tier
     FROM raw.customer_mgmt_action
     WHERE action_type IN ('NEW', 'UPDCUST', 'INACT')
+),
+carried AS (
+    SELECT
+        customer_number,
+        effective_from,
+        status,
+        COALESCE(
+            tier,
+            LAST_VALUE(tier IGNORE NULLS) OVER (
+                PARTITION BY customer_number ORDER BY effective_from
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            )
+        ) AS tier
+    FROM historical
 )
 SELECT
     customer_number,
@@ -46,4 +67,4 @@ SELECT
     (effective_from = MAX(effective_from) OVER (PARTITION BY customer_number)) AS is_current,
     status,
     tier
-FROM historical;
+FROM carried;

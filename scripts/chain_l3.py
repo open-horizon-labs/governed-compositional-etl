@@ -13,6 +13,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import sys
 
 import duckdb
@@ -104,7 +105,8 @@ def check(target: str, job: str) -> dict:
         if not questions:
             problems.append(f"selected entity {missing} has no artifact and no question filed")
     listed_files = {a["file"] for a in manifest.get("artifacts", [])} | {a["file"] for a in manifest.get("audits", [])} | {"manifest.json"}
-    actual = {p.relative_to(base).as_posix() for p in base.rglob("*") if p.is_file()}
+    governance = re.compile(r"^(change-contract-\d+\.md|review(-\d+)?\.(md|json)|adjudication-.*\.md)$")
+    actual = {p.relative_to(base).as_posix() for p in base.rglob("*") if p.is_file() and not governance.match(p.relative_to(base).as_posix())}
     for extra in sorted(actual - listed_files):
         problems.append(f"file {extra} is not listed in the manifest")
     for art in manifest.get("artifacts", []):

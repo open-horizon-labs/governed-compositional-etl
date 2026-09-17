@@ -4,7 +4,7 @@
   "job": "ownership-history",
   "derived_from_model": {
     "path": "chain/l2/ownership-history/semantic-model.json",
-    "review_sha256": "a9f548b1bad619f6876b04939ae672aff7ce5e74429ee159f3ea97e3963ba440"
+    "review_sha256": "bf7b63a4dfa6d73b1616bece8cf6dac5c9df6d47dfaac098c7532ad5d93e4cd2"
   },
   "artifacts": [
     {
@@ -126,8 +126,5 @@
       "entity": "logical.account"
     }
   ],
-  "questions_for_authority": [
-    "raw.customer_mgmt_action INACT rows carry a null c_tier in the fixture (confirmed structurally: every INACT row is null, every NEW row is non-null); the model hands off logical.customer.tier directly from c_tier with no carried_forward_from_previous_statement derivation declared for it (unlike owning_customer_number), so an INACT-sourced customer statement projects with tier = NULL, which fails inv.customer_statement_has_content (nullable: false) as currently stated. Should tier carry forward from the customer's previous statement on an INACT action (mirroring owning_customer_number's declared derivation), should the invariant exempt statements produced by an action the anchored action_type_meanings associate with no detail payload, or is a null tier acceptable here? customer.sql and inv.customer_statement_has_content.sql are written as literally specified (direct handoff, no invented carry-forward); the run reports 1 residual violation for this row pending this decision.",
-    "raw.customer_mgmt_action CLOSEACCT rows carry a null ca_tax_st in the fixture (confirmed structurally: every CLOSEACCT row is null, every NEW/ADDACCT/UPDACCT row is non-null); the model hands off logical.account.tax_treatment directly from ca_tax_st with no carried_forward_from_previous_statement derivation declared for it (unlike owning_customer_number), so a CLOSEACCT-sourced account statement projects with tax_treatment = NULL, which fails inv.account_statement_has_content (nullable: false) as currently stated. Should tax_treatment carry forward from the account's previous statement on a CLOSEACCT action (mirroring owning_customer_number's declared derivation), should the invariant exempt statements produced by an action the anchored action_type_meanings associate with no detail payload, or is a null tax_treatment acceptable here? account.sql and inv.account_statement_has_content.sql are written as literally specified (direct handoff, no invented carry-forward); the run reports 1 residual violation for this row pending this decision."
-  ]
+  "questions_for_authority": []
 }

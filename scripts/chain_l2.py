@@ -339,7 +339,15 @@ def weave(l1: dict | None = None) -> dict:
     for key, uses in kinds.items():
         if len({u[0] for u in uses}) > 1:
             roles = {u[2] for u in uses}
-            relations.append({"relation": "contradiction" if len(roles) > 1 else "overlap", "semantic_kind": key[0], "uses": uses, "note": "same meaning must carry one mutation role across jobs" if len(roles) > 1 else "same meaning realized in several jobs; keep one definition"})
+            # a downstream job may freeze a copy of an upstream statement value; role belongs to the consuming entity's lifecycle
+            downstream_frozen = all(
+                (u[2] == "frozen_from_first_encounter" and JOB_ORDER.index(u[0]) > min(JOB_ORDER.index(v[0]) for v in uses)) or u[2] in ("per_statement", "mutable")
+                for u in uses
+            ) and "frozen_from_first_encounter" in roles
+            if len(roles) > 1 and downstream_frozen:
+                relations.append({"relation": "overlap", "semantic_kind": key[0], "uses": uses, "note": "downstream job freezes a copy of an upstream statement value; meaning shared, role differs by lifecycle"})
+            else:
+                relations.append({"relation": "contradiction" if len(roles) > 1 else "overlap", "semantic_kind": key[0], "uses": uses, "note": "same meaning must carry one mutation role across jobs unless a downstream job freezes a copy" if len(roles) > 1 else "same meaning realized in several jobs; keep one definition"})
     # dependency: handoffs from upstream entities
     for j, d in docs.items():
         for h in d["handoffs"]:

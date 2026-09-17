@@ -43,6 +43,15 @@
 -- refers_to_known_account guarantees a constructed change always has an earlier,
 -- owner-bearing statement to carry forward from.
 --
+-- tax_treatment selector "carried_forward_from_previous_statement" (L2 cycle 2):
+-- CLOSEACCT omits ca_tax_st (L1.omitted-facts-stand: the omitted fact stands as
+-- it last stood), so tax_treatment equals the value carried by this account's
+-- immediately preceding statement, ordered by effective_from across both
+-- sources combined. CLOSEACCT's anchored meaning presupposes an existing
+-- account (only NEW or ADDACCT first records one), so a preceding statement is
+-- guaranteed to exist. ce.account_changes always supplies tax_status_id
+-- directly, so this carry-forward only ever fills a gap left by CLOSEACCT.
+--
 -- is_current selector "computed_within_entity": true when no statement of the
 -- same account_number has a later effective_from than this one.
 
@@ -90,7 +99,13 @@ carried AS (
             )
         ) AS owning_customer_number,
         status,
-        tax_treatment,
+        COALESCE(
+            tax_treatment,
+            LAST_VALUE(tax_treatment IGNORE NULLS) OVER (
+                PARTITION BY account_number ORDER BY effective_from
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            )
+        ) AS tax_treatment,
         provenance
     FROM combined
 )
