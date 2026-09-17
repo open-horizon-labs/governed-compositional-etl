@@ -1,13 +1,10 @@
 {
   "job": "trade-lifecycle",
-  "manifest_sha256": "96b79e4978c180e6a328d2102caaa5002cab1525e6f3b0e8fe091b23e663d9d8",
-  "notes": "see review-1..5",
-  "rejected_artifacts": [
-    "trade.sql",
-    "audits/inv.trade_first_seen_late_matches_status_order.sql"
-  ],
-  "reviewer": "Opus sketch reviewer, scoped review 5; routed to the Sketch by the coordinator",
+  "manifest_sha256": "cc03bbe00d3c8b858ee08826550b8de6723f7bb45f80048bd887f50090e28563",
+  "notes": "see review-1..8",
+  "rejected_artifacts": [],
+  "reviewer": "Opus sketch reviewer, scoped review 8 (both engines)",
   "schema_version": "l3-review/v1",
   "target": "duckdb-sqlmesh",
-  "verdict": "fail"
+  "verdict": "pass"
 }

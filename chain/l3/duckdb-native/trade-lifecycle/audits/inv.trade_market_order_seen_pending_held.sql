@@ -10,11 +10,12 @@
 -- such trade exists in this run.
 
 WITH valid_cdc_rows AS (
+    -- Null-sensitive: a null coded field is itself not a named code.
     SELECT *
     FROM raw.trade_cdc
-    WHERE cdc_flag IN ('I', 'U', 'D')
-      AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-      AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
+    WHERE cdc_flag IS NOT NULL AND cdc_flag IN ('I', 'U', 'D')
+      AND t_st_id IS NOT NULL AND t_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+      AND t_tt_id IS NOT NULL AND t_tt_id IN ('TLB', 'TLS', 'TMB', 'TMS')
 ),
 first_cdc_report AS (
     SELECT t_id, t_dts, t_st_id, t_tt_id
@@ -22,8 +23,11 @@ first_cdc_report AS (
     QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date, cdc_dsn) = 1
 ),
 first_history_report AS (
+    -- th_st_id must itself be anchored: no COALESCE over a held row's
+    -- status.
     SELECT th_t_id, th_dts, th_st_id
     FROM raw.trade_history
+    WHERE th_st_id IS NOT NULL AND th_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
     QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts) = 1
 ),
 first_report AS (

@@ -1,15 +1,17 @@
 AUDIT (name "inv.every_received_trade_persisted");
 
 -- For any trade_number that has at least one received raw.trade_cdc report whose coded fields
--- (cdc_flag, t_st_id, t_tt_id) are all anchored and that does not carry cdc_flag D, and whose
--- earliest report (across both anchored sources) is not itself held under L1.unknown-codes,
--- exactly one governed.trade row exists for that trade_number. A trade_number with any cdc_flag
--- D report is L1.hole.deletions' case and is not claimed here. A trade_number known only
--- through reports held under L1.unknown-codes, or known only through raw.trade_history rows (no
--- identity handoff of its own), is not yet known to this job and is not claimed either;
--- inv.unknown_codes_held reports each held report instead. A trade_number whose earliest report
--- is itself held while a later raw.trade_cdc report is not is likewise not yet claimed, pending
--- L1.hole.held-first-report-placement.
+-- (cdc_flag, t_st_id, t_tt_id) are all anchored and that does not carry cdc_flag D, and none of
+-- whose placement-fixing facts (placement, owning account, or order type) would come from a
+-- held report, exactly one governed.trade row exists for that trade_number. A trade_number
+-- with any cdc_flag D report is L1.hole.deletions' case and is not claimed here. A trade_number
+-- known only through reports held under L1.unknown-codes, or known only through
+-- raw.trade_history rows (no identity handoff of its own), is not yet known to this job and is
+-- not claimed either; inv.unknown_codes_held reports each held report instead. A trade_number
+-- any of whose placement-fixing facts would come from a held report -- the earliest report of
+-- either anchored source, or the earliest raw.trade_cdc report specifically -- is likewise not
+-- yet claimed, pending L1.hole.held-first-report-placement; inv.trade_held_first_report_unclaimed
+-- makes this the audit's own checkable claim.
 WITH fully_anchored_trade_numbers AS (
   SELECT DISTINCT t_id AS trade_number
   FROM raw.trade_cdc
@@ -25,10 +27,6 @@ cdc_flag_scope AS (
     BOOL_AND(cdc_flag IS DISTINCT FROM 'D') AS has_no_d_report
   FROM raw.trade_cdc
   GROUP BY t_id
-),
-history_presence AS (
-  SELECT DISTINCT th_t_id AS trade_number
-  FROM raw.trade_history
 ),
 earliest_history_any AS (
   SELECT
@@ -52,15 +50,11 @@ earliest_report_held AS (
   WHERE status_at_first_report IS NULL
      OR status_at_first_report NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
   UNION
-  SELECT e.trade_number
-  FROM earliest_cdc_any AS e
-  LEFT JOIN history_presence AS h ON h.trade_number = e.trade_number
-  WHERE h.trade_number IS NULL
-    AND (
-      e.cdc_flag IS NULL OR e.cdc_flag NOT IN ('I', 'U', 'D')
-      OR e.t_st_id IS NULL OR e.t_st_id NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-      OR e.t_tt_id IS NULL OR e.t_tt_id NOT IN ('TLB', 'TLS', 'TMB', 'TMS')
-    )
+  SELECT trade_number
+  FROM earliest_cdc_any
+  WHERE cdc_flag IS NULL OR cdc_flag NOT IN ('I', 'U', 'D')
+     OR t_st_id IS NULL OR t_st_id NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+     OR t_tt_id IS NULL OR t_tt_id NOT IN ('TLB', 'TLS', 'TMB', 'TMS')
 ),
 in_scope_trade_numbers AS (
   SELECT f.trade_number

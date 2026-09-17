@@ -42,9 +42,11 @@
 -- owning_customer_effective_from, first_seen_late, order_type) are written
 -- only on INSERT, from the trade's first-encountered report.
 --
--- L1.unknown-codes (report held as a whole) and L1.hole.held-first-report-
--- placement (a trade whose earliest report is itself held is unclaimed: no
--- row, reported by inv.unknown_codes_held only):
+-- L1.unknown-codes (a held report keeps its place in the order of reports;
+-- nothing else about it may be read) and L1.hole.held-first-report-placement,
+-- widened: a trade any of whose placement-fixing facts (placement, owning
+-- account, order type) would come from a held report is unclaimed -- no
+-- row, reported by inv.unknown_codes_held only:
 --
 -- A raw.trade_cdc row carrying any code outside its anchored vocabulary in
 -- any of cdc_flag, t_st_id, t_tt_id (null-sensitive: a null in any of these
@@ -52,20 +54,28 @@
 -- derived from it, for any fact. A raw.trade_history row whose th_st_id is
 -- null or unanchored is likewise held in its entirety.
 --
--- earliest_report_held first determines, for every trade_number, whether
--- its true earliest report -- across BOTH sources, unfiltered, per
--- report_order (history precedes every raw.trade_cdc row) -- is itself
--- held. A trade whose earliest report is held is excluded from this
--- projection entirely, whatever its later reports look like: it is unclaimed
--- under L1.hole.held-first-report-placement, not given a row with nulled
--- fields; inv.unknown_codes_held reports the held earliest report, and
--- inv.every_received_trade_persisted agrees it is unclaimed. Only trades
--- whose earliest report is confirmed anchored proceed past this gate; every
--- CTE below that reads raw.trade_cdc for first report, outcome selection, or
--- pins reads only rows whose cdc_flag, t_st_id, and t_tt_id are all
--- anchored (valid_cdc_rows / latest_outcome); raw.trade_history is read only
--- where th_st_id is anchored (first_history_report). A held later report is
--- not a later report: it changes nothing.
+-- Two independent gates determine whether a trade_number is unclaimed:
+-- (1) earliest_overall_held: whether the trade's true earliest report --
+-- across BOTH sources, unfiltered, per report_order (history precedes every
+-- raw.trade_cdc row) -- is itself held; this is the fact that fixes
+-- placed_at. (2) earliest_cdc_held: whether the trade's true earliest
+-- raw.trade_cdc report specifically (unfiltered) is held; this is the fact
+-- that fixes owning_account_number and order_type, which always come from
+-- the earliest raw.trade_cdc report regardless of whether an anchored
+-- history row precedes it. A trade held by either gate is excluded from
+-- this projection entirely, whatever its later or other-source reports look
+-- like: it is unclaimed, not given a row with nulled or later-sourced
+-- fields (a later anchored raw.trade_cdc report may NOT stand in for a held
+-- earliest raw.trade_cdc report, even when an anchored history row makes
+-- placed_at itself resolvable). inv.unknown_codes_held reports the held
+-- report(s); inv.trade_held_first_report_unclaimed and
+-- inv.every_received_trade_persisted agree such a trade has no row. Only
+-- trades passing both gates proceed; every CTE below that reads
+-- raw.trade_cdc for first report, outcome selection, or pins reads only
+-- rows whose cdc_flag, t_st_id, and t_tt_id are all anchored (valid_cdc_rows
+-- / latest_outcome); raw.trade_history is read only where th_st_id is
+-- anchored (first_history_report). A held later report is not a later
+-- report: it changes nothing.
 --
 -- selector first_encounter_only, across both anchored report sources
 -- (report_order): placed_at <- the earliest raw.trade_history row's th_dts
@@ -134,11 +144,24 @@ USING (
         FROM raw.trade_history
         QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts) = 1
     ),
-    earliest_report_held AS (
+    earliest_cdc_held AS (
+        -- Whether the trade's true earliest raw.trade_cdc report
+        -- specifically is held: owning_account_number and order_type always
+        -- come from this exact report, whatever an earlier anchored history
+        -- row says. Null-sensitive.
+        SELECT
+            t_id AS trade_number,
+            cdc_flag IS NULL OR cdc_flag NOT IN ('I', 'U', 'D')
+            OR t_st_id IS NULL OR t_st_id NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+            OR t_tt_id IS NULL OR t_tt_id NOT IN ('TLB', 'TLS', 'TMB', 'TMS') AS held
+        FROM earliest_cdc_row
+    ),
+    earliest_overall_held AS (
         -- report_order: history precedes every raw.trade_cdc row, so when a
         -- history row exists for the trade, IT is the true earliest report;
-        -- otherwise the earliest raw.trade_cdc row is. Null-sensitive: a
-        -- null coded field is itself not a named code and holds the report.
+        -- otherwise the earliest raw.trade_cdc row is. This is the fact that
+        -- fixes placed_at. Null-sensitive: a null coded field is itself not
+        -- a named code and holds the report.
         SELECT
             COALESCE(h.th_t_id, c.t_id) AS trade_number,
             CASE
@@ -152,6 +175,16 @@ USING (
             END AS held
         FROM earliest_history_row h
         FULL OUTER JOIN earliest_cdc_row c ON c.t_id = h.th_t_id
+    ),
+    trade_unclaimed AS (
+        -- A trade is unclaimed when EITHER gate holds: its true earliest
+        -- report (whichever source) is held, OR its true earliest
+        -- raw.trade_cdc report specifically is held (even under an anchored
+        -- earliest history row) -- a later anchored raw.trade_cdc report may
+        -- not stand in for it.
+        SELECT trade_number FROM earliest_overall_held WHERE held
+        UNION
+        SELECT trade_number FROM earliest_cdc_held WHERE held
     ),
     valid_cdc_rows AS (
         -- A row carrying any code outside its anchored vocabulary in any of
@@ -190,7 +223,7 @@ USING (
             COALESCE(fh.th_st_id, fc.t_st_id) AS first_status
         FROM first_cdc_report fc
         LEFT JOIN first_history_report fh ON fh.th_t_id = fc.t_id
-        WHERE fc.t_id IN (SELECT trade_number FROM earliest_report_held WHERE NOT held)
+        WHERE fc.t_id NOT IN (SELECT trade_number FROM trade_unclaimed)
     ),
     latest_outcome AS (
         SELECT t_id, t_st_id, t_trade_price, t_chrg, t_comm, t_tax, t_qty

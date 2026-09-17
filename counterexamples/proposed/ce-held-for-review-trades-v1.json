@@ -7,7 +7,7 @@
   "constructed_by_hat": "sketch-reviewer",
   "deterministic_assertion": "inv.unknown_codes_held fires with five rows (900005, 900006's later report, 900007, 900008's first report, 900009's first CDC report); inv.trade_market_order_seen_pending_held with one (900004); 900006 stands at PNDG; 900005, 900007, 900008 and 900009 have no row; both engines agree.",
   "expected": {
-    "after_the_sketch_change": "both engines: inv.unknown_codes_held fires naming 900005 (TXX), 900006's second report (ZZZZ) and 900007's report (flag Q); inv.trade_market_order_seen_pending_held fires naming 900004; 900006's outcome stands at PNDG with no prices; 900007 has no governed.trade row and inv.every_received_trade_persisted does not claim it; nothing else fires. 900008 (first report held, later anchored): held and reported; no job asserts its placement while L1.hole.held-first-report-placement is open.",
+    "after_the_sketch_change": "both engines: inv.unknown_codes_held fires naming 900005 (TXX), 900006's later report (ZZZZ), 900007 (flag Q), 900008's first report (ZZZZ) and 900009's first CDC report (TQQ); inv.trade_market_order_seen_pending_held fires naming 900004; 900006 stands at PNDG with no prices; 900004 persists with first_seen_late null; 900005 and 900007 have no row (known only through held reports); 900008 (earliest report held, later anchored) and 900009 (anchored earliest history row over a held earliest CDC report, the case the widened hole was opened for) have no row while L1.hole.held-first-report-placement is open.",
     "before_the_sketch_change": "both engines: 900004 first_seen_late false, 900005 first_seen_late NULL, no audit fires."
   },
   "fixture": {
@@ -236,6 +236,11 @@
     "unknown-codes",
     "market-order-seen-pending"
   ],
+  "observed": {
+    "2026-09-17 after trade-lifecycle L3 cycle 8": "exactly as expected on both engines; cross-engine compare identical; on SQLMesh the second audit confirmed by direct SQL because a blocking audit refuses the plan.",
+    "2026-09-17 before the Sketch change": "silent on both engines; 900004 false, 900005 null (as first constructed, two trades).",
+    "command": ".venv/bin/python scripts/chain_l3.py simulate <target> trade-lifecycle --ce counterexamples/proposed/ce-held-for-review-trades-v1.json"
+  },
   "proposal": [
     "chain/ce/accepted/ce.l1.unknown-codes-held.md",
     "chain/ce/proposed/ce.l1.market-order-seen-pending.md"

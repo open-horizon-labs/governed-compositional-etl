@@ -32,8 +32,11 @@ first_cdc_report AS (
     QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date, cdc_dsn) = 1
 ),
 first_history_report AS (
+    -- th_st_id must itself be anchored: no COALESCE over a held row's
+    -- status.
     SELECT th_t_id, th_dts, th_st_id
     FROM raw.trade_history
+    WHERE th_st_id IS NOT NULL AND th_st_id IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
     QUALIFY ROW_NUMBER() OVER (PARTITION BY th_t_id ORDER BY th_dts) = 1
 ),
 first_report AS (

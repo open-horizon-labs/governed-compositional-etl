@@ -37,6 +37,7 @@ MODEL (
     "inv.trade_ownership_provenance_reachable",
     "inv.trade_ownership_pin_present",
     "inv.every_received_trade_persisted",
+    "inv.trade_held_first_report_unclaimed",
     "inv.unknown_codes_held"
   ),
   depends_on (governed.account, governed.customer)
@@ -47,22 +48,20 @@ MODEL (
 -- the mutable_columns; the frozen columns below are therefore only ever taken at insert time
 -- from a trade's first-encountered report, never replaced by a later run recomputing them.
 --
--- L1.unknown-codes (a report is held as a whole: one unknown code holds the record): every
--- CTE below that reads raw.trade_cdc keeps only rows whose cdc_flag, t_st_id, and t_tt_id are
--- all anchored (null-sensitive: IS NULL OR NOT IN counts as unanchored), and every CTE that
--- reads raw.trade_history keeps only rows whose th_st_id is anchored. A held row supplies no
--- fact anywhere -- not to identity, not to placement, not to outcome (inv.unknown_codes_held
--- reports it directly against the source).
+-- L1.unknown-codes (a report is held as a whole: one unknown code holds the record; nothing
+-- but its place in the order of reports may be read from it): every CTE below that reads
+-- raw.trade_cdc keeps only rows whose cdc_flag, t_st_id, and t_tt_id are all anchored
+-- (null-sensitive: IS NULL OR NOT IN counts as unanchored), and every CTE that reads
+-- raw.trade_history keeps only rows whose th_st_id is anchored. A held row supplies no fact
+-- anywhere (inv.unknown_codes_held reports it directly against the source).
 --
--- L1.hole.held-first-report-placement: a trade whose earliest report (across both anchored
--- sources, per trade_code_meanings.report_order) is itself held is unclaimed by this job even
--- when a later report is anchored: no placed_at, no row. earliest_report_held below computes
--- exactly that set and the final SELECT excludes it.
-WITH history_presence AS (
-  SELECT DISTINCT th_t_id AS trade_number
-  FROM raw.trade_history
-),
-earliest_history_any AS (
+-- L1.hole.held-first-report-placement: a trade is unclaimed (no row) when the earliest report
+-- of either anchored source is held, OR the earliest raw.trade_cdc report -- the source of
+-- owning_account_number and order_type, whatever the earliest history row says -- is held. When
+-- every raw.trade_history row for a trade is held, the earliest one still orders first and the
+-- trade is held on that account too. earliest_report_held computes exactly that set and the
+-- final SELECT excludes it.
+WITH earliest_history_any AS (
   SELECT
     th_t_id AS trade_number,
     th_st_id AS status_at_first_report
@@ -78,25 +77,17 @@ earliest_cdc_any AS (
   FROM raw.trade_cdc
   QUALIFY ROW_NUMBER() OVER (PARTITION BY t_id ORDER BY batch_date ASC, cdc_dsn ASC) = 1
 ),
--- A trade with a raw.trade_history row is held at first encounter iff that earliest history
--- row's th_st_id is unanchored (per report_order, its history row is the earliest report, not
--- its cdc snapshot). A trade with no raw.trade_history row is held at first encounter iff its
--- single earliest raw.trade_cdc row is not fully anchored on all three coded fields.
 earliest_report_held AS (
   SELECT trade_number
   FROM earliest_history_any
   WHERE status_at_first_report IS NULL
      OR status_at_first_report NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
   UNION
-  SELECT e.trade_number
-  FROM earliest_cdc_any AS e
-  LEFT JOIN history_presence AS h ON h.trade_number = e.trade_number
-  WHERE h.trade_number IS NULL
-    AND (
-      e.cdc_flag IS NULL OR e.cdc_flag NOT IN ('I', 'U', 'D')
-      OR e.t_st_id IS NULL OR e.t_st_id NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
-      OR e.t_tt_id IS NULL OR e.t_tt_id NOT IN ('TLB', 'TLS', 'TMB', 'TMS')
-    )
+  SELECT trade_number
+  FROM earliest_cdc_any
+  WHERE cdc_flag IS NULL OR cdc_flag NOT IN ('I', 'U', 'D')
+     OR t_st_id IS NULL OR t_st_id NOT IN ('PNDG', 'SBMT', 'CMPT', 'CNCL')
+     OR t_tt_id IS NULL OR t_tt_id NOT IN ('TLB', 'TLS', 'TMB', 'TMS')
 ),
 -- owning_account_number is still, and only, handoff.raw.trade_cdc.t_ca_id->
 -- logical.trade.owning_account_number: raw.trade_history carries no account field, so this
@@ -138,8 +129,9 @@ first_history_report AS (
 -- sent straight to market and so never pending. Held cases leave first_seen_late NULL, with no
 -- rank arithmetic reaching them: a market order whose first-encountered report is PNDG
 -- (L1.hole.market-order-seen-pending; reported by inv.trade_market_order_seen_pending_held). A
--- trade whose earliest report is held has no row at all (excluded below via
--- earliest_report_held), so first_seen_late is never computed against a held first report here.
+-- trade whose earliest report, from either source, or whose earliest cdc report specifically, is
+-- held has no row at all (excluded below via earliest_report_held), so first_seen_late is never
+-- computed against a held first report here.
 first_report AS (
   SELECT
     c.trade_number,
