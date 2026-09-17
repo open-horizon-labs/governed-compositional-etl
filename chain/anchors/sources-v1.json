@@ -8,12 +8,12 @@
       "status": "assumed"
     },
     "codes": {
-      "ADDACCT": "an additional account is opened for an existing customer; the account becomes active",
-      "CLOSEACCT": "an account is closed; the account becomes inactive",
-      "INACT": "a customer becomes inactive",
-      "NEW": "a new customer is recorded together with their first account; both become active",
-      "UPDACCT": "an existing account's details change; the account stays open",
-      "UPDCUST": "an existing customer's details change; the customer stays active"
+      "ADDACCT": "the row reports an additional account opened for an existing customer",
+      "CLOSEACCT": "the row reports the closing of an account",
+      "INACT": "the row reports a customer becoming inactive",
+      "NEW": "the row reports a new customer together with their first account",
+      "UPDACCT": "the row reports a change to an existing account's details",
+      "UPDCUST": "the row reports a change to an existing customer's details"
     },
     "entity_subjects": {
       "logical.account": "account",
@@ -66,8 +66,8 @@
     },
     "note": "What each received CustomerMgmt action code means, as the source defines it. Meanings of codes are shape: they say what a received row reports, not what any statement or entity carries. The clause locator is unverified; see the adjudication.",
     "status_codes": {
-      "ACTV": "active or open",
-      "INAC": "inactive or closed"
+      "ACTV": "the row reports active or open",
+      "INAC": "the row reports inactive or closed"
     },
     "subjects": {
       "ADDACCT": [

@@ -443,7 +443,7 @@
       "type": "string"
     },
     "questions_for_authority": {
-      "description": "If the Sketch and anchors conflict or leave the permitted derivation ambiguous, put exactly one precise question here and leave the affected elements out.",
+      "description": "If the Sketch and anchors conflict or leave the permitted derivation ambiguous, put one precise question per independent gap here and leave the affected elements out; the gate still validates everything else.",
       "items": {
         "type": "string"
       },
