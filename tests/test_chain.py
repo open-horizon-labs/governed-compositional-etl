@@ -215,6 +215,37 @@ class HoleCacheTests(unittest.TestCase):
             self.assertTrue(L2.stamped_everywhere("positions", gid, "a-fingerprint-no-manifest-carries"), gid)
 
 
+class L3ProvenanceUnderL1Tests(unittest.TestCase):
+    def test_an_l1_move_under_an_unchanged_l2_rejects_the_projection(self):
+        """A matching review sha proves the L2 text is the one selected; it proves nothing about whether L1 moved under
+        it. The gate must compare stamped group fingerprints every time, not only when the sha differs."""
+        import shutil, tempfile
+        target, job = "duckdb-native", "trade-lifecycle"
+        if not (ROOT / "chain/l3" / target / job / "manifest.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3_dir = Path(tmp) / "l3"
+            shutil.copytree(ROOT / "chain/l3" / target / job, l3_dir / target / job)
+            mpath = l3_dir / target / job / "manifest.json"
+            manifest = json.loads(mpath.read_text())
+            review = json.loads((ROOT / "chain/l2" / job / "review.json").read_text())
+            manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]  # the L2 text is exactly the selected one
+            current = {gid: i["fingerprint"] for gid, i in L2.fingerprints(job, selected=True).items()}
+            manifest["group_fingerprints"] = dict(current)
+            mpath.write_text(json.dumps(manifest))
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3_dir
+            try:
+                self.assertFalse([p for p in L3.check(target, job)["problems"] if "moved" in p], "baseline should be clean")
+                moved = sorted(current)[0]
+                manifest["group_fingerprints"][moved] = "f" * 64  # an L1 clause or hole moved under the same L2 text
+                mpath.write_text(json.dumps(manifest))
+                problems = L3.check(target, job)["problems"]
+            finally:
+                L3.L3_DIR = saved
+        self.assertTrue(any(moved in p and "moved" in p for p in problems), problems)
+
+
 class WeaveTests(unittest.TestCase):
     def test_weave_reports_uncovered_clauses_as_gaps(self):
         out = L2.weave()

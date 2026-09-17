@@ -155,26 +155,32 @@ def check(target: str, job: str) -> dict:
     for e in sorted(Draft202012Validator(schema).iter_errors(manifest), key=lambda e: list(e.path)):
         problems.append(f"manifest: {e.message} at {'/'.join(map(str, e.path))}")
     questions = list(manifest.get("questions_for_authority") or [])
+    # Provenance is two independent questions, and the gate must ask both every time. Does this projection compile from
+    # the L2 text that is selected now (the review sha)? And do the groups it derives from still fingerprint the way they
+    # did when it was stamped? An L1 clause or hole can move under an unchanged L2, so a matching sha proves nothing
+    # about staleness; asking only on a sha mismatch once reported a stale projection as accepted.
     provenance_note = None
-    if manifest.get("derived_from_model", {}).get("review_sha256") != review["model_sha256"]:
-        stamped = manifest.get("group_fingerprints") or {}
-        current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items()}
-        derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]] + [a["invariant"] for a in manifest.get("audits", [])])
-        # a group whose fingerprint moved only because a clause was reworded is still valid when the chain manifest
-        # records Jev's keep (cache "hit-by-jev") or an adjudicated keep for that group; a moved fingerprint under
-        # "stale" or an unadjudicated "review" is not
-        chain_manifest = json.loads((ROOT / "chain/manifest.json").read_text()) if (ROOT / "chain/manifest.json").exists() else {}
-        cache = {gid: info.get("cache") for gid, info in chain_manifest.get("jobs", {}).get(job, {}).get("elements", {}).items()}
-        kept = {gid for gid in derived_groups if stamped.get(gid) != current.get(gid) and cache.get(gid) in ("hit-by-jev", "hit-by-adjudication")}
-        awaiting = sorted(gid for gid in derived_groups if stamped.get(gid) != current.get(gid) and cache.get(gid) == "review")
-        if awaiting:
-            problems.append(f"groups {awaiting} moved under an L1 change that Jev routed to review; adjudicate (keep or invalidate) before this projection can be accepted or re-projected")
-        if kept and all(stamped.get(gid) == current.get(gid) or gid in kept for gid in derived_groups):
-            provenance_note = f"review sha superseded; groups {sorted(kept)} moved only under a clause change Jev judged behavior-neutral (kept); projection remains valid"
-        elif stamped and derived_groups and all(stamped.get(gid) == current.get(gid) for gid in derived_groups):
-            provenance_note = "review sha superseded by an L2 change that left every derived group's fingerprint unchanged; projection remains valid"
-        else:
-            problems.append("manifest review_sha256 does not match the selected L2 model and derived group fingerprints differ or are unstamped; re-project the stale artifacts")
+    stamped = manifest.get("group_fingerprints") or {}
+    current = {gid: info["fingerprint"] for gid, info in L2.fingerprints(job, selected=True).items()}
+    derived_groups = groups_of(model, [d for a in manifest.get("artifacts", []) for d in a["derived_from"]] + [a["invariant"] for a in manifest.get("audits", [])])
+    chain_manifest = json.loads((ROOT / "chain/manifest.json").read_text()) if (ROOT / "chain/manifest.json").exists() else {}
+    cache = {gid: info.get("cache") for gid, info in chain_manifest.get("jobs", {}).get(job, {}).get("elements", {}).items()}
+    sha_matches = manifest.get("derived_from_model", {}).get("review_sha256") == review["model_sha256"]
+    moved = sorted(gid for gid in derived_groups if stamped.get(gid) != current.get(gid))
+    # a moved fingerprint is still valid when the chain manifest records Jev's keep or an adjudicated keep for that group
+    kept = sorted(gid for gid in moved if cache.get(gid) in ("hit-by-jev", "hit-by-adjudication"))
+    awaiting = sorted(gid for gid in moved if cache.get(gid) == "review")
+    unresolved = [gid for gid in moved if gid not in kept and gid not in awaiting]
+    if awaiting:
+        problems.append(f"groups {awaiting} moved under an L1 change that Jev routed to review; adjudicate (keep or invalidate) before this projection can be accepted or re-projected")
+    if unresolved:
+        problems.append(f"groups {unresolved} moved since this projection was stamped; re-project the stale artifacts")
+    elif not stamped and not sha_matches:
+        problems.append("manifest review_sha256 does not match the selected L2 model and no group fingerprints are stamped; re-project")
+    elif kept:
+        provenance_note = f"groups {kept} moved only under a change judged behavior-neutral (kept); projection remains valid"
+    elif not sha_matches:
+        provenance_note = "review sha superseded by an L2 change that left every derived group's fingerprint unchanged; projection remains valid"
     if manifest.get("target") != target or manifest.get("job") != job:
         problems.append("manifest target/job do not match the directory")
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())

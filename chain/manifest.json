@@ -1,7 +1,13 @@
 {
-  "answered_holes": [],
-  "changed_clauses": [],
-  "changed_holes": [],
+  "answered_holes": [
+    "L1.hole.market-order-seen-pending"
+  ],
+  "changed_clauses": [
+    "L1.placement-moment"
+  ],
+  "changed_holes": [
+    "L1.hole.market-order-seen-pending"
+  ],
   "jobs": {
     "ownership-history": {
       "elements": {
@@ -965,10 +971,9 @@
             "L1.hole.closed-account-activity",
             "L1.hole.deletions",
             "L1.hole.held-first-report-placement",
-            "L1.hole.market-order-seen-pending",
             "L1.hole.owner-change-reversions-account"
           ],
-          "cache": "hit",
+          "cache": "stale",
           "coverage_claim": "L1.placement-moment fixes placement to the moment stated by the trade's earliest held report, in that report's own time. placed_at is handed off, under selector first_encounter_only, from whichever anchored source holds that earliest report: raw.trade_cdc's t_dts for a trade whose held reports are Trade change records ordered by trade_code_meanings.report_order's (batch_date, cdc_dsn), or, for a historical-load trade with anchored raw.trade_history rows, raw.trade_history's th_dts on its earliest such row instead, per report_order's statement that such a trade's earliest held report is its earliest TradeHistory row, not its Trade snapshot; inv.trade_placed_at_matches_earliest_report makes this rule itself checkable, not merely that placed_at is set once. Together the two handoffs carry exactly that moment, frozen, across both anchored report sources; owning_account_number still comes only from raw.trade_cdc's t_ca_id regardless of which source supplies placed_at, since raw.trade_history carries no account field (sg.trade-shape). L1.attribution-at-placement requires the trade's ownership reference to be the pair of statements, account and customer, as they stood at that moment -- 'the account, and through it the customer, as they stood at the moment the trade was placed' -- not either one's current statement. L1.as-of defines each such answer as the upstream statement whose effective_from is the latest at or before placed_at; L1.lifecycle-mutates-outcome's 'leaves the ownership as first recorded' is what fixes owning_account_effective_from, owning_customer_number, and owning_customer_effective_from as frozen_from_first_encounter on this entity rather than per_statement, since that role belongs to the account and customer entities they are drawn from, not to how they behave once pinned here. owning_account_effective_from, handed off from logical.account.effective_from with selector as_of_event_time, completes the (account_number, effective_from) pair with owning_account_number (sg.trade-shape) that identifies the exact account statement. owning_customer_number is handed off directly from that same pinned account statement's own logical.account.owning_customer_number, so it can never name a customer inconsistent with it; owning_customer_effective_from, handed off from logical.customer.effective_from with selector as_of_event_time (also at or before placed_at), completes the (customer_number, effective_from) pair identifying the exact customer statement, satisfying the 'and through it the customer, as they stood' half of the clause in full -- not just which customer, but which of that customer's dated statements. inv.trade_placement_reference_frozen restates that all four reference attributes are set once, at first encounter, and never replaced. inv.trade_ownership_pin_present restates, as a single checkable fact, that a persisted trade never carries a null in any of these four attributes -- that the pin resolved, not merely that whatever it resolved to is frozen. first_seen_late, using trade_code_meanings.status_order and report_order together with order_type (handed off from raw.trade_cdc.t_tt_id under selector first_encounter_only and anchored, as to which codes exist and which are market or limit, by trade_code_meanings.trade_type_codes), marks a trade whose first-encountered report -- across both anchored sources -- as first seen late when its status (th_st_id or t_st_id) is later than its order type's first lifecycle event: PNDG, status_order's first entry, for a limit order (TLB, TLS); SBMT for a market order (TMB, TMS), per L1.placement-moment's amended sentence that an order sent straight to market has no pending stage; so a limit order first reported anything other than PNDG is first seen late, a market order first reported SBMT is not, and one first reported CMPT or CNCL is -- a market order first reported PNDG, and an order type outside the anchored four, are left undefined by this rule and are not claimed by inv.trade_first_seen_late_matches_status_order, which otherwise restates it directly. This coverage is conditional, not complete: L1.hole.change-effective-time bounds the account- and customer-statement pins against any upstream statement ownership-history has deferred (a CDC-sourced account or customer update); L1.hole.batch-identity bounds whether a report would also need to carry which file delivered it, which first_encounter_only and latest_change currently answer only via file production order (report_order) or, for raw.trade_history, th_dts ordering, not batch identity; L1.hole.closed-account-activity bounds a pin that lands on a closed-account statement whose status this job cannot verify against the trade's own later activity; L1.hole.deletions bounds what a cdc_flag D row means for a trade's first-encountered report and hence for placed_at and first_seen_late. Separately, L1.hole.owner-change-reversions-account (recorded in holes) could change which account statement placed_at pins if its resolution re-versions accounts on a customer-only change.",
           "derived_from": [
             "L1.as-of",
@@ -978,8 +983,9 @@
             "L1.placement-moment",
             "L1.unknown-codes"
           ],
-          "fingerprint": "69c7d5427257e83e6bcd567274e6d9bce1a4d72609cb890c30f17e1007514f52",
+          "fingerprint": "167a468929e1b1fe5e723d8469c4ad4798433c0a1f397bd50c1082a2f5122a0e",
           "gap": "L1.hole.change-effective-time, L1.hole.batch-identity, L1.hole.closed-account-activity, L1.hole.deletions, L1.hole.owner-change-reversions-account, L1.hole.market-order-seen-pending, and L1.hole.held-first-report-placement each bound part of this group's coverage; see coverage_claim.",
+          "jev": null,
           "justifications": {
             "handoff.logical.account.effective_from->logical.trade.owning_account_effective_from": {
               "necessity": "L1.attribution-at-placement requires the trade's ownership reference to name the account as it stood at the moment of placement; L1.as-of defines that answer as the latest statement that took effect at or before the queried moment. This handoff selects, among the upstream ownership-history statements of this trade's owning_account_number, the one whose effective_from is the latest at or before placed_at, and freezes that effective_from as the second half of the (account_number, effective_from) reference identifying the specific account statement -- not the account's current statement.",
@@ -1113,6 +1119,10 @@
             "type.trade_owning_customer_effective_from",
             "type.trade_owning_customer_reference",
             "type.trade_placed_at"
+          ],
+          "touched_clauses": [
+            "L1.placement-moment",
+            "L1.hole.market-order-seen-pending"
           ]
         },
         "sg.trade-identity": {
@@ -1215,9 +1225,11 @@
           ]
         }
       },
-      "l3_reprojection_required": false,
+      "l3_reprojection_required": true,
       "selected_model_sha256": "ba947c83d724f841726a07a697a2d452e6c8554d3547ff6a9d23216d5b623a8b",
-      "stale": [],
+      "stale": [
+        "sg.placement-moment"
+      ],
       "status": "ok"
     }
   },
@@ -1234,7 +1246,7 @@
       "L1.no-phantom-positions": "31c8d8e18fbef917b3e4dd0f034e610b535a923b510861aacfdfbe29440b28d9",
       "L1.omitted-facts-stand": "d0c779cd0c2b06a984529246554f0cdc68cad87d5d4a05142ce5eced7d071615",
       "L1.owner-standing": "359f28444e3ad773ac1595cbb99e37a79da83272b710d25a8accceff7a3150f0",
-      "L1.placement-moment": "0f02f7055c82aca3994cc3c61f370c2881670287717cf376858c06d33a8377b3",
+      "L1.placement-moment": "f74acd4428fd21abca4642b894f2167618640679dd31ef3482a23a5653a138d2",
       "L1.statement-content": "b203489f09eb80ac13b30834cc1e81510ff0a3adb52fbcae68ad78e8594d6c6a",
       "L1.unknown-codes": "d413d00da1524e932781bfa326dd0678ae1fbb5bd7921f53044b41079345c375"
     },
@@ -1250,7 +1262,7 @@
       "L1.no-phantom-positions": "Summing holding changes for any one statement of an account or customer can never go below zero. A negative result means a holding was opened under one statement and closed under another, which the clauses above forbid.",
       "L1.omitted-facts-stand": "A change that does not mention a standing fact leaves that fact as it last stood. A statement produced by such a change carries the fact at its last stated value. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends.)",
       "L1.owner-standing": "An account's standing includes its owner's standing. When the brokerage says how an account stood at a moment, that includes how its customer stood at that same moment.",
-      "L1.placement-moment": "A trade is placed at the moment of the earliest report of it held by the brokerage, as that report states its own time. A trade whose earliest held report is not the trade's first lifecycle event is treated as placed at that report and marked as first seen late, so the ownership it fixes can be reviewed. An order sent straight to market has no pending stage and is not first seen late when its earliest report is submitted. (Placement assumed under `issue-8-statement-content-assumed`; the market-order sentence accepted from `ce.l1.first-seen-late-market-orders` on 2026-09-17.)",
+      "L1.placement-moment": "A trade is placed at the moment of the earliest report of it held by the brokerage, as that report states its own time. A trade whose earliest held report is not the trade's first lifecycle event is treated as placed at that report and marked as first seen late, so the ownership it fixes can be reviewed. An order sent straight to market has no pending stage of its own, so it is not first seen late when its earliest report is submitted; and where the brokerage's own systems record such an order as pending before routing it, that pending record is the order's own first lifecycle event, so it is not first seen late then either. (Placement assumed under `issue-8-statement-content-assumed`; the market-order sentence accepted from `ce.l1.first-seen-late-market-orders` on 2026-09-17; the pending-market-order sentence accepted from `ce.l1.market-order-seen-pending` on 2026-09-17, closing `L1.hole.market-order-seen-pending`.)",
       "L1.statement-content": "A dated statement carries the brokerage's standing facts at that moment. For a customer: whether the customer is active or inactive, and the customer's tier. For an account: whether the account is open or closed, its tax treatment, and which customer owns it. Names, addresses, contact details, and tax identifiers are not part of standing until a job needs them. (Assumed under `issue-8-statement-content-assumed`; review trigger: the business confirms or amends this enumeration.)",
       "L1.unknown-codes": "The brokerage's records speak in a fixed vocabulary of codes (statuses, order types, change flags). A report carrying a code that vocabulary does not name is held for review and is not interpreted: no rule below may read a meaning into it, default it, or silently drop the report. Every job reports such a record as a violation, naming the record and the code. A report is held as a whole: one unknown code holds the record, not the field. A held report keeps its place in the order of reports, so the job can tell which report came first, but nothing else about it may be read. A held report changes nothing and creates nothing: every fact stands as it last stood, and a customer, account or trade known only through held reports is not yet known to the job; the hold itself is what is reported. (Second sentence is an authorized clarification, assumed under `issue-8-statement-content-assumed`; review trigger: business confirmation.)"
     },
@@ -1260,7 +1272,6 @@
       "L1.hole.closed-account-activity": "87dee45f4fcb4e5ba1be7e18cda33a4e6785a450e4b3a21bb2d97a6cb8d7f544",
       "L1.hole.deletions": "7eff84620c821a7cfe159213bbf87cc7cffafa3c94c022796ef7a600a00313ea",
       "L1.hole.held-first-report-placement": "f0686cb01fdf7e407b357d86d237ff1d6aab91b6ce2771081f91f4188d452d4c",
-      "L1.hole.market-order-seen-pending": "20fb81a0a7ebbb9618d32b0af4bd621e2ef4c3b9d649553cac7a3e0484d61361",
       "L1.hole.owner-change-reversions-account": "91237cb2243c72c6149742dac22640a49ab52ec06b32982a95f69791b2ab55f2",
       "L1.hole.securities-and-brokers": "599e4a28594d005925ae5777393ef53d0a4babd944f87f6aae95fd5d56a28432",
       "L1.hole.trade-timestamps": "1f42d838b06622558539b983a26688d8c8593b897fd28a7a6add0875171ae250"
@@ -1271,7 +1282,6 @@
       "L1.hole.closed-account-activity": "Trades appear on accounts the brokerage recorded as closed years earlier (account 428 closed in 2012, trades in 2017). Is that a data error, a reopening the records omit, or does a closed account still own trades?",
       "L1.hole.deletions": "Incremental files can mark a record deleted. What does deleting a trade or account mean for history, ownership, and holdings?",
       "L1.hole.held-first-report-placement": "When a trade's earliest report is held under `L1.unknown-codes` and a later report is not, is the trade placed at the earliest report the job can read, or is the trade itself held until the first report is resolved? The same question arises for every fact fixed at placement: if the earliest report that would supply the owning account or the order type is held while an earlier report of another kind is not, may a later report supply it? `L1.placement-moment` speaks of the earliest report the brokerage holds; a held report is one the brokerage has but may not read. Until answered, a trade any of whose placement-fixing facts would come from a held report is held.",
-      "L1.hole.market-order-seen-pending": "`L1.placement-moment` says an order sent straight to market has no pending stage. What does it mean when a market order's earliest held report is pending: a late first encounter, a mis-typed order, or a record error? Until answered, no job may decide whether such a trade is first seen late; it is held for review and reported like an unknown code.",
       "L1.hole.owner-change-reversions-account": "When a customer's standing changes, does the brokerage consider every account of that customer to have a new statement at that moment, or only the customer? The source data shows customer changes without matching account changes.",
       "L1.hole.securities-and-brokers": "Securities, companies, and brokers are named in the records but not yet part of any job. When they are, the attribution rule must be restated for them.",
       "L1.hole.trade-timestamps": "Which moment counts as \"when it completed\" when a later report of a trade arrives without its full history? (Placement is settled, provisionally, by `L1.placement-moment`.)"
