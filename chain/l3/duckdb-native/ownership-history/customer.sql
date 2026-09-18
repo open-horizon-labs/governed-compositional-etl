@@ -73,10 +73,7 @@ carried AS (
         customer_number,
         effective_from,
         is_withdrawal,
-        COALESCE(
-            status,
-            NULL
-        ) AS status_raw,
+        status AS status_raw,
         COALESCE(
             tier,
             LAST_VALUE(tier IGNORE NULLS) OVER (
