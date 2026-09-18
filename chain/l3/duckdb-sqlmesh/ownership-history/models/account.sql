@@ -129,6 +129,16 @@ account_withdrawal_bound AS (
 -- at all -- not a date comparison against this statement's own effective_from, because
 -- "current" asks about standing at an unbounded, ever-advancing present, not at the moment
 -- this statement was dated.
+-- This existence-only form is sound only while a withdrawal's effective_from cannot be
+-- dated later than the present moment at which "current" is being asked (see
+-- logical.account.is_current's own parallel_assumption): today the only source that
+-- supplies an effective_from at all (raw.customer_mgmt_action) carries no withdrawal
+-- action, and the withdrawal-capable CDC sources supply no effective_from of their own and
+-- stay deferred under L1.hole.change-effective-time, so a forward-dated withdrawal cannot
+-- occur. Should the business ever answer that hole to allow a withdrawal effective in the
+-- future relative to the present, this branch's existence form must be revisited to an
+-- as-of-now form instead, comparing the withdrawal's own moment to the present rather than
+-- merely asserting its existence.
 customer_withdrawn AS (
   SELECT DISTINCT customer_number
   FROM governed.customer

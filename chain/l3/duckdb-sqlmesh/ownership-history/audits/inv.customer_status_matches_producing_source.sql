@@ -11,16 +11,23 @@ AUDIT (name "inv.customer_status_matches_producing_source");
 -- row on correct data, and the exhaustive CASE below falls to NULL for any other code, so
 -- a customer statement wrongly produced from an account-subject action becomes a
 -- violation instead of a silently dropped row. The expected value is recomputed from that
--- row's action_type, never read back from the status column being checked.
+-- row's action_type, never read back from the status column being checked. The join to the
+-- producing row is a LEFT JOIN, not an inner join: a raw.customer_mgmt_action row with a
+-- null c_id yields a statement with a null customer_number, and an inner join's
+-- NULL = NULL match failure would silently drop that statement from this audit entirely,
+-- letting a nullable: false violation pass all six customer audits. A LEFT JOIN keeps the
+-- statement; with no matching producing row, the expected value computes to NULL, and a
+-- non-null status is caught as a mismatch instead of vanishing.
 SELECT
   m.customer_number,
   m.effective_from,
   m.status
 FROM @this_model AS m
-JOIN raw.customer_mgmt_action AS a
+LEFT JOIN raw.customer_mgmt_action AS a
   ON a.c_id = m.customer_number
   AND a.action_ts = m.effective_from
-WHERE m.status IS DISTINCT FROM (
+WHERE m.customer_number IS NULL
+   OR m.status IS DISTINCT FROM (
   CASE a.action_type
     WHEN 'NEW' THEN 'ACTV'
     WHEN 'UPDCUST' THEN 'ACTV'

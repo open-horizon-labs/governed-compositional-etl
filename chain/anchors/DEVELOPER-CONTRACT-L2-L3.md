@@ -83,6 +83,22 @@ hold, follow the rule and say so in your report. Do not silently widen the label
 rule to match it. If a rule and its label disagree in a way you cannot implement faithfully, that is a question
 for the model's authority under the conflict protocol, not something to resolve in SQL.
 
+## `compare` is meaningless inside an isolated worktree
+
+If your working directory is a git worktree of its own -- your own checkout, so that nothing you do can disturb
+another agent -- then it holds its own copy of every OTHER engine target's projection, frozen at whatever commit
+the worktree was created from. `compare <target-a> <job> --against <target-b>` reads both projections from the
+tree it runs in, so inside a worktree it compares your live work against a stale sibling and reports a difference
+that does not exist, or hides one that does.
+
+This has happened. A Developer ran `compare` from its worktree, got `identical: false` with `columns_match: false`
+on both tables, and correctly declined to draw a conclusion from it; the coordinator ran the same command in the
+integrated tree and got `identical: true` with columns matching. The Developer's guess at the cause was right.
+
+So: run `check`, `run`, `mutate` and `twophase` in your worktree, because those concern only your own target. Do
+not run `compare` there, and do not report a `compare` result from a worktree as evidence. Cross-engine agreement
+is the coordinator's to check after both targets are integrated.
+
 ## Change contract (CESS working form)
 
 - **Prior policy authority:** `chain/l2/<job>/semantic-model.json`, restricted to `selected_element_ids` in `chain/l2/<job>/review.json`. Deferred elements are not projected; rejected elements never.
