@@ -86,28 +86,6 @@ unioned AS (
   UNION ALL
   SELECT * FROM from_constructed
 ),
--- withdrawal_group: a running count of withdrawals up to and including each row, per
--- account_number, ordered by effective_from. A withdrawal row starts a fresh group (it is
--- the first row counted into its own new group value), so carry-forward windows
--- repartitioned on (account_number, withdrawal_group) below cannot reach back across a
--- withdrawal at all -- not just onto the withdrawal statement itself, which the final
--- per-row CASE also suppresses, but onto every statement after it too. Without this, a
--- statement recorded after a withdrawal would still carry a pre-withdrawal owner or
--- tax_treatment forward through the identity-only partition, which is precisely treating a
--- post-withdrawal report as resuming the record: L1.hole.deletion-reversal's open,
--- standing instruction is that no job may treat a report received after a withdrawal as
--- resuming it, and a carried fact that survives the withdrawal and re-attaches afterward is
--- exactly that.
-grouped AS (
-  SELECT
-    *,
-    SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
-      PARTITION BY account_number
-      ORDER BY effective_from
-      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS withdrawal_group
-  FROM unioned
-),
 filled AS (
   SELECT
     account_number,
@@ -117,24 +95,30 @@ filled AS (
     provenance,
     -- logical.account.owning_customer_number: carried_forward_from_previous_statement
     -- (L1.omitted-facts-stand) when the producing row (ce.account_changes) supplies no
-    -- owner -- but never across a withdrawal boundary (see withdrawal_group above), and
-    -- never onto a withdrawal statement itself, which asserts no standing (including who
-    -- owns the account) to carry forward at all, per L1.deletion-withdraws; the outer CASE
-    -- in the final SELECT suppresses the carried value there too.
+    -- owner, per the immediately preceding statement of the same account -- no withdrawal
+    -- boundary in this partition, per the model's own carried_forward_from_previous_statement
+    -- rule text, which names the value "carried by the immediately preceding statement"
+    -- with no exception for a withdrawal sitting between them.
+    -- logical.account.is_current's reversal-foreclosure and owner-cascade branches are
+    -- L1.hole.deletion-reversal's complete implementation here: the record has no standing
+    -- from the withdrawal forward, which is what "not resuming" means for this job. Never
+    -- onto a withdrawal statement itself, which asserts no standing (including who owns
+    -- the account) to carry forward at all, per L1.deletion-withdraws; the outer CASE in
+    -- the final SELECT suppresses the carried value there.
     LAST_VALUE(owning_customer_number_as_reported IGNORE NULLS) OVER (
-      PARTITION BY account_number, withdrawal_group
+      PARTITION BY account_number
       ORDER BY effective_from
       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) AS owning_customer_number_carried,
     -- logical.account.tax_treatment: carried_forward_from_previous_statement when the
-    -- producing action (CLOSEACCT) omits ca_tax_st -- suppressed across the same boundary
-    -- and on the withdrawal statement itself, the same way.
+    -- producing action (CLOSEACCT) omits ca_tax_st, per the immediately preceding
+    -- statement -- suppressed only on the withdrawal statement itself, the same way.
     LAST_VALUE(tax_treatment_as_reported IGNORE NULLS) OVER (
-      PARTITION BY account_number, withdrawal_group
+      PARTITION BY account_number
       ORDER BY effective_from
       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) AS tax_treatment_carried
-  FROM grouped
+  FROM unioned
 ),
 -- logical.account.is_current's own-withdrawal, reversal-foreclosure branch: once an
 -- account's own record carries a withdrawal, no statement of that account_number at or

@@ -12,13 +12,19 @@
 -- producing rows, joined to governed.account on (account_number,
 -- effective_from) = (ca_id, action_ts) for historical rows and (account_id,
 -- action_at) for ce rows; it is never read back from
--- governed.account.tax_treatment. Zero rows means the invariant holds.
+-- governed.account.tax_treatment. Per chain/anchors/sources-v1.json's own
+-- action_type_meanings.fields_present, CLOSEACCT's field list does not
+-- include ca_tax_st at all, so this recomputation reads ca_tax_st only for
+-- NEW, ADDACCT, and UPDACCT and forces NULL for CLOSEACCT before its own
+-- carry-forward runs -- matching account.sql's own read, not trusting
+-- whatever raw.customer_mgmt_action.ca_tax_st happens to hold on a CLOSEACCT
+-- row. Zero rows means the invariant holds.
 
 WITH historical AS (
     SELECT
         ca_id AS account_number,
         action_ts AS effective_from,
-        ca_tax_st AS tax_direct
+        CASE WHEN action_type = 'CLOSEACCT' THEN NULL ELSE ca_tax_st END AS tax_direct
     FROM raw.customer_mgmt_action
     WHERE action_type IN ('NEW', 'ADDACCT', 'UPDACCT', 'CLOSEACCT')
 ),

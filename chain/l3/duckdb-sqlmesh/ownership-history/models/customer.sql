@@ -43,27 +43,6 @@ WITH base AS (
   FROM raw.customer_mgmt_action
   WHERE action_type IN ('NEW', 'UPDCUST', 'INACT')
 ),
--- withdrawal_group: a running count of withdrawals up to and including each row, per
--- customer_number, ordered by effective_from. A withdrawal row starts a fresh group (it is
--- the first row counted into its own new group value), so carry-forward windows
--- repartitioned on (customer_number, withdrawal_group) below cannot reach back across a
--- withdrawal at all -- not just onto the withdrawal statement itself, which the final
--- per-row CASE also suppresses, but onto every statement after it too. Without this, a
--- statement recorded after a withdrawal would still carry a pre-withdrawal tier forward
--- through the identity-only partition, which is precisely treating a post-withdrawal
--- report as resuming the record: L1.hole.deletion-reversal's open, standing instruction is
--- that no job may treat a report received after a withdrawal as resuming it, and a carried
--- fact that survives the withdrawal and re-attaches afterward is exactly that.
-grouped AS (
-  SELECT
-    *,
-    SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
-      PARTITION BY customer_number
-      ORDER BY effective_from
-      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS withdrawal_group
-  FROM base
-),
 filled AS (
   SELECT
     customer_number,
@@ -71,20 +50,25 @@ filled AS (
     is_withdrawal,
     status,
     -- logical.customer.tier: carried_forward_from_previous_statement (L1.omitted-facts-stand)
-    -- when the producing action (INACT) omits c_tier -- but never across a withdrawal
-    -- boundary (see withdrawal_group above), and never onto a withdrawal statement itself,
-    -- which asserts no standing to carry forward at all, per L1.deletion-withdraws; the
-    -- outer CASE in the final SELECT suppresses the carried value there too. No candidate
-    -- source produces a withdrawal statement today (is_withdrawal is hardcoded FALSE
-    -- above), so none of this is exercised, but it must agree with
-    -- inv.customer_statement_has_content's own withdrawal-direction assertion, which is
-    -- exercised the moment a withdrawal statement is ever produced.
+    -- when the producing action (INACT) omits c_tier, per the immediately preceding
+    -- statement of the same customer -- no withdrawal boundary in this partition, per the
+    -- model's own carried_forward_from_previous_statement rule text, which names the value
+    -- "carried by the immediately preceding statement" with no exception for a withdrawal
+    -- sitting between them. logical.customer.is_current's reversal-foreclosure branch is
+    -- L1.hole.deletion-reversal's complete implementation here: the record has no standing
+    -- from the withdrawal forward, which is what "not resuming" means for this job. Never
+    -- onto a withdrawal statement itself, which asserts no standing to carry forward at
+    -- all, per L1.deletion-withdraws; the outer CASE in the final SELECT suppresses the
+    -- carried value there. No candidate source produces a withdrawal statement today
+    -- (is_withdrawal is hardcoded FALSE above), so none of this is exercised, but it must
+    -- agree with inv.customer_statement_has_content's own withdrawal-direction assertion,
+    -- which is exercised the moment a withdrawal statement is ever produced.
     LAST_VALUE(tier_as_reported IGNORE NULLS) OVER (
-      PARTITION BY customer_number, withdrawal_group
+      PARTITION BY customer_number
       ORDER BY effective_from
       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) AS tier_carried
-  FROM grouped
+  FROM base
 ),
 -- logical.customer.is_current's reversal-foreclosure branch: once a customer has any
 -- withdrawal statement, no statement of that customer at or after the withdrawal's own

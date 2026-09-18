@@ -8,13 +8,17 @@
 -- (the producing source) with its own carry-forward over the same
 -- action-producing rows, joined to governed.customer on (customer_number,
 -- effective_from) = (c_id, action_ts) for comparison; it is never read back
--- from governed.customer.tier. Zero rows means the invariant holds.
+-- from governed.customer.tier. Per chain/anchors/sources-v1.json's own
+-- action_type_meanings.fields_present, INACT's field list does not include
+-- c_tier at all, so this recomputation reads c_tier only for NEW and UPDCUST
+-- and forces NULL for INACT before its own carry-forward runs -- matching
+-- customer.sql's own read. Zero rows means the invariant holds.
 
 WITH producing AS (
     SELECT
         c_id AS customer_number,
         action_ts AS effective_from,
-        c_tier AS tier_direct
+        CASE WHEN action_type = 'INACT' THEN NULL ELSE c_tier END AS tier_direct
     FROM raw.customer_mgmt_action
     WHERE action_type IN ('NEW', 'UPDCUST', 'INACT')
 ),

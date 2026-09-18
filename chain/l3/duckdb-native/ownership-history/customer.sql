@@ -25,11 +25,18 @@
 -- (NEW, UPDCUST -> ACTV; INACT -> INAC).
 --
 -- tier selector "carried_forward_from_previous_statement" (L2 cycle 2): INACT
--- omits c_tier (L1.omitted-facts-stand: the omitted fact stands as it last
--- stood), so tier equals the value carried by this customer's immediately
--- preceding statement, ordered by effective_from. INACT's anchored meaning
--- presupposes an existing customer (only NEW first records one), so a
--- preceding statement is guaranteed to exist.
+-- omits c_tier per chain/anchors/sources-v1.json's own action_type_meanings.
+-- fields_present (INACT's field list is only action_ts, action_type, c_id --
+-- c_tier is not in it, unlike NEW and UPDCUST), so this file reads c_tier
+-- only for NEW and UPDCUST and forces NULL for INACT before the carry-forward
+-- COALESCE runs, rather than trusting whatever raw.customer_mgmt_action.
+-- c_tier happens to hold on an INACT row -- found by the same reasoning as
+-- account.sql's CLOSEACCT/ca_tax_st fix (L2 cycle 4 review, F4), applied here
+-- to the identical shape. L1.omitted-facts-stand: the omitted fact stands as
+-- it last stood, so tier equals the value carried by this customer's
+-- immediately preceding statement, ordered by effective_from. INACT's
+-- anchored meaning presupposes an existing customer (only NEW first records
+-- one), so a preceding statement is guaranteed to exist.
 --
 -- is_withdrawal "computed_within_entity" (L2 cycle 3): false for every
 -- statement produced by raw.customer_mgmt_action, whose action_type vocabulary
@@ -49,20 +56,19 @@
 -- so a future undeferred CDC source needs no change to this logic.
 --
 -- status/tier: null exactly when is_withdrawal is true (never today), since a
--- withdrawal asserts no standing at all per L1.deletion-withdraws.
---
--- Carry-forward boundary: tier's carried_forward_from_previous_statement
--- derivation must not reach past a withdrawal. A withdrawal's own raw tier
--- is null (per the deferred raw.customer_cdc handoff's own note: "must
--- populate no value here"), and plain LAST_VALUE(... IGNORE NULLS) would
--- silently skip that null and carry the PRE-withdrawal tier across it to a
--- later statement. withdrawal_group (a running count of withdrawals up to
--- and including each row) partitions the carry-forward window so it never
--- looks earlier than the customer's own most recent withdrawal. Unreachable
--- today (is_withdrawal is hardcoded false for every row this file
--- produces), but wired so the derivation and inv.customer_statement_has_
--- content agree structurally rather than by coincidence once
--- raw.customer_cdc is undeferred.
+-- withdrawal asserts no standing at all per L1.deletion-withdraws. This is a
+-- per-row output suppression only (the final CASE below); tier's
+-- carried_forward_from_previous_statement derivation is NOT boundary-limited
+-- at a withdrawal -- the model text states "the value carried by the
+-- immediately preceding statement" with no withdrawal exception, and
+-- logical.customer.is_current's own reversal-foreclosure branch is where
+-- L1.hole.deletion-reversal's "not resuming" reading is fully implemented,
+-- for currency; extending it to content would answer the open hole in SQL.
+-- An earlier revision added a withdrawal_group partition boundary here on
+-- exactly that reasoning; a reviewer measured it against must-hold audits on
+-- a hand-built withdrawal population and found it broke
+-- inv.customer_statement_has_content and inv.customer_tier_matches_
+-- producing_source, so it was removed.
 
 CREATE OR REPLACE TABLE governed.customer AS
 WITH historical AS (
@@ -74,26 +80,12 @@ WITH historical AS (
             WHEN 'UPDCUST' THEN 'ACTV'
             WHEN 'INACT'  THEN 'INAC'
         END AS status,
-        c_tier AS tier,
+        CASE WHEN action_type = 'INACT' THEN NULL ELSE c_tier END AS tier,
         -- raw.customer_mgmt_action's action_type vocabulary names no withdrawal
         -- action; the CDC source that could set this true is deferred.
         FALSE AS is_withdrawal
     FROM raw.customer_mgmt_action
     WHERE action_type IN ('NEW', 'UPDCUST', 'INACT')
-),
-historical_grouped AS (
-    SELECT
-        *,
-        -- running count of withdrawals up to and including this row: a
-        -- withdrawal starts a new group (including itself), so carry-forward
-        -- partitioned on this can never reach past it. See account.sql's
-        -- "Carry-forward boundary" note; same reasoning, applied here to
-        -- tier.
-        SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
-            PARTITION BY customer_number ORDER BY effective_from
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) AS withdrawal_group
-    FROM historical
 ),
 carried AS (
     SELECT
@@ -104,11 +96,11 @@ carried AS (
         COALESCE(
             tier,
             LAST_VALUE(tier IGNORE NULLS) OVER (
-                PARTITION BY customer_number, withdrawal_group ORDER BY effective_from
+                PARTITION BY customer_number ORDER BY effective_from
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             )
         ) AS tier_carried
-    FROM historical_grouped
+    FROM historical
 ),
 withdrawals AS (
     SELECT customer_number, MIN(effective_from) AS first_withdrawal_from

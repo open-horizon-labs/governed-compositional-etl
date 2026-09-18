@@ -46,11 +46,19 @@
 -- owner-bearing statement to carry forward from.
 --
 -- tax_treatment selector "carried_forward_from_previous_statement" (L2 cycle 2):
--- CLOSEACCT omits ca_tax_st (L1.omitted-facts-stand: the omitted fact stands as
--- it last stood), so tax_treatment equals the value carried by this account's
--- immediately preceding statement, ordered by effective_from across both
--- sources combined. CLOSEACCT's anchored meaning presupposes an existing
--- account (only NEW or ADDACCT first records one), so a preceding statement is
+-- CLOSEACCT omits ca_tax_st per chain/anchors/sources-v1.json's own
+-- action_type_meanings.fields_present (CLOSEACCT's field list does not
+-- include ca_tax_st at all -- NEW, ADDACCT, and UPDACCT's do), so this file
+-- reads ca_tax_st only for those three action types and forces NULL for
+-- CLOSEACCT before the carry-forward COALESCE runs, rather than trusting
+-- whatever raw.customer_mgmt_action.ca_tax_st happens to hold on a
+-- CLOSEACCT row -- the anchors say that field is not CLOSEACCT's to carry,
+-- so a non-null value there is not this job's fact to read, omitted or not.
+-- L1.omitted-facts-stand: the omitted fact stands as it last stood, so
+-- tax_treatment equals the value carried by this account's immediately
+-- preceding statement, ordered by effective_from across both sources
+-- combined. CLOSEACCT's anchored meaning presupposes an existing account
+-- (only NEW or ADDACCT first records one), so a preceding statement is
 -- guaranteed to exist. ce.account_changes always supplies tax_status_id
 -- directly, so this carry-forward only ever fills a gap left by CLOSEACCT.
 --
@@ -105,28 +113,22 @@
 -- carries one, with no further change to this file required.
 --
 -- owning_customer_number/status/tax_treatment: null exactly when is_withdrawal
--- is true (never today), since a withdrawal asserts no standing at all.
---
--- Carry-forward boundary: owning_customer_number's and tax_treatment's
--- carried_forward_from_previous_statement derivations must not reach past a
--- withdrawal. A withdrawal's own raw value is null (per the deferred
--- raw.account_cdc handoffs' own notes: "must populate no value here" /
--- "rather than echoing the row's last c_id"), and plain LAST_VALUE(...
--- IGNORE NULLS) would silently skip that null and carry the PRE-withdrawal
--- value across it to a later statement -- exactly the resumption
--- L1.hole.deletion-reversal forbids treating as legitimate, applied to
--- content rather than currency. withdrawal_group (a running count of
--- withdrawals up to and including each row) partitions the carry-forward
--- window so it never looks earlier than the account's own most recent
--- withdrawal: the withdrawal row starts a fresh, single-row group (so its
--- own carried value is null before the final CASE even applies), and any
--- statement after it can only carry forward from within that same
--- post-withdrawal group, never from before the boundary. Unreachable today
--- (is_withdrawal is hardcoded false for every row this file produces), but
--- wired so the derivation and the withdrawal-direction audits
--- (inv.account_statement_has_content, inv.account_owner_matches_producing_
--- source) agree structurally rather than by coincidence once
--- raw.account_cdc is undeferred.
+-- is true (never today), since a withdrawal asserts no standing at all. This
+-- is a per-row output suppression only (the final CASE below); the
+-- carried_forward_from_previous_statement derivations for owning_customer_
+-- number and tax_treatment are NOT boundary-limited at a withdrawal -- the
+-- model text for both (and for logical.customer.tier) states "the value
+-- carried by the immediately preceding statement" with no withdrawal
+-- exception, and logical.account.is_current's own reversal-foreclosure
+-- branch is where L1.hole.deletion-reversal's "not resuming" reading is
+-- fully implemented, for currency; extending it to content as well would be
+-- answering the open hole in SQL rather than leaving it open. An earlier
+-- revision of this file added a withdrawal_group partition boundary to these
+-- carry-forward windows on exactly that reasoning; a reviewer measured it
+-- against five must-hold audits on a hand-built withdrawal population and
+-- found it broke all five (inv.account_statement_has_content,
+-- inv.account_tax_treatment_matches_producing_source, and
+-- inv.account_owner_matches_producing_source among them), so it was removed.
 
 CREATE OR REPLACE TABLE governed.account AS
 WITH historical AS (
@@ -140,7 +142,7 @@ WITH historical AS (
             WHEN 'UPDACCT'  THEN 'ACTV'
             WHEN 'CLOSEACCT' THEN 'INAC'
         END AS status,
-        ca_tax_st AS tax_treatment,
+        CASE WHEN action_type = 'CLOSEACCT' THEN NULL ELSE ca_tax_st END AS tax_treatment,
         CAST(NULL AS VARCHAR) AS provenance,
         -- raw.customer_mgmt_action's action_type vocabulary names no account
         -- withdrawal action; the CDC source that could set this true is
@@ -167,18 +169,6 @@ combined AS (
     UNION ALL
     SELECT * FROM constructed
 ),
-combined_grouped AS (
-    SELECT
-        *,
-        -- running count of withdrawals up to and including this row: a
-        -- withdrawal starts a new group (including itself), so carry-forward
-        -- partitioned on this can never reach past it.
-        SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
-            PARTITION BY account_number ORDER BY effective_from
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) AS withdrawal_group
-    FROM combined
-),
 carried AS (
     SELECT
         account_number,
@@ -187,7 +177,7 @@ carried AS (
         COALESCE(
             owning_customer_number,
             LAST_VALUE(owning_customer_number IGNORE NULLS) OVER (
-                PARTITION BY account_number, withdrawal_group ORDER BY effective_from
+                PARTITION BY account_number ORDER BY effective_from
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             )
         ) AS owning_customer_number_carried,
@@ -195,12 +185,12 @@ carried AS (
         COALESCE(
             tax_treatment,
             LAST_VALUE(tax_treatment IGNORE NULLS) OVER (
-                PARTITION BY account_number, withdrawal_group ORDER BY effective_from
+                PARTITION BY account_number ORDER BY effective_from
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             )
         ) AS tax_treatment_carried,
         provenance
-    FROM combined_grouped
+    FROM combined
 ),
 account_withdrawals AS (
     SELECT account_number, MIN(effective_from) AS first_withdrawal_from
