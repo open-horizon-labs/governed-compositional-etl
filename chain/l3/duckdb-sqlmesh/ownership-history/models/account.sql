@@ -86,6 +86,28 @@ unioned AS (
   UNION ALL
   SELECT * FROM from_constructed
 ),
+-- withdrawal_group: a running count of withdrawals up to and including each row, per
+-- account_number, ordered by effective_from. A withdrawal row starts a fresh group (it is
+-- the first row counted into its own new group value), so carry-forward windows
+-- repartitioned on (account_number, withdrawal_group) below cannot reach back across a
+-- withdrawal at all -- not just onto the withdrawal statement itself, which the final
+-- per-row CASE also suppresses, but onto every statement after it too. Without this, a
+-- statement recorded after a withdrawal would still carry a pre-withdrawal owner or
+-- tax_treatment forward through the identity-only partition, which is precisely treating a
+-- post-withdrawal report as resuming the record: L1.hole.deletion-reversal's open,
+-- standing instruction is that no job may treat a report received after a withdrawal as
+-- resuming it, and a carried fact that survives the withdrawal and re-attaches afterward is
+-- exactly that.
+grouped AS (
+  SELECT
+    *,
+    SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
+      PARTITION BY account_number
+      ORDER BY effective_from
+      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS withdrawal_group
+  FROM unioned
+),
 filled AS (
   SELECT
     account_number,
@@ -94,20 +116,25 @@ filled AS (
     status,
     provenance,
     -- logical.account.owning_customer_number: carried_forward_from_previous_statement
-    -- (L1.omitted-facts-stand) when the producing row (ce.account_changes) supplies no owner.
+    -- (L1.omitted-facts-stand) when the producing row (ce.account_changes) supplies no
+    -- owner -- but never across a withdrawal boundary (see withdrawal_group above), and
+    -- never onto a withdrawal statement itself, which asserts no standing (including who
+    -- owns the account) to carry forward at all, per L1.deletion-withdraws; the outer CASE
+    -- in the final SELECT suppresses the carried value there too.
     LAST_VALUE(owning_customer_number_as_reported IGNORE NULLS) OVER (
-      PARTITION BY account_number
+      PARTITION BY account_number, withdrawal_group
       ORDER BY effective_from
       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS owning_customer_number,
+    ) AS owning_customer_number_carried,
     -- logical.account.tax_treatment: carried_forward_from_previous_statement when the
-    -- producing action (CLOSEACCT) omits ca_tax_st.
+    -- producing action (CLOSEACCT) omits ca_tax_st -- suppressed across the same boundary
+    -- and on the withdrawal statement itself, the same way.
     LAST_VALUE(tax_treatment_as_reported IGNORE NULLS) OVER (
-      PARTITION BY account_number
+      PARTITION BY account_number, withdrawal_group
       ORDER BY effective_from
       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS tax_treatment
-  FROM unioned
+    ) AS tax_treatment_carried
+  FROM grouped
 ),
 -- logical.account.is_current's own-withdrawal, reversal-foreclosure branch: once an
 -- account's own record carries a withdrawal, no statement of that account_number at or
@@ -147,6 +174,14 @@ customer_withdrawn AS (
 SELECT
   f.account_number,
   f.effective_from,
+  -- is_current's owner-cascade branch joins on owning_customer_number_carried, which is
+  -- also fine to read as the plain owner reference here: for a non-withdrawal statement it
+  -- is identical to the suppressed output column (suppression only nulls it when
+  -- is_withdrawal is true), and for a withdrawal statement is_current is already forced
+  -- false by branch 1 below regardless of what the cw lookup returns, so which owner
+  -- variant the join uses cannot change the outcome for that row either. The
+  -- carried/suppressed distinction that mattered for O2's carry-forward boundary does not
+  -- carry over to this join: it is not load-bearing here.
   -- logical.account.is_current: computed_within_entity, per its full rule text (the label
   -- undersells this -- one branch below reads the sibling logical.customer entity):
   -- false when this statement's own is_withdrawal is true;
@@ -165,12 +200,17 @@ SELECT
     ELSE f.effective_from = MAX(f.effective_from) OVER (PARTITION BY f.account_number)
   END AS is_current,
   f.is_withdrawal,
-  f.owning_customer_number,
-  f.status,
-  f.tax_treatment,
+  -- owning_customer_number, status, tax_treatment: a withdrawal statement asserts no
+  -- standing at all (L1.deletion-withdraws), so all three are suppressed to NULL here
+  -- regardless of what the carry-forward or status's own CASE computed, agreeing with
+  -- inv.account_statement_has_content's and inv.account_owner_matches_producing_source's
+  -- requirement that a withdrawal statement carry none of them.
+  CASE WHEN f.is_withdrawal THEN NULL ELSE f.owning_customer_number_carried END AS owning_customer_number,
+  CASE WHEN f.is_withdrawal THEN NULL ELSE f.status END AS status,
+  CASE WHEN f.is_withdrawal THEN NULL ELSE f.tax_treatment_carried END AS tax_treatment,
   f.provenance
 FROM filled AS f
 LEFT JOIN account_withdrawal_bound AS aw
   ON aw.account_number = f.account_number
 LEFT JOIN customer_withdrawn AS cw
-  ON cw.customer_number = f.owning_customer_number;
+  ON cw.customer_number = f.owning_customer_number_carried;

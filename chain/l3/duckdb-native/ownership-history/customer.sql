@@ -50,6 +50,19 @@
 --
 -- status/tier: null exactly when is_withdrawal is true (never today), since a
 -- withdrawal asserts no standing at all per L1.deletion-withdraws.
+--
+-- Carry-forward boundary: tier's carried_forward_from_previous_statement
+-- derivation must not reach past a withdrawal. A withdrawal's own raw tier
+-- is null (per the deferred raw.customer_cdc handoff's own note: "must
+-- populate no value here"), and plain LAST_VALUE(... IGNORE NULLS) would
+-- silently skip that null and carry the PRE-withdrawal tier across it to a
+-- later statement. withdrawal_group (a running count of withdrawals up to
+-- and including each row) partitions the carry-forward window so it never
+-- looks earlier than the customer's own most recent withdrawal. Unreachable
+-- today (is_withdrawal is hardcoded false for every row this file
+-- produces), but wired so the derivation and inv.customer_statement_has_
+-- content agree structurally rather than by coincidence once
+-- raw.customer_cdc is undeferred.
 
 CREATE OR REPLACE TABLE governed.customer AS
 WITH historical AS (
@@ -68,6 +81,20 @@ WITH historical AS (
     FROM raw.customer_mgmt_action
     WHERE action_type IN ('NEW', 'UPDCUST', 'INACT')
 ),
+historical_grouped AS (
+    SELECT
+        *,
+        -- running count of withdrawals up to and including this row: a
+        -- withdrawal starts a new group (including itself), so carry-forward
+        -- partitioned on this can never reach past it. See account.sql's
+        -- "Carry-forward boundary" note; same reasoning, applied here to
+        -- tier.
+        SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
+            PARTITION BY customer_number ORDER BY effective_from
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS withdrawal_group
+    FROM historical
+),
 carried AS (
     SELECT
         customer_number,
@@ -77,11 +104,11 @@ carried AS (
         COALESCE(
             tier,
             LAST_VALUE(tier IGNORE NULLS) OVER (
-                PARTITION BY customer_number ORDER BY effective_from
+                PARTITION BY customer_number, withdrawal_group ORDER BY effective_from
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             )
         ) AS tier_carried
-    FROM historical
+    FROM historical_grouped
 ),
 withdrawals AS (
     SELECT customer_number, MIN(effective_from) AS first_withdrawal_from

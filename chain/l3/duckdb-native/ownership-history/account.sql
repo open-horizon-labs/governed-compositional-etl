@@ -106,6 +106,27 @@
 --
 -- owning_customer_number/status/tax_treatment: null exactly when is_withdrawal
 -- is true (never today), since a withdrawal asserts no standing at all.
+--
+-- Carry-forward boundary: owning_customer_number's and tax_treatment's
+-- carried_forward_from_previous_statement derivations must not reach past a
+-- withdrawal. A withdrawal's own raw value is null (per the deferred
+-- raw.account_cdc handoffs' own notes: "must populate no value here" /
+-- "rather than echoing the row's last c_id"), and plain LAST_VALUE(...
+-- IGNORE NULLS) would silently skip that null and carry the PRE-withdrawal
+-- value across it to a later statement -- exactly the resumption
+-- L1.hole.deletion-reversal forbids treating as legitimate, applied to
+-- content rather than currency. withdrawal_group (a running count of
+-- withdrawals up to and including each row) partitions the carry-forward
+-- window so it never looks earlier than the account's own most recent
+-- withdrawal: the withdrawal row starts a fresh, single-row group (so its
+-- own carried value is null before the final CASE even applies), and any
+-- statement after it can only carry forward from within that same
+-- post-withdrawal group, never from before the boundary. Unreachable today
+-- (is_withdrawal is hardcoded false for every row this file produces), but
+-- wired so the derivation and the withdrawal-direction audits
+-- (inv.account_statement_has_content, inv.account_owner_matches_producing_
+-- source) agree structurally rather than by coincidence once
+-- raw.account_cdc is undeferred.
 
 CREATE OR REPLACE TABLE governed.account AS
 WITH historical AS (
@@ -146,6 +167,18 @@ combined AS (
     UNION ALL
     SELECT * FROM constructed
 ),
+combined_grouped AS (
+    SELECT
+        *,
+        -- running count of withdrawals up to and including this row: a
+        -- withdrawal starts a new group (including itself), so carry-forward
+        -- partitioned on this can never reach past it.
+        SUM(CASE WHEN is_withdrawal THEN 1 ELSE 0 END) OVER (
+            PARTITION BY account_number ORDER BY effective_from
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS withdrawal_group
+    FROM combined
+),
 carried AS (
     SELECT
         account_number,
@@ -154,7 +187,7 @@ carried AS (
         COALESCE(
             owning_customer_number,
             LAST_VALUE(owning_customer_number IGNORE NULLS) OVER (
-                PARTITION BY account_number ORDER BY effective_from
+                PARTITION BY account_number, withdrawal_group ORDER BY effective_from
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             )
         ) AS owning_customer_number_carried,
@@ -162,12 +195,12 @@ carried AS (
         COALESCE(
             tax_treatment,
             LAST_VALUE(tax_treatment IGNORE NULLS) OVER (
-                PARTITION BY account_number ORDER BY effective_from
+                PARTITION BY account_number, withdrawal_group ORDER BY effective_from
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             )
         ) AS tax_treatment_carried,
         provenance
-    FROM combined
+    FROM combined_grouped
 ),
 account_withdrawals AS (
     SELECT account_number, MIN(effective_from) AS first_withdrawal_from

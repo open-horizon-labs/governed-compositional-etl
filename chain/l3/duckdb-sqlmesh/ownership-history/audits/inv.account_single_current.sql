@@ -6,17 +6,28 @@ AUDIT (name "inv.account_single_current");
 -- at any moment, per L1.owner-standing's extended second sentence), exactly one is current;
 -- if either condition fails, none is current.
 --
--- is_current can only ever be true for an account's own latest-dated statement (the model's
+-- is_current can only ever be true for the account's latest-dated statement(s) (the model's
 -- fallback branch requires "no statement of the same account_number has a later
--- effective_from"), so the owner condition must be evaluated against THAT statement's own
--- owning_customer_number, not against every owning_customer_number the account has ever
--- carried: an account whose owner changed from a withdrawn C1 to a standing C2 has its
--- latest statement owned by C2, and is correctly current, even though an earlier statement
--- named a withdrawn owner. Collapsing the owner check to "any statement's owner was ever
--- withdrawn" would fire on that account for behavior the model requires. Own-withdrawal, by
--- contrast, is correctly evaluated over every statement of the account: a withdrawal
--- anywhere in the account's own history forecloses currency for every later statement,
--- including its latest one, per the reversal-foreclosure branch.
+-- effective_from", which every tied-latest statement satisfies equally, so the model's own
+-- ELSE arm marks ALL of them current, not one), so the owner condition must be evaluated
+-- against the owning_customer_number named by that latest moment, not against every
+-- owning_customer_number the account has ever carried: an account whose owner changed from
+-- a withdrawn C1 to a standing C2 has its latest statement owned by C2, and is correctly
+-- current, even though an earlier statement named a withdrawn owner. Collapsing the owner
+-- check to "any statement's owner was ever withdrawn" would fire on that account for
+-- behavior the model requires. Own-withdrawal, by contrast, is correctly evaluated over
+-- every statement of the account: a withdrawal anywhere in the account's own history
+-- forecloses currency for every later statement, including its latest one, per the
+-- reversal-foreclosure branch.
+--
+-- ROW_NUMBER() needs an explicit tiebreak: two statements of one account at the same
+-- effective_from are producible (unioned is a bare UNION ALL of the raw and constructed
+-- arms with no dedupe, and no anchored source forbids it), and on an unbroken tie
+-- rn = 1's pick is unspecified -- if the tied statements name different owners with one
+-- withdrawn, the verdict flips with the pick. Not blocking, because a tie independently
+-- violates inv.account_statements_no_overlap and inv.account_asof_has_unique_answer, so no
+-- tied data reaches acceptance regardless; the tiebreak is added anyway so this audit's own
+-- verdict does not depend on an unspecified pick even transiently.
 WITH owner_withdrawn_customers AS (
   SELECT DISTINCT customer_number
   FROM governed.customer
@@ -26,7 +37,11 @@ latest_statement AS (
   SELECT
     account_number,
     owning_customer_number,
-    ROW_NUMBER() OVER (PARTITION BY account_number ORDER BY effective_from DESC) AS rn
+    ROW_NUMBER() OVER (
+      PARTITION BY account_number
+      ORDER BY effective_from DESC, owning_customer_number DESC NULLS LAST,
+        status DESC NULLS LAST, tax_treatment DESC NULLS LAST, provenance DESC NULLS LAST
+    ) AS rn
   FROM @this_model
 ),
 flags AS (

@@ -71,16 +71,21 @@ JOIN withdrawn_customers w ON w.customer_number = s.owning_customer_number
 
 UNION ALL
 
--- unevaluable arm 1: owning_customer_number itself is unresolvable.
+-- unevaluable arm 1: owning_customer_number itself is unresolvable. Sourced
+-- from account_own_standing, not governed.account directly, so both
+-- unevaluable arms are checked over the same population the comment above
+-- claims: an account whose own record has already ended (its own latest
+-- statement is itself a withdrawal) is excluded here exactly as it is from
+-- the withdrawn-owner branch, rather than reported for an owner input that
+-- no longer bears on any standing this account could carry.
 SELECT
     'unresolvable_owner' AS case_type,
-    a.account_number,
+    s.account_number,
     CAST(NULL AS BIGINT) AS withdrawn_customer_number,
     CAST(NULL AS TIMESTAMP) AS withdrawal_effective_from,
     'owning_customer_number' AS unresolvable_input
-FROM governed.account a
-WHERE NOT a.is_withdrawal
-  AND a.owning_customer_number IS NULL
+FROM account_own_standing s
+WHERE s.owning_customer_number IS NULL
 
 UNION ALL
 
