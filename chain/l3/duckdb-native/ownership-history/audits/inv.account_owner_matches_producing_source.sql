@@ -1,17 +1,19 @@
--- inv.account_owner_matches_producing_source: for every candidate-sourced
--- account statement whose producing historical action carries c_id,
--- owning_customer_number equals that action's c_id; for one produced by a
--- constructed scenario row, which carries no owner field, owning_customer_number
--- equals the value carried by the account's immediately preceding statement,
--- per L1.omitted-facts-stand.
+-- inv.account_owner_matches_producing_source: for every non-withdrawal
+-- (is_withdrawal = false) candidate-sourced account statement whose
+-- producing historical action carries c_id, owning_customer_number equals
+-- that action's c_id; for one produced by a constructed scenario row, which
+-- carries no owner field, owning_customer_number equals the value carried by
+-- the account's immediately preceding statement, per L1.omitted-facts-stand.
+-- A withdrawal statement (is_withdrawal = true) carries no
+-- owning_customer_number at all.
 --
--- Expected owner is recomputed independently from raw.customer_mgmt_action and
--- ce.account_changes (the two producing sources) with its own carry-forward
--- over the combined, effective_from-ordered producing rows, joined to
--- governed.account on (account_number, effective_from) = (ca_id, action_ts)
--- for historical rows and (account_id, action_at) for ce rows; it is never
--- read back from governed.account.owning_customer_number. Zero rows means the
--- invariant holds.
+-- Expected owner is recomputed independently from raw.customer_mgmt_action
+-- and ce.account_changes (the two producing sources) with its own
+-- carry-forward over the combined, effective_from-ordered producing rows,
+-- joined to governed.account on (account_number, effective_from) = (ca_id,
+-- action_ts) for historical rows and (account_id, action_at) for ce rows; it
+-- is never read back from governed.account.owning_customer_number. Zero rows
+-- means the invariant holds.
 
 WITH historical AS (
     SELECT
@@ -51,4 +53,5 @@ FROM governed.account a
 JOIN expected e
     ON e.account_number = a.account_number
    AND e.effective_from = a.effective_from
-WHERE a.owning_customer_number IS DISTINCT FROM e.expected_owner;
+WHERE (NOT a.is_withdrawal AND a.owning_customer_number IS DISTINCT FROM e.expected_owner)
+   OR (a.is_withdrawal AND a.owning_customer_number IS NOT NULL);

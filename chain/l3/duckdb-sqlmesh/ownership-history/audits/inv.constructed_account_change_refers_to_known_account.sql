@@ -1,14 +1,19 @@
 AUDIT (name "inv.constructed_account_change_refers_to_known_account");
 
 -- Every account statement sourced from the labeled constructed scenario ce.account_changes
--- (provenance IS NOT NULL) names an account_number that already has an earlier statement
--- sourced from received records (provenance IS NULL); a constructed change never
--- introduces an account the brokerage does not have.
+-- (provenance IS NOT NULL) that is not itself a withdrawal names an account_number that
+-- already has an earlier statement sourced from received records (provenance IS NULL); a
+-- constructed change never introduces an account the brokerage does not have. A
+-- withdrawal-labeled scenario row would be excepted, per L1.constructed-scenarios' narrow
+-- exception, since it asserts nothing and brings nothing into being; ce.account_changes as
+-- anchored carries no field distinguishing a withdrawal row, so every row from this source
+-- is is_withdrawal = false and this exception is not yet exercised.
 SELECT
   c.account_number,
   c.effective_from
 FROM @this_model AS c
 WHERE c.provenance IS NOT NULL
+  AND c.is_withdrawal = FALSE
   AND NOT EXISTS (
     SELECT 1
     FROM @this_model AS r

@@ -14,7 +14,9 @@ MODEL (
     "inv.account_tax_treatment_matches_producing_source",
     "inv.account_owner_matches_producing_source",
     "inv.unknown_codes_held",
-    "inv.account_statement_never_created_by_activity"
+    "inv.account_statement_never_created_by_activity",
+    "inv.withdrawal_never_reaches_account_status",
+    "inv.customer_withdrawal_with_standing_accounts_reported"
   ),
   depends_on (governed.customer)
 );
@@ -23,10 +25,19 @@ MODEL (
 -- complete change feed: raw.customer_mgmt_action (received records; only NEW, ADDACCT,
 -- UPDACCT, CLOSEACCT carry an account subject) and ce.account_changes (labeled constructed
 -- scenarios; provenance is never null here, and never populated for received records).
+--
+-- logical.account.is_withdrawal: computed_within_entity. Neither candidate source can
+-- express a withdrawal -- raw.customer_mgmt_action's action_type vocabulary names no
+-- withdrawal action, and ce.account_changes carries no field that could signal one -- so
+-- every statement this job currently produces has is_withdrawal = false. The only handoff
+-- that could ever set it true is raw.account_cdc.cdc_flag = 'D', which remains deferred
+-- under L1.hole.change-effective-time and is not selected for this cycle; no handoff is
+-- invented from it here.
 WITH from_actions AS (
   SELECT
     ca_id AS account_number,
     action_ts AS effective_from,
+    FALSE AS is_withdrawal,
     -- handoff.raw.customer_mgmt_action.c_id->logical.account.owning_customer_number
     -- supplied directly by every account action row.
     c_id AS owning_customer_number_as_reported,
@@ -53,6 +64,8 @@ from_constructed AS (
     account_id AS account_number,
     -- handoff.ce.account_changes.action_at->logical.account.effective_from
     action_at AS effective_from,
+    -- ce.account_changes carries no field that could signal a withdrawal.
+    FALSE AS is_withdrawal,
     -- ce.account_changes carries no owner of its own; resolved below via
     -- carried_forward_from_previous_statement (L1.omitted-facts-stand).
     CAST(NULL AS BIGINT) AS owning_customer_number_as_reported,
@@ -77,6 +90,7 @@ filled AS (
   SELECT
     account_number,
     effective_from,
+    is_withdrawal,
     status,
     provenance,
     -- logical.account.owning_customer_number: carried_forward_from_previous_statement
@@ -94,15 +108,59 @@ filled AS (
       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) AS tax_treatment
   FROM unioned
+),
+-- logical.account.is_current's own-withdrawal, reversal-foreclosure branch: once an
+-- account's own record carries a withdrawal, no statement of that account_number at or
+-- after that withdrawal's own moment is ever current again (L1.hole.deletion-reversal).
+account_withdrawal_bound AS (
+  SELECT
+    account_number,
+    MIN(effective_from) AS first_withdrawal_from
+  FROM filled
+  WHERE is_withdrawal
+  GROUP BY account_number
+),
+-- logical.account.is_current's owner-cascade branch: an account has no standing when its
+-- owning customer has been withdrawn at all, at any moment, regardless of how long ago the
+-- account's own last statement was dated (L1.owner-standing's extended second sentence).
+-- This is the cross-entity read: it consults the SIBLING logical.customer entity's own
+-- is_withdrawal fact via governed.customer, not anything derivable from logical.account's
+-- own rows. The check is existence-only -- whether the owning customer has ANY withdrawal
+-- at all -- not a date comparison against this statement's own effective_from, because
+-- "current" asks about standing at an unbounded, ever-advancing present, not at the moment
+-- this statement was dated.
+customer_withdrawn AS (
+  SELECT DISTINCT customer_number
+  FROM governed.customer
+  WHERE is_withdrawal
 )
 SELECT
-  account_number,
-  effective_from,
-  -- logical.account.is_current: computed_within_entity, true when no statement of the same
-  -- account_number has a later effective_from than this one.
-  effective_from = MAX(effective_from) OVER (PARTITION BY account_number) AS is_current,
-  owning_customer_number,
-  status,
-  tax_treatment,
-  provenance
-FROM filled;
+  f.account_number,
+  f.effective_from,
+  -- logical.account.is_current: computed_within_entity, per its full rule text (the label
+  -- undersells this -- one branch below reads the sibling logical.customer entity):
+  -- false when this statement's own is_withdrawal is true;
+  -- false when a withdrawal statement of the same account_number has an effective_from at
+  --   or before this statement's effective_from (own-withdrawal, reversal-foreclosure);
+  -- false when this statement's owning_customer_number's customer entity has ANY
+  --   withdrawal statement at all, at any effective_from, existence-only, no date
+  --   comparison against this statement's own effective_from (owner-cascade,
+  --   L1.owner-standing's extended second sentence via the sibling logical.customer entity);
+  -- otherwise true when no statement of the same account_number has a later effective_from
+  --   than this one, false when one does.
+  CASE
+    WHEN f.is_withdrawal THEN FALSE
+    WHEN aw.first_withdrawal_from IS NOT NULL AND aw.first_withdrawal_from <= f.effective_from THEN FALSE
+    WHEN cw.customer_number IS NOT NULL THEN FALSE
+    ELSE f.effective_from = MAX(f.effective_from) OVER (PARTITION BY f.account_number)
+  END AS is_current,
+  f.is_withdrawal,
+  f.owning_customer_number,
+  f.status,
+  f.tax_treatment,
+  f.provenance
+FROM filled AS f
+LEFT JOIN account_withdrawal_bound AS aw
+  ON aw.account_number = f.account_number
+LEFT JOIN customer_withdrawn AS cw
+  ON cw.customer_number = f.owning_customer_number;

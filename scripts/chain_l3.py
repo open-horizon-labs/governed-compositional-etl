@@ -274,6 +274,22 @@ def check(target: str, job: str) -> dict:
             ctes = {c.alias_or_name.lower() for c in s.find_all(exp.CTE)}
             reads = {(f"{t.db}.{t.name}" if t.db else t.name).lower() for t in s.find_all(exp.Table) if t.name.lower() not in ctes}
             illegal = sorted(r for r in reads if r not in {a.lower() for a in allowed})
+            # A derivation can span two entities of the same job -- an account has no current statement when its
+            # owning customer has been withdrawn -- and the L2 schema has no handoff for that, because a handoff
+            # names a source or an upstream job, not a sibling. So containment, which is built from handoffs, could
+            # not grant the read, and refused correct SQL. A Developer met this and did the right thing: it kept the
+            # sibling read and reported the gate as the problem rather than dropping the branch, which would have
+            # reinstated a defect two reviews had to find twice.
+            #
+            # A job's own entities are one unit compiled from one selected model, so reading a sibling is permitted.
+            # But it is an undeclared dependency -- nothing in the model says this entity depends on that one -- so it
+            # is surfaced as a question rather than passing silently. Permit it so the projection can be right; report
+            # it so the dependency is visible to whoever reads the projection next.
+            siblings = {("governed." + e["id"].split(".")[-1]).lower() for e in model["entities"]}
+            undeclared = sorted(r for r in illegal if r in siblings)
+            illegal = [r for r in illegal if r not in undeclared]
+            if undeclared:
+                questions.append(f"artifact {art['file']} reads sibling {undeclared} of its own job, which no handoff declares: permitted, because a derivation may span two entities of one job and the schema has no handoff for that, but the dependency is stated only in the derivation's rule text")
             if illegal:
                 problems.append(f"artifact {art['file']} reads {illegal}, outside its handoffs {sorted(allowed)}")
             verdict = GUARD.guard_statement(s, roles, art["entity"].split(".")[-1])

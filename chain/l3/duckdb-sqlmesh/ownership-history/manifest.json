@@ -6,6 +6,7 @@
         "logical.customer.customer_number",
         "logical.customer.effective_from",
         "logical.customer.is_current",
+        "logical.customer.is_withdrawal",
         "logical.customer.status",
         "logical.customer.tier",
         "handoff.raw.customer_mgmt_action.c_id->logical.customer.customer_number",
@@ -26,6 +27,7 @@
         "logical.account.account_number",
         "logical.account.effective_from",
         "logical.account.is_current",
+        "logical.account.is_withdrawal",
         "logical.account.owning_customer_number",
         "logical.account.status",
         "logical.account.tax_treatment",
@@ -39,13 +41,15 @@
         "handoff.ce.account_changes.action_at->logical.account.effective_from",
         "handoff.ce.account_changes.provenance->logical.account.provenance",
         "handoff.ce.account_changes.status_id->logical.account.status",
-        "handoff.ce.account_changes.tax_status_id->logical.account.tax_treatment"
+        "handoff.ce.account_changes.tax_status_id->logical.account.tax_treatment",
+        "logical.customer.is_withdrawal"
       ],
       "entity": "logical.account",
       "file": "models/account.sql",
       "reads": [
         "raw.customer_mgmt_action",
-        "ce.account_changes"
+        "ce.account_changes",
+        "governed.customer"
       ],
       "strategy": "versioned: FULL rebuild from the complete raw.customer_mgmt_action and ce.account_changes change feed"
     }
@@ -140,11 +144,21 @@
       "entity": "logical.account",
       "file": "audits/inv.account_statement_never_created_by_activity.sql",
       "invariant": "inv.account_statement_never_created_by_activity"
+    },
+    {
+      "entity": "logical.account",
+      "file": "audits/inv.customer_withdrawal_with_standing_accounts_reported.sql",
+      "invariant": "inv.customer_withdrawal_with_standing_accounts_reported"
+    },
+    {
+      "entity": "logical.account",
+      "file": "audits/inv.withdrawal_never_reaches_account_status.sql",
+      "invariant": "inv.withdrawal_never_reaches_account_status"
     }
   ],
   "derived_from_model": {
     "path": "chain/l2/ownership-history/semantic-model.json",
-    "review_sha256": "16f960d70a6e2f803d8f56955434e8409f1a36228d77f7ffab1e0a03019eb67b"
+    "review_sha256": "91da986447301a1135731c8d61c62b26908f3d6452a82d11d711a8b8078de8c6"
   },
   "group_fingerprints": {
     "sg.constructed-scenarios": "bcb1b3bbce9bd7a546293b56fddf61bfc68102e6ddcb852e49a20685698d6cf1",
