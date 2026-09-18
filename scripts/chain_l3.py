@@ -290,6 +290,18 @@ def check(target: str, job: str) -> dict:
             illegal = [r for r in illegal if r not in undeclared]
             if undeclared:
                 questions.append(f"artifact {art['file']} reads sibling {undeclared} of its own job, which no handoff declares: permitted, because a derivation may span two entities of one job and the schema has no handoff for that, but the dependency is stated only in the derivation's rule text")
+                # Permitting the read created an execution-order dependency with nothing enforcing it: execute()
+                # runs the artifacts array in order, so the sibling must already be built. A reviewer found that this
+                # rested entirely on the order someone happened to write the array in. Reordering it would not fail
+                # -- the sibling table would simply be empty or absent -- and an empty withdrawal set is exactly the
+                # wrong answer that looks like a right one. So the order is now a gate rule rather than a convention.
+                position = {a["entity"]: i for i, a in enumerate(manifest.get("artifacts", []))}
+                for sib in undeclared:
+                    producer = next((e for e, i in position.items() if ("governed." + e.split(".")[-1]).lower() == sib), None)
+                    if producer is None:
+                        problems.append(f"artifact {art['file']} reads sibling {sib}, which no artifact of this job builds")
+                    elif position[producer] >= position[art["entity"]]:
+                        problems.append(f"artifact {art['file']} reads sibling {sib}, built by {producer}, which comes no earlier in the manifest's artifacts array; artifacts execute in array order, so the sibling would be empty or absent when this one runs")
             if illegal:
                 problems.append(f"artifact {art['file']} reads {illegal}, outside its handoffs {sorted(allowed)}")
             verdict = GUARD.guard_statement(s, roles, art["entity"].split(".")[-1])

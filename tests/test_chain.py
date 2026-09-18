@@ -495,6 +495,56 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class SiblingReadOrderingTests(unittest.TestCase):
+    """A derivation may span two entities of one job -- an account has no current statement when its owning customer
+    has been withdrawn -- and the L2 schema has no handoff for that, so containment could not grant the read and the
+    gate refused correct SQL. Permitting it introduced a second problem a reviewer caught: artifacts execute in the
+    order of the manifest's array, so the sibling must already be built, and that rested entirely on the order
+    someone happened to write. Reordering would not fail -- the sibling table would be empty or absent -- and an
+    empty withdrawal set is the wrong answer that looks most like a right one."""
+
+    TARGET, JOB = "duckdb-native", "ownership-history"
+
+    def _check_with(self, mutate_manifest):
+        import copy, json as _json, tempfile, shutil
+        base = ROOT / "chain/l3" / self.TARGET / self.JOB
+        if not (base / "manifest.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3 = Path(tmp) / "l3"
+            shutil.copytree(ROOT / "chain/l3", l3)
+            mp = l3 / self.TARGET / self.JOB / "manifest.json"
+            man = _json.loads(mp.read_text())
+            mutate_manifest(man)
+            mp.write_text(_json.dumps(man, indent=2, sort_keys=True) + "\n")
+            saved = L3.L3_DIR
+            L3.L3_DIR = l3
+            try:
+                return L3.check(self.TARGET, self.JOB)
+            finally:
+                L3.L3_DIR = saved
+
+    def test_the_sibling_read_is_permitted_and_surfaced(self):
+        r = self._check_with(lambda man: None)
+        self.assertFalse([p for p in r["problems"] if "sibling" in p], r["problems"])
+        if not [q for q in r["questions"] if "sibling" in q]:
+            self.skipTest("this projection has no sibling read")
+
+    def test_a_sibling_built_later_in_the_array_is_rejected(self):
+        r = self._check_with(lambda man: man.__setitem__("artifacts", list(reversed(man["artifacts"]))))
+        if not [q for q in L3.check(self.TARGET, self.JOB)["questions"] if "sibling" in q]:
+            self.skipTest("this projection has no sibling read")
+        self.assertTrue([p for p in r["problems"] if "no earlier in the manifest" in p], r["problems"])
+
+    def test_a_sibling_no_artifact_builds_is_rejected(self):
+        def drop_producer(man):
+            man["artifacts"] = [a for a in man["artifacts"] if not a["entity"].endswith(".customer")]
+        r = self._check_with(drop_producer)
+        if not [q for q in L3.check(self.TARGET, self.JOB)["questions"] if "sibling" in q]:
+            self.skipTest("this projection has no sibling read")
+        self.assertTrue([p for p in r["problems"] if "which no artifact of this job builds" in p], r["problems"])
+
+
 class CitedPathMustExistTests(unittest.TestCase):
     """A citation to a path that is not there reads as evidence and supplies none. One model justified an explained
     absence -- a reports:true invariant with no counterexample naming its rows -- by citing chain/ce/proposed/... when
