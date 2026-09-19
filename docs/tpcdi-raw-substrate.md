@@ -36,7 +36,7 @@ The pinned DIGen wrapper does not discover its bundled TPC-DI plugin correctly o
 The effective generation is DIGen's documented small-scale command:
 
 ```sh
-java -jar DIGen.jar -sf 3 -o raw/generated/tpcdi-sf3 -jvm "-Xms512m -Xmx2g"
+java -jar DIGen.jar -sf 3 -o raw/generated/tpcdi-sf3-review -jvm "-Xms512m -Xmx2g"
 ```
 
 Run the complete generation, verification, and persistent load with:

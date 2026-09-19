@@ -395,7 +395,7 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("--tools-dir", type=Path, default=ROOT / ".cache/tpcdi-tools/1.1.0")
     command.add_argument("--java", type=Path, default=Path(shutil.which("java") or "java"))
     command.add_argument("--duckdb")
-    command.add_argument("--raw-dir", type=Path, default=ROOT / "raw/generated/tpcdi-sf3")
+    command.add_argument("--raw-dir", type=Path, default=ROOT / "raw/generated/tpcdi-sf3-review")
     command.add_argument("--database", type=Path, default=ROOT / "build/tpcdi.duckdb")
     command.add_argument("--temp-dir", type=Path, default=ROOT / "tmp/duckdb")
     command.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
