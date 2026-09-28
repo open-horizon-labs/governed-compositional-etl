@@ -213,6 +213,13 @@ def check(target: str, job: str) -> dict:
     kept = sorted(gid for gid in moved if cache.get(gid) in ("hit-by-jev", "hit-by-adjudication"))
     awaiting = sorted(gid for gid in moved if cache.get(gid) == "review")
     unresolved = [gid for gid in moved if gid not in kept and gid not in awaiting]
+    # Which artifacts the unresolved moves actually reach. A job-level "stale" hides that most of a projection may be
+    # untouched by a move; per artifact, stale means some group it derives from moved unresolved, and nothing else.
+    unresolved_set = set(unresolved)
+    artifacts_stale = [a["file"] for a in manifest.get("artifacts", []) if groups_of(model, a["derived_from"]) & unresolved_set]
+    artifacts_kept = [a["file"] for a in manifest.get("artifacts", []) if a["file"] not in artifacts_stale]
+    audits_stale = [a["file"] for a in manifest.get("audits", []) if groups_of(model, [a["invariant"]]) & unresolved_set]
+    audits_kept = [a["file"] for a in manifest.get("audits", []) if a["file"] not in audits_stale]
     if awaiting:
         problems.append(f"groups {awaiting} moved under an L1 change that Jev routed to review; adjudicate (keep or invalidate) before this projection can be accepted or re-projected")
     # A moved fingerprint has two causes the gate was reading as one. If the projection's content is still exactly what
@@ -364,7 +371,9 @@ def check(target: str, job: str) -> dict:
     status = "rejected" if problems else ("question" if questions else "ok")
     return {"target": target, "job": job, "status": status, "problems": problems, "questions": questions, "profile": profile["target"], "provenance": provenance_note,
             "acceptance": acceptance(target, job),
-            "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", []))}
+            "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", [])),
+            "groups_moved_unresolved": sorted(unresolved_set), "artifacts_stale": artifacts_stale, "artifacts_kept": artifacts_kept,
+            "audits_stale": audits_stale, "audits_kept": audits_kept}
 
 
 AUDIT_RESULT = re.compile(r"([A-Za-z0-9_.]+) on model ([A-Za-z0-9_.]+) (?:(\u2705 PASS)|\u274c FAIL \[(\d+)\])")

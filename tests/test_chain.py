@@ -305,6 +305,68 @@ class L3ProvenanceUnderL1Tests(unittest.TestCase):
         self.assertFalse(r["acceptance"]["accepted"], r["acceptance"])  # still not accepted: it awaits the reviewer
 
 
+class ArtifactLevelStalenessTests(unittest.TestCase):
+    """check reports which artifacts and audits a moved group actually reaches. The wrong patch marks every artifact of a
+    job with a moved group stale; this moves ONE group in an accepted-state copy and requires the rest to be kept."""
+
+    def _moved(self, target, job, group):
+        import hashlib, shutil, tempfile
+        real = ROOT / "chain/l3" / target / job
+        if not (real / "manifest.json").exists():
+            self.skipTest("not projected")
+        before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (real / "manifest.json", real / "review.json") if p.exists()}
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp) / "l3" / target / job
+            shutil.copytree(real, base)
+            manifest = json.loads((base / "manifest.json").read_text())
+            review = json.loads((ROOT / "chain/l2" / job / "review.json").read_text())
+            manifest["derived_from_model"]["review_sha256"] = review["model_sha256"]
+            current = {gid: i["fingerprint"] for gid, i in L2.fingerprints(job, selected=True).items()}
+            if group not in current:
+                self.skipTest(f"{group} is not a selected group of {job}")
+            manifest["group_fingerprints"] = dict(current, **{group: "f" * 64})
+            (base / "manifest.json").write_text(json.dumps(manifest))
+            record = json.loads((base / "review.json").read_text())
+            record["projection_sha256"] = L3.projection_digest(base)  # accepted state: the move is really unanswered
+            (base / "review.json").write_text(json.dumps(record))
+            saved = L3.L3_DIR
+            L3.L3_DIR = Path(tmp) / "l3"
+            try:
+                r = L3.check(target, job)
+            finally:
+                L3.L3_DIR = saved
+        after = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (real / "manifest.json", real / "review.json") if p.exists()}
+        self.assertEqual(before, after, "check must not stamp or rewrite the real tree")
+        model, _ = L3.load_job(job)
+        return r, model, manifest
+
+    def _assert_only_reached(self, r, model, manifest, group):
+        cache = json.loads((ROOT / "chain/manifest.json").read_text()).get("jobs", {}).get(r["job"], {}).get("elements", {})
+        if cache.get(group, {}).get("cache") in ("hit-by-jev", "hit-by-adjudication", "review"):
+            self.skipTest(f"{group} carries a cache decision that resolves its move")
+        self.assertEqual(r["groups_moved_unresolved"], [group], r)
+        expect_stale = [a["file"] for a in manifest["artifacts"] if group in L3.groups_of(model, a["derived_from"])]
+        expect_audits = [a["file"] for a in manifest["audits"] if group in L3.groups_of(model, [a["invariant"]])]
+        self.assertTrue(expect_stale and len(expect_stale) < len(manifest["artifacts"]), "scenario must split the job")
+        self.assertEqual(r["artifacts_stale"], expect_stale)
+        self.assertEqual(sorted(r["artifacts_kept"]), sorted(set(a["file"] for a in manifest["artifacts"]) - set(expect_stale)))
+        self.assertEqual(r["audits_stale"], expect_audits)
+        self.assertEqual(sorted(r["audits_stale"] + r["audits_kept"]), sorted(a["file"] for a in manifest["audits"]))
+        self.assertLess(len(r["audits_stale"]), len(manifest["audits"]))
+
+    def test_one_moved_group_in_positions_stales_only_holding_change(self):
+        group = "sg.holding-shape"
+        r, model, manifest = self._moved("duckdb-native", "positions", group)
+        self._assert_only_reached(r, model, manifest, group)
+        self.assertEqual(r["artifacts_stale"], ["holding_change.sql"])
+
+    def test_one_moved_group_in_ownership_history_keeps_customer(self):
+        group = "sg.owner-standing"
+        r, model, manifest = self._moved("duckdb-native", "ownership-history", group)
+        self._assert_only_reached(r, model, manifest, group)
+        self.assertIn("customer.sql", r["artifacts_kept"])
+
+
 class StampIsAcceptanceTests(unittest.TestCase):
     def test_a_projection_edited_after_its_review_cannot_be_stamped(self):
         """Stamping records that a reviewed projection is accepted, so it is the reviewer's step. A Developer that edits
