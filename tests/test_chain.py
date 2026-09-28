@@ -367,6 +367,28 @@ class ArtifactLevelStalenessTests(unittest.TestCase):
         self.assertIn("customer.sql", r["artifacts_kept"])
 
 
+class CascadeDriverTests(unittest.TestCase):
+    def test_the_driver_runs_on_the_tree_writes_nothing_and_emits_its_keys(self):
+        import hashlib, subprocess
+        watched = [ROOT / "chain/manifest.json", *sorted((ROOT / "chain/l3").rglob("manifest.json")), *sorted((ROOT / "chain/l3").rglob("review.json"))]
+        before = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in watched if p.exists()}
+        r = subprocess.run([sys.executable, str(ROOT / "scripts/chain_cascade.py"), "--json", "--no-jev"], cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr[-2000:])
+        doc = json.loads(r.stdout)
+        self.assertEqual(set(doc), {"changed_clauses", "changed_holes", "jobs", "summary"})
+        self.assertEqual(list(doc["jobs"]), L3.JOB_ORDER)
+        for job, e in doc["jobs"].items():
+            if "groups" not in e["l2"]:
+                continue
+            self.assertEqual(set(e["l2"]["groups"]) >= {"hit", "hit-by-jev", "hit-by-adjudication", "review", "stale"}, True)
+            for target, t in e["l3"].items():
+                if t["status"] != "waiting-on-l2" and t["status"] != "missing":
+                    self.assertTrue({"artifacts_stale", "artifacts_kept", "audits_stale", "audits_kept"} <= set(t), t)
+        self.assertTrue({"groups_stale", "jobs_with_stale_groups", "artifacts_to_rebuild", "artifacts_kept", "line"} <= set(doc["summary"]))
+        after = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in watched if p.exists()}
+        self.assertEqual(before, after, "the cascade driver is a report and must write nothing")
+
+
 class StampIsAcceptanceTests(unittest.TestCase):
     def test_a_projection_edited_after_its_review_cannot_be_stamped(self):
         """Stamping records that a reviewed projection is accepted, so it is the reviewer's step. A Developer that edits
