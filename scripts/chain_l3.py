@@ -491,12 +491,17 @@ WATCH = {"ownership-history": "SELECT account_number, effective_from, is_current
          "positions": "SELECT * FROM governed.holding_change ORDER BY 1, 2"}
 
 
-def run_two_phase(target: str, job: str, database: Path | None = None, watch: str | None = None) -> dict:
+def run_two_phase(target: str, job: str, database: Path | None = None, watch: str | None = None, ce: dict | None = None) -> dict:
     """The counterexample as a simulation: project the first-encounter batch, then load the later batch and the labeled
-    constructed change without dropping governed tables, project again, and report what changed on the watched row."""
+    constructed change without dropping governed tables, project again, and report what changed on the watched row.
+    With ce, the second phase loads that document's constructed rows (ce.account_changes and raw additions) instead."""
     fixture = json.loads((ROOT / "oracle/fixtures/public/chain-fixture-v1.json").read_text())
-    ce = json.loads((ROOT / "counterexamples/archive/ce-account-428-rollover-v1.json").read_text())
-    changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"]["ce_account_changes"]]
+    additions = None
+    if ce is None:
+        ce = json.loads((ROOT / "counterexamples/archive/ce-account-428-rollover-v1.json").read_text())
+        changes = [{k: v for k, v in row.items() if k != "note"} for row in ce["fixture"]["ce_account_changes"]]
+    else:
+        changes, additions = ce_rows(ce)
     database = database or ROOT / f"build/chain-{target}-twophase.duckdb"
     watch = watch or WATCH.get(job, WATCH["trade-lifecycle"])  # the watched row belongs to the job being simulated
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
@@ -510,7 +515,7 @@ def run_two_phase(target: str, job: str, database: Path | None = None, watch: st
         cur = con.execute(watch); cols = [d[0] for d in cur.description]; before = [dict(zip(cols, map(str, r))) for r in cur.fetchall()]
     finally:
         con.close()
-    LOADER.reload_sources(database, fixture, "rollover", changes)
+    LOADER.reload_sources(database, fixture, "rollover", changes, additions or None)
     report = {"target": target, "job": job, "phase": "two-phase", "upstream": [], "audits": {}, "samples": {}}
     reporting_invariants = reporting_invariants_for(job)
     if is_sqlmesh(profile):
@@ -591,6 +596,7 @@ def run(target: str, job: str, phase: str = "rollover", database: Path | None = 
     ce = ce if ce is not None else json.loads((ROOT / DEFAULT_CE).read_text())
     changes, additions = ce_rows(ce)
     database = database or ROOT / f"build/chain-{target}.duckdb"
+    database.parent.mkdir(parents=True, exist_ok=True)  # a fresh checkout or worktree has no build/
     LOADER.load_fixture(database, fixture, phase, changes if phase == "rollover" else None, additions if phase == "rollover" else None)
     report = {"target": target, "job": job, "phase": phase, "upstream": [], "audits": {}, "samples": {}}
     profile = json.loads((ROOT / "chain/profiles" / f"{target}.json").read_text())
@@ -639,7 +645,7 @@ def simulate(target: str, job: str, ce_path: Path) -> dict:
             "note": "SQLMesh audits block promotion, so a fired audit here means the plan was refused and no table was written" if report.get("sqlmesh", {}).get("blocking_failures") else None}
 
 
-def mutate(target: str, job: str, database: Path | None = None) -> dict:
+def mutate(target: str, job: str, database: Path | None = None, ce: dict | None = None) -> dict:
     """Audit sensitivity on native targets: corrupt one protected value at a time on a scratch copy and require an audit to fire.
     Mutations: for every frozen_from_first_encounter or per_statement attribute, null one row's value and, where two
     distinct values exist, swap one row's value for another row's; for every attribute derived within the entity, swap and
@@ -653,7 +659,7 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
     base = L3_DIR / target / job
     manifest = json.loads((base / "manifest.json").read_text())
     database = database or ROOT / f"build/chain-{target}-mutate.duckdb"
-    run(target, job, "rollover", database=database)
+    run(target, job, "rollover", database=database, ce=ce)  # with ce, mutations land on that document's constructed rows too
     scratch_dir = database.parent / "mutate-scratch"
     scratch_dir.mkdir(exist_ok=True)
     scratch = scratch_dir / database.name  # same file stem: SQLMesh views embed the catalog name
@@ -720,16 +726,23 @@ def mutate(target: str, job: str, database: Path | None = None) -> dict:
                     con.close()
                 results.append({"entity": entity["id"], "attribute": attr["name"], "role": role, "class": klass, "mutation": kind, "fired": fired, "protected": bool(fired)})
     unprotected = [r for r in results if not r["protected"]]
-    return {"target": target, "job": job, "mutations": len(results), "unprotected": unprotected, "results": results}
+    out = {"target": target, "job": job, "mutations": len(results), "unprotected": unprotected, "results": results}
+    if ce is not None:
+        out["counterexample"] = ce.get("id")
+    return out
 
 
-def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> dict:
-    """Engine independence: the same selected L2 projected on two targets must yield identical tables."""
-    ra = run(target_a, job, phase, database=ROOT / f"build/chain-compare-{target_a}.duckdb")
-    rb = run(target_b, job, phase, database=ROOT / f"build/chain-compare-{target_b}.duckdb")
+def compare(job: str, target_a: str, target_b: str, phase: str = "rollover", ce: dict | None = None) -> dict:
+    """Engine independence: the same selected L2 projected on two targets must yield identical tables.
+    With ce, both engines run over that counterexample document's constructed rows (as simulate does), so the
+    comparison reaches surfaces the bare fixture leaves empty."""
+    ra = run(target_a, job, phase, database=ROOT / f"build/chain-compare-{target_a}.duckdb", ce=ce)
+    rb = run(target_b, job, phase, database=ROOT / f"build/chain-compare-{target_b}.duckdb", ce=ce)
     model, _ = load_job(job)
     tables = ["governed." + e["id"].split(".")[-1] for e in model["entities"]]
     out = {"job": job, "targets": [target_a, target_b], "both_ok": ra["ok"] and rb["ok"], "tables": {}}
+    if ce is not None:
+        out["counterexample"] = ce.get("id")
     ca = duckdb.connect(str(ROOT / f"build/chain-compare-{target_a}.duckdb"), read_only=True)
     cb = duckdb.connect(str(ROOT / f"build/chain-compare-{target_b}.duckdb"), read_only=True)
     try:
@@ -743,6 +756,10 @@ def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> 
             a_cols = [d[0] for d in ca.execute(f"SELECT * FROM {table} LIMIT 0").description]
             b_cols = [d[0] for d in cb.execute(f"SELECT * FROM {table} LIMIT 0").description]
             out["tables"][table] = {"identical": a_rows == b_rows and a_cols == b_cols, "rows": [len(a_rows), len(b_rows)], "columns_match": a_cols == b_cols}
+            if a_rows != b_rows:
+                # name the rows, not just the table: a count match with a value mismatch is the case that hides
+                only_a = [r for r in a_rows if r not in b_rows]; only_b = [r for r in b_rows if r not in a_rows]
+                out["tables"][table]["only_in"] = {target_a: [list(map(str, r)) for r in only_a[:5]], target_b: [list(map(str, r)) for r in only_b[:5]]}
     finally:
         ca.close(); cb.close()
     out["identical"] = out["both_ok"] and all(v.get("identical") for v in out["tables"].values())
@@ -752,13 +769,14 @@ def compare(job: str, target_a: str, target_b: str, phase: str = "rollover") -> 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("command", choices=("check", "run", "stamp", "compare", "twophase", "mutate", "simulate"))
-    p.add_argument("--ce", type=Path, help="simulate: a counterexample document (fixture.ce_account_changes and/or fixture.raw_additions)")
+    p.add_argument("--ce", type=Path, help="simulate, compare, mutate, twophase: a counterexample document (fixture.ce_account_changes and/or fixture.raw_additions)")
     p.add_argument("target")
     p.add_argument("job")
     p.add_argument("--against", help="compare: the second target")
     p.add_argument("--phase", default="rollover", choices=("first_encounter", "rollover"))
     a = p.parse_args()
     try:
+        ce = json.loads((ROOT / a.ce).read_text()) if a.ce and a.command in ("compare", "mutate", "twophase") else None
         if a.command == "check":
             r = check(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["status"] == "ok" else 3
         if a.command == "stamp":
@@ -768,11 +786,11 @@ def main() -> int:
                 raise L3Error("simulate needs --ce <counterexample document>")
             r = simulate(a.target, a.job, a.ce); print(json.dumps(r, indent=2)); return 0 if not r["silent"] else 4
         if a.command == "mutate":
-            r = mutate(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if not r["unprotected"] else 3
+            r = mutate(a.target, a.job, ce=ce); print(json.dumps(r, indent=2)); return 0 if not r["unprotected"] else 3
         if a.command == "twophase":
-            r = run_two_phase(a.target, a.job); print(json.dumps(r, indent=2)); return 0 if r["first_phase_ok"] and r["second_phase_ok"] else 3
+            r = run_two_phase(a.target, a.job, ce=ce); print(json.dumps(r, indent=2)); return 0 if r["first_phase_ok"] and r["second_phase_ok"] else 3
         if a.command == "compare":
-            r = compare(a.job, a.target, a.against, a.phase); print(json.dumps(r, indent=2)); return 0 if r["identical"] else 3
+            r = compare(a.job, a.target, a.against, a.phase, ce=ce); print(json.dumps(r, indent=2)); return 0 if r["identical"] else 3
         r = run(a.target, a.job, a.phase); print(json.dumps(r, indent=2)); return 0 if r["ok"] else 3
     except (L3Error, OSError, json.JSONDecodeError, duckdb.Error) as error:
         print(f"l3 error: {error}", file=sys.stderr); return 2

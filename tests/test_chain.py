@@ -477,6 +477,41 @@ class EngineIndependenceTests(unittest.TestCase):
         self.assertTrue(report["identical"], report)
 
 
+class CompareWithCounterexampleTests(unittest.TestCase):
+    """compare/mutate/twophase over a counterexample document's rows. The bare fixture never reaches the surfaces recent
+    changes added, so compare reported identical across real divergences. The wrong patch is a --ce that parses and is
+    ignored; these tests fail it by requiring the document's rows to appear in the compared tables."""
+
+    INTERLEAVED = {"id": "test.ce-624-interleaved", "provenance": "controlled_counterexample", "fixture": {"ce_account_changes": [
+        {"account_id": 428, "action_at": "2017-07-08 00:58:00", "provenance": "controlled_counterexample", "status_id": "ACTV", "tax_status_id": 2},
+        {"account_id": 624, "action_at": "2009-06-01 12:00:00", "provenance": "controlled_counterexample", "status_id": "ACTV", "tax_status_id": 2}]}}
+
+    def setUp(self):
+        if not all((ROOT / "chain/l3" / t / JOB / "manifest.json").exists() for t in ("duckdb-native", "duckdb-sqlmesh")):
+            self.skipTest("both targets not projected")
+
+    def test_compare_loads_the_counterexample_rows_on_both_engines(self):
+        bare = L3.compare(JOB, "duckdb-native", "duckdb-sqlmesh")
+        with_ce = L3.compare(JOB, "duckdb-native", "duckdb-sqlmesh", ce=self.INTERLEAVED)
+        self.assertNotIn("counterexample", bare)
+        self.assertEqual(with_ce["counterexample"], "test.ce-624-interleaved")
+        b, c = bare["tables"]["governed.account"]["rows"], with_ce["tables"]["governed.account"]["rows"]
+        self.assertEqual(c, [b[0] + 1, b[1] + 1], (bare, with_ce))  # the one extra constructed statement, on each engine
+        self.assertTrue(with_ce["identical"], with_ce)
+
+    def test_compare_takes_an_archived_document_in_place_of_the_default(self):
+        doc = json.loads((ROOT / "counterexamples/proposed/ce-withdrawn-account-v1.json").read_text())
+        bare = L3.compare(JOB, "duckdb-native", "duckdb-sqlmesh")
+        with_ce = L3.compare(JOB, "duckdb-native", "duckdb-sqlmesh", ce=doc)
+        # the document carries no ce_account_changes, so the default 428 rollover statement is absent: as simulate does
+        self.assertEqual(with_ce["tables"]["governed.account"]["rows"][0], bare["tables"]["governed.account"]["rows"][0] - 1)
+
+    def test_mutate_runs_over_the_counterexample_rows(self):
+        r = L3.mutate("duckdb-native", JOB, database=ROOT / "build/test-mutate-ce.duckdb", ce=self.INTERLEAVED)
+        self.assertEqual(r["counterexample"], "test.ce-624-interleaved")
+        self.assertIn("results", r)
+
+
 class L3AuditContainmentTests(unittest.TestCase):
     def test_audit_reading_a_deferred_source_is_rejected(self):
         base = ROOT / "chain/l3/duckdb-native/ownership-history"
