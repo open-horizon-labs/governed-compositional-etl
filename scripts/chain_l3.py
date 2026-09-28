@@ -120,6 +120,23 @@ def groups_of(model: dict, element_ids: list[str]) -> set[str]:
     return {steps[e]["sufficiency_group"] for e in element_ids if e in steps and steps[e].get("sufficiency_group")}
 
 
+def column_groups(model: dict, entity_id: str) -> dict[str, set[str]]:
+    """For one entity, the sufficiency groups each attribute derives from: the attribute's own group plus the groups
+    of every handoff that lands on it. This is the unit a change actually touches. An artifact is one SQL file per
+    entity, and SQL cannot rebuild one column of a table, so at artifact level any moved group stales the whole file
+    -- which is true and useless. The columns are where the work is, and the model already knows them."""
+    steps = L2.element_steps(model)
+    out: dict[str, set[str]] = {}
+    for e in model["entities"]:
+        if e["id"] != entity_id:
+            continue
+        for a in e["attributes"]:
+            aid = f"{entity_id}.{a['name']}"
+            ids = [aid] + [f"handoff.{h['from']}->{h['to']}" for h in model.get("handoffs", []) if h["to"] == aid]
+            out[a["name"]] = {steps[i]["sufficiency_group"] for i in ids if i in steps and steps[i].get("sufficiency_group")}
+    return out
+
+
 def projection_digest(base: Path) -> str:
     """What the reviewer judged: every SQL file of the projection, by content, so a touched-but-identical file is the same
     projection and an edited one is not."""
@@ -220,6 +237,17 @@ def check(target: str, job: str) -> dict:
     artifacts_kept = [a["file"] for a in manifest.get("artifacts", []) if a["file"] not in artifacts_stale]
     audits_stale = [a["file"] for a in manifest.get("audits", []) if groups_of(model, [a["invariant"]]) & unresolved_set]
     audits_kept = [a["file"] for a in manifest.get("audits", []) if a["file"] not in audits_stale]
+    # Column level: which columns of a stale artifact a Developer must actually rewrite, and which must come out
+    # byte-identical. Computed from the model, not from the manifest's derived_from, which lists whole elements.
+    columns = {}
+    for a in manifest.get("artifacts", []):
+        cg = column_groups(model, a["entity"])
+        st = sorted(c for c, gs in cg.items() if gs & unresolved_set)
+        columns[a["file"]] = {"stale": st, "kept": sorted(c for c in cg if c not in st)}
+        if a["file"] in artifacts_stale and not st:
+            # the manifest claims a moved group but no column of the entity derives from it: the Developer declared
+            # derived_from wider than the SQL, or the model moved something the entity does not carry
+            questions.append(f"artifact {a['file']} is stale by its manifest's derived_from, but no column of {a['entity']} derives from the moved groups {sorted(groups_of(model, a['derived_from']) & unresolved_set)}; either the manifest over-declares or nothing in this file needs to change")
     if awaiting:
         problems.append(f"groups {awaiting} moved under an L1 change that Jev routed to review; adjudicate (keep or invalidate) before this projection can be accepted or re-projected")
     # A moved fingerprint has two causes the gate was reading as one. If the projection's content is still exactly what
@@ -373,7 +401,7 @@ def check(target: str, job: str) -> dict:
             "acceptance": acceptance(target, job),
             "artifacts": len(manifest.get("artifacts", [])), "audits": len(manifest.get("audits", [])),
             "groups_moved_unresolved": sorted(unresolved_set), "artifacts_stale": artifacts_stale, "artifacts_kept": artifacts_kept,
-            "audits_stale": audits_stale, "audits_kept": audits_kept}
+            "audits_stale": audits_stale, "audits_kept": audits_kept, "columns": columns}
 
 
 AUDIT_RESULT = re.compile(r"([A-Za-z0-9_.]+) on model ([A-Za-z0-9_.]+) (?:(\u2705 PASS)|\u274c FAIL \[(\d+)\])")

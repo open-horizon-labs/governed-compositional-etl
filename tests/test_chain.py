@@ -639,6 +639,58 @@ class CounterexampleSimulationTests(unittest.TestCase):
         self.check_target("duckdb-native")
 
 
+class ColumnLevelStalenessTests(unittest.TestCase):
+    """An artifact is one SQL file per entity and SQL cannot rebuild one column, so at artifact level any moved group
+    stales the whole file -- true and useless. The columns are where the work is. Three narrow L1 changes were run
+    through the router and every one rebuilt every table in its job while staling 2 of 20, 9 of 14 and 8 of 13
+    audits; the model already knows which columns each group reaches, and now the gate says so."""
+
+    def _check_moving(self, target, job, group):
+        import json as _json, tempfile, shutil
+        base = ROOT / "chain/l3" / target / job
+        if not (base / "manifest.json").exists():
+            self.skipTest("not projected")
+        with tempfile.TemporaryDirectory() as tmp:
+            l3 = Path(tmp) / "l3"
+            shutil.copytree(ROOT / "chain/l3", l3)
+            mp = l3 / target / job / "manifest.json"
+            man = _json.loads(mp.read_text())
+            review = _json.loads((ROOT / "chain/l2" / job / "review.json").read_text())
+            man["derived_from_model"]["review_sha256"] = review["model_sha256"]
+            current = {g: i["fingerprint"] for g, i in L2.fingerprints(job, selected=True).items()}
+            self.assertIn(group, current)
+            man["group_fingerprints"] = dict(current, **{group: "f" * 64})
+            mp.write_text(_json.dumps(man))
+            rp = l3 / target / job / "review.json"
+            rec = _json.loads(rp.read_text()); rec["projection_sha256"] = L3.projection_digest(l3 / target / job)
+            rp.write_text(_json.dumps(rec))
+            saved = L3.L3_DIR; L3.L3_DIR = l3
+            try:
+                return L3.check(target, job)
+            finally:
+                L3.L3_DIR = saved
+
+    def test_moving_current_version_stales_exactly_its_columns(self):
+        """The tempting patch: every column of a stale artifact is stale. Under sg.current-version only is_current and
+        is_withdrawal derive from the moved group; the other six account columns must be reported kept."""
+        r = self._check_moving("duckdb-native", "ownership-history", "sg.current-version")
+        self.assertIn("account.sql", r["artifacts_stale"])
+        cols = r["columns"]["account.sql"]
+        self.assertEqual(cols["stale"], ["is_current", "is_withdrawal"], cols)
+        self.assertTrue(set(cols["kept"]) >= {"account_number", "effective_from", "owning_customer_number", "status", "tax_treatment"}, cols)
+
+    def test_every_column_derives_from_some_group(self):
+        """A column in no group would be invisible to the router: nothing could ever stale it."""
+        import json as _json
+        for job in ("ownership-history", "trade-lifecycle", "positions"):
+            model = _json.loads((ROOT / "chain/l2" / job / "selected-model.json").read_text())
+            for e in model["entities"]:
+                cg = L3.column_groups(model, e["id"])
+                with self.subTest(job=job, entity=e["id"]):
+                    orphans = sorted(c for c, gs in cg.items() if not gs)
+                    self.assertEqual(orphans, [], f"{e['id']} columns in no sufficiency group: {orphans}")
+
+
 class SiblingReadOrderingTests(unittest.TestCase):
     """A derivation may span two entities of one job -- an account has no current statement when its owning customer
     has been withdrawn -- and the L2 schema has no handoff for that, so containment could not grant the read and the

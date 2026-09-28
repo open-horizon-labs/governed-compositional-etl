@@ -45,3 +45,31 @@ Identical on both engines.
 - A worktree has no `.env`; Jev silently returns `not-run`, which routes to invalidate. Copy the key in.
 - Stale groups persist until stamped, so an unfinished cycle masks the next change's artifact/audit deltas.
   Measure against a control, or finish the cycle first.
+
+## Column level, added after the run above
+
+The artifact-level "not shown" was true and useless: SQL cannot rebuild one column of a table, so any moved group
+stales the whole file. The columns are where the work is, and the L2 model already knows which group each column
+derives from (the attribute's own group plus the groups of every handoff landing on it). `chain_l3.py check` now
+reports `columns` per artifact -- stale (rewrite) and kept (must come out byte-identical) -- and the cascade driver
+prints and totals them. In a clean tree, exactly one group moving:
+
+| | table | rewrite | keep |
+|---|---|---|---|
+| A | customer.sql | 2 of 6: `is_current`, `is_withdrawal` | 4 |
+| A | account.sql | 2 of 8: `is_current`, `is_withdrawal` | 6 |
+| B | holding_change.sql | 3 of 9: the quantity columns | 6 |
+| B | account_position.sql | 3 of 3 | 0 (a pure aggregate of the moved rule) |
+| B | customer_position.sql | 3 of 3 | 0 |
+| C | trade.sql | 6 of 15: placement, order type, first-seen-late, the ownership pins | 9 |
+
+Across the three: 19 columns to rewrite, 25 kept. Both engines identical.
+
+Two facts checked adversarially, both in `ColumnLevelStalenessTests`: moving `sg.current-version` stales exactly
+`is_current` and `is_withdrawal` on `account.sql` and nothing else, so the "every column of a stale file is stale"
+patch fails; and every column of every entity in all three jobs derives from some group, so no column is invisible
+to the router. A stale artifact none of whose columns derive from the moved groups is now raised as a question:
+either the manifest over-declares `derived_from` or nothing in the file needs to change.
+
+So "compile only what's needed" holds at job, group, audit and column level. It does not hold at file level, and
+cannot, and the demo should say so in those words.

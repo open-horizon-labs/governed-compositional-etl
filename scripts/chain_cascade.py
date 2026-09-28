@@ -94,7 +94,7 @@ def cascade(use_jev: bool = True) -> dict:
                 t = {"status": "waiting-on-l2", "why": why if not in_sync else f"groups {fresh} need an L2 recompile"}
             else:
                 r = L3.check(target, job)
-                t = {"status": r["status"], **{k: r.get(k, []) for k in ("artifacts_stale", "artifacts_kept", "audits_stale", "audits_kept")},
+                t = {"status": r["status"], **{k: r.get(k, []) for k in ("artifacts_stale", "artifacts_kept", "audits_stale", "audits_kept")}, "columns": r.get("columns", {}),
                      "acceptance": r.get("acceptance")}
                 acc = r.get("acceptance") or {}
                 # stale files on a projection still exactly as accepted: nothing has been recompiled, a Developer owes it.
@@ -114,9 +114,12 @@ def cascade(use_jev: bool = True) -> dict:
     rebuild = sum(len(t["artifacts_stale"]) for e in out["jobs"].values() for t in e["l3"].values() if "developer_handoff" in t)
     to_review = sum(len(t["artifacts_stale"]) for e in out["jobs"].values() for t in e["l3"].values() if "reviewer_handoff" in t)
     kept = sum(len(t.get("artifacts_kept", [])) for e in out["jobs"].values() for t in e["l3"].values())
+    cols_stale = sum(len(c["stale"]) for e in out["jobs"].values() for t in e["l3"].values() for c in t.get("columns", {}).values())
+    cols_kept = sum(len(c["kept"]) for e in out["jobs"].values() for t in e["l3"].values() for c in t.get("columns", {}).values())
     n_stale = sum(len(out["jobs"][j]["l2"]["groups"]["stale"]) for j in stale_jobs)
     out["summary"] = {"groups_stale": n_stale, "jobs_with_stale_groups": len(stale_jobs), "artifacts_to_rebuild": rebuild, "artifacts_kept": kept, "artifacts_awaiting_review": to_review,
-                      "line": f"{n_stale} groups stale across {len(stale_jobs)} jobs, {rebuild} artifacts to rebuild, {kept} kept, {to_review} recompiled and awaiting review"}
+                      "columns_to_rewrite": cols_stale, "columns_kept": cols_kept,
+                      "line": f"{n_stale} groups stale across {len(stale_jobs)} jobs; {rebuild} artifacts to rebuild, {kept} kept; {cols_stale} columns to rewrite, {cols_kept} kept; {to_review} recompiled and awaiting review"}
     return out
 
 
@@ -146,6 +149,9 @@ def render(doc: dict) -> None:
             print(head)
             if "artifacts_stale" in t:
                 print(f"    artifacts stale {t['artifacts_stale']}  kept {t['artifacts_kept']}")
+                for f, c in t.get("columns", {}).items():
+                    if c["stale"]:
+                        print(f"      {f}: rewrite {c['stale']}  keep {c['kept']}")
                 print(f"    audits stale {len(t['audits_stale'])}  kept {len(t['audits_kept'])}")
             if "developer_handoff" in t:
                 print(f"    -> {t['developer_handoff']['to']}: rebuild {len(t['developer_handoff']['rebuild'])} files for groups {t['developer_handoff']['groups']}")
